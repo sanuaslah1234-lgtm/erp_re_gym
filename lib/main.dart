@@ -6,6 +6,7 @@ import 'package:erp_software/frontend/providers/cashier/order_provider.dart';
 import 'package:erp_software/frontend/providers/cashier/refund_provider.dart';
 import 'package:erp_software/frontend/providers/cashier/barcode_provider.dart';
 import 'package:erp_software/frontend/providers/cashier/cashier_settings_provider.dart';
+import 'package:erp_software/frontend/providers/product_management_provider.dart';
 import 'package:erp_software/frontend/screens/auth/login_screen.dart';
 import 'package:erp_software/frontend/screens/employee/employee_list_screen.dart';
 import 'package:provider/provider.dart';
@@ -28,6 +29,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider<RefundProvider>(create: (_) => RefundProvider()),
         ChangeNotifierProvider<BarcodeProvider>(create: (_) => BarcodeProvider()),
         ChangeNotifierProvider<CashierSettingsProvider>(create: (_) => CashierSettingsProvider()),
+        ChangeNotifierProvider<ProductManagementProvider>(create: (_) => ProductManagementProvider()),
       ],
       child: MaterialApp(
         title: 'ERP Software',

@@ -5,6 +5,8 @@ import 'package:erp_software/frontend/widgets/erp_sidebar.dart';
 import 'package:erp_software/frontend/widgets/erp_topbar.dart';
 import 'package:provider/provider.dart';
 
+import 'package:erp_software/frontend/widgets/erp_toast.dart';
+
 class AddEmployeeScreen extends StatefulWidget {
   const AddEmployeeScreen({super.key});
 
@@ -74,21 +76,15 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
       if (!mounted) return;
 
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Employee added successfully to PostgreSQL database!'),
-            backgroundColor: Color(0xFF2563EB),
-            behavior: SnackBarBehavior.floating,
-          ),
+        ErpToast.showSuccess(
+          context,
+          'Employee added successfully to PostgreSQL database!',
         );
         Navigator.pop(context);
       } else if (employeeProvider.errorMessage != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(employeeProvider.errorMessage!),
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-          ),
+        ErpToast.showError(
+          context,
+          employeeProvider.errorMessage!,
         );
       }
     }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/providers/cashier/barcode_provider.dart';
 import 'package:erp_software/frontend/widgets/barcode_widget.dart';
+import 'package:erp_software/frontend/widgets/erp_toast.dart';
 import 'package:provider/provider.dart';
 
 class LivePrintSheetGrid extends StatelessWidget {
@@ -43,11 +44,10 @@ class LivePrintSheetGrid extends StatelessWidget {
                     : () async {
                         final success = await provider.printLabels(authProvider.token);
                         if (success && context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Labels sent to printer & history recorded in database!'),
-                              backgroundColor: Color(0xFF2563EB),
-                            ),
+                          ErpToast.showSuccess(
+                            context,
+                            'Labels sent to printer & history recorded in database!',
+                            title: 'Printing Labels',
                           );
                         }
                       },

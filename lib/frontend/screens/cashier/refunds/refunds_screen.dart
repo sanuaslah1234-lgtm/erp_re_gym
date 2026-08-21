@@ -6,6 +6,7 @@ import 'package:erp_software/frontend/screens/cashier/refunds/widgets/refund_ite
 import 'package:erp_software/frontend/screens/cashier/refunds/widgets/refund_order_search.dart';
 import 'package:erp_software/frontend/screens/cashier/refunds/widgets/refund_summary.dart';
 import 'package:erp_software/frontend/widgets/erp_sidebar.dart';
+import 'package:erp_software/frontend/widgets/erp_toast.dart';
 import 'package:erp_software/frontend/widgets/erp_topbar.dart';
 import 'package:provider/provider.dart';
 
@@ -97,11 +98,10 @@ class _RefundsScreenState extends State<RefundsScreen> {
                                   onSubmitRefund: () async {
                                     final refund = await refundProvider.processRefund(authProvider.token);
                                     if (refund != null && context.mounted) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text('Refund ${refund.refundNumber} completed! Stock restored in PostgreSQL.'),
-                                          backgroundColor: Colors.purple,
-                                        ),
+                                      ErpToast.showSuccess(
+                                        context,
+                                        'Refund ${refund.refundNumber} completed! Stock restored in PostgreSQL.',
+                                        title: 'Refund Processed',
                                       );
                                     }
                                   },

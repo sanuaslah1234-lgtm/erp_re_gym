@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:erp_software/frontend/models/cashier/pos_order.dart';
+import 'package:erp_software/frontend/widgets/erp_toast.dart';
 
 class ReceiptDialog extends StatelessWidget {
   final PosOrder order;
@@ -139,8 +140,10 @@ class ReceiptDialog extends StatelessWidget {
                   Expanded(
                     child: ElevatedButton.icon(
                       onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Sent to Thermal Receipt Printer!')),
+                        ErpToast.showInfo(
+                          context,
+                          'Sent to Thermal Receipt Printer!',
+                          title: 'Printing Receipt',
                         );
                         Navigator.pop(context);
                       },

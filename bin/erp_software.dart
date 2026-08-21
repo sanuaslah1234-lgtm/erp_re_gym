@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:erp_software/backend/controllers/auth_controller.dart';
@@ -22,12 +23,16 @@ import 'package:erp_software/backend/repositories/cashier/cashier_settings_repos
 import 'package:erp_software/backend/repositories/cashier/order_repository.dart';
 import 'package:erp_software/backend/repositories/cashier/product_repository.dart';
 import 'package:erp_software/backend/repositories/cashier/refund_repository.dart';
+import 'package:erp_software/backend/repositories/product_management_repository.dart';
 import 'package:erp_software/backend/routes/cashier_routes.dart';
+import 'package:erp_software/backend/routes/product_management_routes.dart';
 import 'package:erp_software/backend/services/cashier/barcode_service.dart';
 import 'package:erp_software/backend/services/cashier/cashier_settings_service.dart';
 import 'package:erp_software/backend/services/cashier/order_service.dart';
 import 'package:erp_software/backend/services/cashier/pos_service.dart';
 import 'package:erp_software/backend/services/cashier/refund_service.dart';
+import 'package:erp_software/backend/services/product_management_service.dart';
+import 'package:erp_software/backend/controllers/product_management_controller.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_router/shelf_router.dart';
@@ -52,8 +57,9 @@ Middleware _corsMiddleware() {
   };
 }
 
-Future<void> main() async {
-  final db = PostgresService();
+void main() {
+  runZonedGuarded(() async {
+    final db = PostgresService();
 
   try {
     // 1. Connect PostgreSQL & initialize tables
@@ -70,6 +76,7 @@ Future<void> main() async {
     final refundRepository = RefundRepository(db);
     final barcodeRepository = BarcodeRepository(db);
     final cashierSettingsRepository = CashierSettingsRepository(db);
+    final productManagementRepository = ProductManagementRepository(db);
 
     // 3. Initialize Services
     final emailService = EmailService();
@@ -93,6 +100,7 @@ Future<void> main() async {
     );
     final refundService = RefundService(refundRepository);
     final barcodeService = BarcodeService(barcodeRepository);
+    final productManagementService = ProductManagementService(productManagementRepository);
 
     // 4. Initialize Controllers
     final authController = AuthController(authService);
@@ -104,6 +112,7 @@ Future<void> main() async {
     final refundController = RefundController(refundService);
     final barcodeController = BarcodeController(barcodeService);
     final cashierSettingsController = CashierSettingsController(cashierSettingsService);
+    final productManagementController = ProductManagementController(productManagementService);
 
     // 5. Mount Sub-Routers
     final mainRouter = Router();
@@ -119,6 +128,7 @@ Future<void> main() async {
         settingsController: cashierSettingsController,
       ).call,
     );
+    mainRouter.mount('/api', setupProductManagementRoutes(productManagementController).call);
 
     // 6. Middleware Pipeline
     final handler = Pipeline()
@@ -127,10 +137,38 @@ Future<void> main() async {
         .addHandler(mainRouter.call);
 
     final port = AppConfig.apiPort;
-    final server = await shelf_io.serve(handler, '0.0.0.0', port, shared: true);
+    HttpServer? server;
+    for (int attempt = 1; attempt <= 5; attempt++) {
+      try {
+        server = await shelf_io.serve(handler, '0.0.0.0', port, shared: true);
+        break;
+      } on SocketException catch (e) {
+        if (attempt == 1) {
+          stdout.writeln('Port $port is currently held by a stale process. Automatically freeing port $port...');
+        }
+        if (Platform.isWindows) {
+          try {
+            final myPid = pid;
+            Process.runSync('powershell', [
+              '-Command',
+              'Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess | Where-Object { \$_ -ne $myPid } | ForEach-Object { Stop-Process -Id \$_ -Force -ErrorAction SilentlyContinue }'
+            ]);
+          } catch (_) {}
+        }
+        if (attempt == 5) {
+          rethrow;
+        }
+        await Future.delayed(const Duration(milliseconds: 800));
+      }
+    }
 
-    stdout.writeln('ERP REST API Server running on http://${server.address.host}:${server.port}');
+    if (server != null) {
+      stdout.writeln('ERP REST API Server running on http://${server.address.host}:${server.port}');
+    }
   } catch (e) {
     stderr.writeln('ERP Backend initialization error: $e');
   }
+  }, (error, stack) {
+    stderr.writeln('ERP Backend Uncaught Error: $error');
+  });
 }

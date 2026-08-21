@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/screens/cashier/cashier_dashboard_screen.dart';
 import 'package:erp_software/frontend/screens/employee/employee_list_screen.dart';
+import 'package:erp_software/frontend/screens/products/brands_screen.dart';
+import 'package:erp_software/frontend/screens/products/categories_screen.dart';
+import 'package:erp_software/frontend/screens/products/product_management_screen.dart';
+import 'package:erp_software/frontend/screens/products/units_screen.dart';
+import 'package:erp_software/frontend/screens/reports/reports_screen.dart';
+import 'package:erp_software/frontend/widgets/erp_toast.dart';
+import 'package:provider/provider.dart';
 
 class ErpSidebar extends StatefulWidget {
   final String activeItem;
@@ -9,7 +17,7 @@ class ErpSidebar extends StatefulWidget {
 
   const ErpSidebar({
     super.key,
-    this.activeItem = 'Employees',
+    this.activeItem = 'Employees / Staff',
     this.onSelect,
     this.isDrawer = false,
   });
@@ -24,7 +32,7 @@ class _ErpSidebarState extends State<ErpSidebar> {
   @override
   void initState() {
     super.initState();
-    _activeItem = widget.activeItem;
+    _activeItem = _normalizeItemName(widget.activeItem);
   }
 
   @override
@@ -32,15 +40,33 @@ class _ErpSidebarState extends State<ErpSidebar> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.activeItem != widget.activeItem) {
       setState(() {
-        _activeItem = widget.activeItem;
+        _activeItem = _normalizeItemName(widget.activeItem);
       });
     }
   }
 
+  String _normalizeItemName(String name) {
+    if (name == 'POS') return 'POS Terminal';
+    if (name == 'Barcode Print') return 'Barcode Printing';
+    if (name == 'Employees') return 'Employees / Staff';
+    if (name == 'Stock') return 'Inventory / Stock';
+    if (name == 'Warehouse') return 'Warehouse Management';
+    if (name == 'Units') return 'Units of Measure';
+    if (name == 'Goods Vendors & Suppliers') return 'Suppliers';
+    if (name == 'Store Outlets & Branches') return 'Branches';
+    if (name == 'Expenses & Accounts') return 'Expenses';
+    if (name == 'Reports & Analytics') return 'Reports';
+    return name;
+  }
+
   void _handleItemTap(String title) {
+    final target = _normalizeItemName(title);
+    final current = _normalizeItemName(widget.activeItem);
+
     setState(() {
-      _activeItem = title;
+      _activeItem = target;
     });
+
     if (widget.onSelect != null) {
       widget.onSelect!(title);
     }
@@ -48,80 +74,150 @@ class _ErpSidebarState extends State<ErpSidebar> {
       Navigator.of(context).maybePop();
     }
 
-    if (title == 'Employees' && widget.activeItem != 'Employees') {
-      Navigator.pushReplacement(
+    if (target == 'Employees / Staff') {
+      if (current != 'Employees / Staff') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const EmployeeListScreen()),
+        );
+      }
+    } else if (target == 'Products' || target == 'Inventory / Stock' || target == 'Warehouse Management' || target == 'Suppliers' || target == 'Purchases') {
+      if (current != 'Products') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const ProductManagementScreen()),
+        );
+      }
+    } else if (target == 'Categories') {
+      if (current != 'Categories') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const CategoriesScreen()),
+        );
+      }
+    } else if (target == 'Brands') {
+      if (current != 'Brands') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const BrandsScreen()),
+        );
+      }
+    } else if (target == 'Units of Measure') {
+      if (current != 'Units of Measure') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const UnitsScreen()),
+        );
+      }
+    } else if (target == 'Reports' || target == 'Expenses') {
+      if (current != 'Reports') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const ReportsScreen()),
+        );
+      }
+    } else if (target == 'Dashboard' || target == 'POS Terminal' || target == 'Barcode Printing' || target == 'Sales Orders' || target == 'Settings' || target == 'Customers' || target == 'Branches') {
+      final tab = target == 'Dashboard' ? 'POS Terminal' : target;
+      if (current != tab) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => CashierDashboardScreen(initialTab: tab)),
+        );
+      }
+    } else {
+      ErpToast.showInfo(
         context,
-        MaterialPageRoute(builder: (_) => const EmployeeListScreen()),
-      );
-    } else if ((title == 'POS' || title == 'POS Orders' || title == 'Barcode Print' || title == 'Refunds') && widget.activeItem != title) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => CashierDashboardScreen(initialTab: title)),
+        '$title module selected',
+        title: 'Retail Management',
       );
     }
+  }
+
+  void _handleSignOut() {
+    if (widget.isDrawer) {
+      Navigator.of(context).maybePop();
+    }
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    authProvider.logout();
+    ErpToast.showInfo(
+      context,
+      'Signed out successfully',
+      title: 'Session Ended',
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 260,
-      color: const Color(0xFFEBF2FA),
+      width: 270,
+      color: const Color(0xFFEBF3FB),
       child: SafeArea(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (widget.isDrawer)
-              Container(
-                padding: const EdgeInsets.all(20),
-                alignment: Alignment.centerLeft,
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1D61F2),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(Icons.badge_outlined, color: Colors.white, size: 20),
-                    ),
-                    const SizedBox(width: 12),
-                    const Text(
-                      'ERP Mobile',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF0F172A),
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else
-              const SizedBox(height: 24),
+            const SizedBox(height: 16),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 14),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 children: [
-                  _buildGroupHeader('BRANCH MANAGER'),
-                  _buildMenuItem(Icons.grid_view_outlined, 'Dashboard'),
-                  _buildMenuItem(Icons.people_outline, 'Customers'),
-                  _buildMenuItem(Icons.inventory_2_outlined, 'Inventory'),
-                  _buildMenuItem(Icons.shopping_cart_outlined, 'Sales Orders'),
-                  _buildMenuItem(Icons.shopping_bag_outlined, 'Purchases'),
-                  _buildMenuItem(Icons.business_outlined, 'Departments'),
-                  _buildMenuItem(Icons.group_outlined, 'Designations / Roles'),
-                  _buildMenuItem(Icons.badge_outlined, 'Employees'),
-                  const SizedBox(height: 20),
-                  _buildGroupHeader('CASHIER'),
-                  _buildMenuItem(Icons.desktop_windows_outlined, 'POS'),
-                  _buildMenuItem(Icons.notes_outlined, 'POS Orders'),
-                  _buildMenuItem(Icons.qr_code_scanner_outlined, 'Barcode Print'),
-                  _buildMenuItem(Icons.history_outlined, 'Refunds'),
-                  const SizedBox(height: 20),
-                  _buildGroupHeader('INVENTORY MANAGER'),
-                  _buildMenuItem(Icons.all_inbox_outlined, 'Products'),
+                  _buildGroupHeader('RETAIL MANAGEMENT'),
+                  _buildMenuItem(Icons.grid_view_rounded, 'Dashboard'),
+                  _buildMenuItem(Icons.desktop_windows_outlined, 'POS Terminal'),
+                  _buildMenuItem(Icons.label_outlined, 'Barcode Printing'),
+                  _buildMenuItem(Icons.inventory_2_outlined, 'Products'),
                   _buildMenuItem(Icons.category_outlined, 'Categories'),
-                  const SizedBox(height: 40),
+                  _buildMenuItem(Icons.sell_outlined, 'Brands'),
+                  _buildMenuItem(Icons.straighten_outlined, 'Units of Measure'),
+                  _buildMenuItem(Icons.unarchive_outlined, 'Inventory / Stock'),
+                  _buildMenuItem(Icons.warehouse_outlined, 'Warehouse Management'),
+                  _buildMenuItem(Icons.people_outline_rounded, 'Customers'),
+                  _buildMenuItem(Icons.local_shipping_outlined, 'Goods Vendors & Suppliers'),
+                  _buildMenuItem(Icons.shopping_cart_outlined, 'Purchases'),
+                  _buildMenuItem(Icons.shopping_bag_outlined, 'Sales Orders'),
+                  _buildMenuItem(Icons.receipt_long_outlined, 'Invoices'),
+                  _buildMenuItem(Icons.store_outlined, 'Store Outlets & Branches'),
+                  _buildMenuItem(Icons.badge_outlined, 'Designations & Roles'),
+                  _buildMenuItem(Icons.attach_money_rounded, 'Expenses & Accounts'),
+                  _buildMenuItem(Icons.person_outline_rounded, 'Employees / Staff'),
+                  _buildMenuItem(Icons.bar_chart_rounded, 'Reports & Analytics'),
+                  _buildMenuItem(Icons.settings_outlined, 'Settings'),
+                  const SizedBox(height: 16),
                 ],
+              ),
+            ),
+
+            // Bottom Section: Sign Out Button
+            const Divider(height: 1, color: Color(0xFFCBD5E1)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Material(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(10),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(10),
+                  onTap: _handleSignOut,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    child: const Row(
+                      children: [
+                        Icon(
+                          Icons.logout_rounded,
+                          size: 20,
+                          color: Color(0xFFEF4444),
+                        ),
+                        SizedBox(width: 14),
+                        Text(
+                          'Sign Out',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFEF4444),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
           ],
@@ -132,40 +228,42 @@ class _ErpSidebarState extends State<ErpSidebar> {
 
   Widget _buildGroupHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.only(left: 12, top: 12, bottom: 8),
+      padding: const EdgeInsets.only(left: 12, top: 10, bottom: 12),
       child: Text(
         title,
         style: const TextStyle(
           fontSize: 11,
-          fontWeight: FontWeight.bold,
+          fontWeight: FontWeight.w800,
           color: Color(0xFF2563EB),
-          letterSpacing: 0.5,
+          letterSpacing: 0.8,
         ),
       ),
     );
   }
 
   Widget _buildMenuItem(IconData icon, String title) {
-    final isActive = title == _activeItem;
+    final normalized = _normalizeItemName(title);
+    final isActive = normalized == _activeItem;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2.0),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
         child: InkWell(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
           onTap: () => _handleItemTap(title),
-          child: Container(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               color: isActive ? const Color(0xFF1D61F2) : Colors.transparent,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(12),
               boxShadow: isActive
                   ? [
                       BoxShadow(
-                        color: const Color(0xFF1D61F2).withValues(alpha: 0.25),
-                        blurRadius: 8,
+                        color: const Color(0xFF1D61F2).withValues(alpha: 0.3),
+                        blurRadius: 10,
                         offset: const Offset(0, 4),
                       )
                     ]
@@ -175,17 +273,17 @@ class _ErpSidebarState extends State<ErpSidebar> {
               children: [
                 Icon(
                   icon,
-                  size: 19,
-                  color: isActive ? Colors.white : const Color(0xFF475569),
+                  size: 20,
+                  color: isActive ? Colors.white : const Color(0xFF334155),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Text(
                     title,
                     style: TextStyle(
                       fontSize: 13,
-                      fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                      color: isActive ? Colors.white : const Color(0xFF334155),
+                      fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                      color: isActive ? Colors.white : const Color(0xFF1E293B),
                     ),
                   ),
                 ),

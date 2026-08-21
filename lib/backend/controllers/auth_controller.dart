@@ -18,14 +18,14 @@ class AuthController {
       }
 
       final data = jsonDecode(bodyStr) as Map<String, dynamic>;
-      final email = data['email']?.toString();
+      final identifier = (data['identifier'] ?? data['email'] ?? data['employeeId'] ?? data['employee_id'])?.toString().trim();
       final password = data['password']?.toString();
 
-      if (email == null || password == null) {
-        return ResponseFormatter.error(message: 'Email and password are required', statusCode: 400);
+      if (identifier == null || identifier.isEmpty || password == null || password.isEmpty) {
+        return ResponseFormatter.error(message: 'Email/Employee ID and password are required', statusCode: 400);
       }
 
-      final authResponse = await authService.login(email, password);
+      final authResponse = await authService.login(identifier, password);
 
       return ResponseFormatter.success(
         message: 'Login successful',

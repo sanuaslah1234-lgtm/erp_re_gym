@@ -8,6 +8,7 @@ Router setupAuthRoutes(AuthController authController) {
 
   // Public auth routes
   router.post('/login', authController.login);
+  router.post('/employee-login', authController.login);
   router.post('/logout', authController.logout);
   router.post('/forgot-password', authController.forgotPassword);
   router.post('/verify-otp', authController.verifyOtp);

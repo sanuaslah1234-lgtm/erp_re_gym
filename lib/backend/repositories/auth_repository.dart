@@ -33,6 +33,33 @@ class AuthRepository {
     );
   }
 
+  Future<UserModel?> findUserByIdentifier(String identifier) async {
+    final result = await db.connection.execute(
+      Sql.named('''
+        SELECT u.id, u.email, u.password_hash, u.role, u.is_active, u.last_login_at, u.created_at, u.updated_at
+        FROM users u
+        LEFT JOIN employees e ON u.id = e.user_id
+        WHERE LOWER(u.email) = LOWER(@identifier) OR LOWER(e.employee_id) = LOWER(@identifier)
+        LIMIT 1
+      '''),
+      parameters: {'identifier': identifier},
+    );
+
+    if (result.isEmpty) return null;
+    final row = result.first;
+
+    return UserModel(
+      id: row[0] as int,
+      email: row[1] as String,
+      passwordHash: row[2] as String,
+      role: row[3] as String,
+      isActive: row[4] as bool,
+      lastLoginAt: row[5] != null ? DateTime.tryParse(row[5].toString()) : null,
+      createdAt: row[6] != null ? DateTime.tryParse(row[6].toString()) : null,
+      updatedAt: row[7] != null ? DateTime.tryParse(row[7].toString()) : null,
+    );
+  }
+
   Future<UserModel?> findUserById(int id) async {
     final result = await db.connection.execute(
       Sql.named('''

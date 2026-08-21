@@ -83,12 +83,66 @@ class PostgresService {
       );
     ''');
 
-    // 4. Create Cashier tables
+    // 4. Create Cashier & Inventory tables
+    await connection.execute('''
+      CREATE TABLE IF NOT EXISTS suppliers (
+        id SERIAL PRIMARY KEY,
+        supplier_code VARCHAR(50) UNIQUE NOT NULL,
+        name VARCHAR(150) NOT NULL,
+        phone VARCHAR(30),
+        email VARCHAR(150),
+        address TEXT,
+        gst_vat_number VARCHAR(50),
+        status VARCHAR(20) DEFAULT 'active',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    ''');
+
+    await connection.execute('''
+      CREATE TABLE IF NOT EXISTS customers (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(150) NOT NULL,
+        phone VARCHAR(30),
+        email VARCHAR(150),
+        address TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    ''');
+
     await connection.execute('''
       CREATE TABLE IF NOT EXISTS categories (
         id SERIAL PRIMARY KEY,
         name VARCHAR(100) NOT NULL UNIQUE,
-        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        description TEXT,
+        status VARCHAR(20) DEFAULT 'active',
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    ''');
+    await connection.execute('ALTER TABLE categories ADD COLUMN IF NOT EXISTS description TEXT;');
+    await connection.execute('ALTER TABLE categories ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT \'active\';');
+    await connection.execute('ALTER TABLE categories ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;');
+
+    await connection.execute('''
+      CREATE TABLE IF NOT EXISTS brands (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(100) NOT NULL UNIQUE,
+        description TEXT,
+        status VARCHAR(20) DEFAULT 'active',
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    ''');
+
+    await connection.execute('''
+      CREATE TABLE IF NOT EXISTS units (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(100) NOT NULL UNIQUE,
+        short_symbol VARCHAR(50) NOT NULL,
+        status VARCHAR(20) DEFAULT 'active',
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
     ''');
 
@@ -99,19 +153,90 @@ class PostgresService {
         barcode VARCHAR(100) UNIQUE,
         name VARCHAR(255) NOT NULL,
         category_id INT REFERENCES categories(id) ON DELETE SET NULL,
+        supplier_id INT REFERENCES suppliers(id) ON DELETE SET NULL,
+        brand VARCHAR(100),
+        unit VARCHAR(30) NOT NULL DEFAULT 'pcs',
         purchase_price NUMERIC(12,2) NOT NULL DEFAULT 0,
         selling_price NUMERIC(12,2) NOT NULL DEFAULT 0,
         tax_percentage NUMERIC(5,2) NOT NULL DEFAULT 0,
+        opening_stock NUMERIC(12,3) NOT NULL DEFAULT 0,
         stock_quantity NUMERIC(12,3) NOT NULL DEFAULT 0,
-        unit VARCHAR(30) NOT NULL DEFAULT 'pcs',
+        minimum_stock NUMERIC(12,3) NOT NULL DEFAULT 5,
+        image_url TEXT,
+        description TEXT,
         is_active BOOLEAN NOT NULL DEFAULT TRUE,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
     ''');
+    await connection.execute('ALTER TABLE products ADD COLUMN IF NOT EXISTS brand VARCHAR(100);');
+    await connection.execute('ALTER TABLE products ADD COLUMN IF NOT EXISTS opening_stock NUMERIC(12,3) DEFAULT 0;');
+    await connection.execute('ALTER TABLE products ADD COLUMN IF NOT EXISTS minimum_stock NUMERIC(12,3) DEFAULT 5;');
+    await connection.execute('ALTER TABLE products ADD COLUMN IF NOT EXISTS supplier_id INT REFERENCES suppliers(id) ON DELETE SET NULL;');
+    await connection.execute('ALTER TABLE products ADD COLUMN IF NOT EXISTS image_url TEXT;');
+    await connection.execute('ALTER TABLE products ADD COLUMN IF NOT EXISTS description TEXT;');
+
     await connection.execute('CREATE INDEX IF NOT EXISTS idx_products_barcode ON products(barcode);');
     await connection.execute('CREATE INDEX IF NOT EXISTS idx_products_product_code ON products(product_code);');
     await connection.execute('CREATE INDEX IF NOT EXISTS idx_products_name ON products(name);');
+
+    // 5. Purchases & Purchase Items
+    await connection.execute('''
+      CREATE TABLE IF NOT EXISTS purchases (
+        id SERIAL PRIMARY KEY,
+        invoice_number VARCHAR(50) UNIQUE NOT NULL,
+        supplier_id INT REFERENCES suppliers(id) ON DELETE SET NULL,
+        purchase_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        subtotal NUMERIC(12,2) DEFAULT 0,
+        tax_amount NUMERIC(12,2) DEFAULT 0,
+        discount_amount NUMERIC(12,2) DEFAULT 0,
+        total_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
+        payment_status VARCHAR(30) DEFAULT 'paid',
+        created_by INT REFERENCES users(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    ''');
+
+    await connection.execute('''
+      CREATE TABLE IF NOT EXISTS purchase_items (
+        id SERIAL PRIMARY KEY,
+        purchase_id INT NOT NULL REFERENCES purchases(id) ON DELETE CASCADE,
+        product_id INT NOT NULL REFERENCES products(id),
+        quantity NUMERIC(12,3) NOT NULL,
+        purchase_price NUMERIC(12,2) NOT NULL,
+        tax_amount NUMERIC(12,2) DEFAULT 0,
+        discount_amount NUMERIC(12,2) DEFAULT 0,
+        total_amount NUMERIC(12,2) NOT NULL
+      );
+    ''');
+
+    // 6. Stock Movements Audit Trail
+    await connection.execute('''
+      CREATE TABLE IF NOT EXISTS stock_movements (
+        id SERIAL PRIMARY KEY,
+        product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+        movement_type VARCHAR(30) NOT NULL,
+        quantity NUMERIC(12,3) NOT NULL,
+        previous_stock NUMERIC(12,3) NOT NULL,
+        new_stock NUMERIC(12,3) NOT NULL,
+        reference_id VARCHAR(100),
+        notes TEXT,
+        created_by INT REFERENCES users(id),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    ''');
+
+    // 7. Expenses
+    await connection.execute('''
+      CREATE TABLE IF NOT EXISTS expenses (
+        id SERIAL PRIMARY KEY,
+        category_name VARCHAR(100) NOT NULL,
+        amount NUMERIC(12,2) NOT NULL,
+        description TEXT,
+        expense_date DATE DEFAULT CURRENT_DATE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    ''');
 
     await connection.execute('''
       CREATE TABLE IF NOT EXISTS pos_orders (

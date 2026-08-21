@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
+import 'package:erp_software/frontend/widgets/erp_toast.dart';
 import 'package:provider/provider.dart';
 
 enum ForgotPasswordStep { email, otp, newPassword, success }
@@ -92,20 +93,15 @@ class _ForgotPasswordModalState extends State<ForgotPasswordModal> {
       if (otpCode != null) {
         _startResendTimer();
         setState(() => _currentStep = ForgotPasswordStep.otp);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('OTP sent to $email. Please check your inbox.'),
-            backgroundColor: const Color(0xFF6C5CE7),
-            behavior: SnackBarBehavior.floating,
-          ),
+        ErpToast.showInfo(
+          context,
+          'OTP sent to $email. Please check your inbox.',
+          title: 'OTP Dispatched',
         );
       } else if (authProvider.errorMessage != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(authProvider.errorMessage!),
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-          ),
+        ErpToast.showError(
+          context,
+          authProvider.errorMessage!,
         );
       }
     }
@@ -122,12 +118,10 @@ class _ForgotPasswordModalState extends State<ForgotPasswordModal> {
 
     if (otpCode != null) {
       _startResendTimer();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('New OTP code $otpCode sent to $email'),
-          backgroundColor: const Color(0xFF6C5CE7),
-          behavior: SnackBarBehavior.floating,
-        ),
+      ErpToast.showInfo(
+        context,
+        'New OTP code sent to $email',
+        title: 'OTP Resent',
       );
     }
   }
@@ -135,12 +129,9 @@ class _ForgotPasswordModalState extends State<ForgotPasswordModal> {
   Future<void> _submitOtp() async {
     final otp = _otpCode;
     if (otp.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter all 6 digits of the OTP code'),
-          backgroundColor: Colors.orangeAccent,
-          behavior: SnackBarBehavior.floating,
-        ),
+      ErpToast.showWarning(
+        context,
+        'Please enter all 6 digits of the OTP code',
       );
       return;
     }
@@ -155,12 +146,9 @@ class _ForgotPasswordModalState extends State<ForgotPasswordModal> {
     if (success) {
       setState(() => _currentStep = ForgotPasswordStep.newPassword);
     } else if (authProvider.errorMessage != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(authProvider.errorMessage!),
-          backgroundColor: Colors.redAccent,
-          behavior: SnackBarBehavior.floating,
-        ),
+      ErpToast.showError(
+        context,
+        authProvider.errorMessage!,
       );
     }
   }
@@ -183,12 +171,9 @@ class _ForgotPasswordModalState extends State<ForgotPasswordModal> {
           widget.onPasswordResetSuccess!(email);
         }
       } else if (authProvider.errorMessage != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(authProvider.errorMessage!),
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-          ),
+        ErpToast.showError(
+          context,
+          authProvider.errorMessage!,
         );
       }
     }
@@ -399,7 +384,6 @@ class _ForgotPasswordModalState extends State<ForgotPasswordModal> {
 
   // --- Step 2: OTP Verification Form ---
   Widget _buildOtpStep(AuthProvider authProvider) {
-    final currentOtp = authProvider.lastGeneratedOtp ?? '123456';
 
     return Column(
       children: [
@@ -430,20 +414,24 @@ class _ForgotPasswordModalState extends State<ForgotPasswordModal> {
                   const Icon(Icons.key_rounded, color: Color(0xFFA29BFE), size: 18),
                   const SizedBox(width: 8),
                   Text(
-                    'OTP: $currentOtp',
+                    'OTP: ${authProvider.lastGeneratedOtp ?? '------'}',
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                      letterSpacing: 1.2,
+                      fontSize: 15,
+                      letterSpacing: 1.5,
                     ),
                   ),
                 ],
               ),
               InkWell(
-                onTap: () => _autofillOtp(currentOtp),
+                onTap: () {
+                  if (authProvider.lastGeneratedOtp != null) {
+                    _autofillOtp(authProvider.lastGeneratedOtp!);
+                  }
+                },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: const Color(0xFF6C5CE7),
                     borderRadius: BorderRadius.circular(8),

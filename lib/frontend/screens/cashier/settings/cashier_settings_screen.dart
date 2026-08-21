@@ -7,6 +7,7 @@ import 'package:erp_software/frontend/screens/cashier/settings/widgets/pos_prefe
 import 'package:erp_software/frontend/screens/cashier/settings/widgets/receipt_settings.dart';
 import 'package:erp_software/frontend/screens/cashier/settings/widgets/tax_settings.dart';
 import 'package:erp_software/frontend/widgets/erp_sidebar.dart';
+import 'package:erp_software/frontend/widgets/erp_toast.dart';
 import 'package:erp_software/frontend/widgets/erp_topbar.dart';
 import 'package:provider/provider.dart';
 
@@ -121,11 +122,9 @@ class _CashierSettingsScreenState extends State<CashierSettingsScreen> {
 
                                       final success = await settingsProvider.saveSettings(authProvider.token, updated);
                                       if (success && context.mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Cashier settings saved to PostgreSQL database!'),
-                                            backgroundColor: Color(0xFF2563EB),
-                                          ),
+                                        ErpToast.showSuccess(
+                                          context,
+                                          'Cashier settings saved to PostgreSQL database!',
                                         );
                                       }
                                     },

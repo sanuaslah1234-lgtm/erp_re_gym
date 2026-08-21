@@ -8,7 +8,7 @@ import 'package:erp_software/frontend/screens/cashier/settings/cashier_settings_
 class CashierDashboardScreen extends StatefulWidget {
   final String initialTab;
 
-  const CashierDashboardScreen({super.key, this.initialTab = 'POS'});
+  const CashierDashboardScreen({super.key, this.initialTab = 'POS Terminal'});
 
   @override
   State<CashierDashboardScreen> createState() => _CashierDashboardScreenState();
@@ -26,10 +26,13 @@ class _CashierDashboardScreenState extends State<CashierDashboardScreen> {
   Widget _buildActiveTabScreen() {
     switch (_activeTab) {
       case 'POS':
+      case 'POS Terminal':
         return const PosScreen();
       case 'POS Orders':
+      case 'Sales Orders':
         return const PosOrdersScreen();
       case 'Barcode Print':
+      case 'Barcode Printing':
         return const BarcodePrintScreen();
       case 'Refunds':
         return const RefundsScreen();

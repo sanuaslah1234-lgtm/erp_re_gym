@@ -21,16 +21,16 @@ class AuthService {
     this.emailService,
   });
 
-  Future<AuthResponseModel> login(String email, String password) async {
-    final user = await authRepository.findUserByEmail(email);
+  Future<AuthResponseModel> login(String identifier, String password) async {
+    final user = await authRepository.findUserByIdentifier(identifier);
 
     if (user == null || user.passwordHash == null) {
-      throw ApiException('Invalid email or password', statusCode: 401);
+      throw ApiException('Invalid email/ID or password', statusCode: 401);
     }
 
     final isValidPassword = PasswordService.verifyPassword(password, user.passwordHash!);
     if (!isValidPassword) {
-      throw ApiException('Invalid email or password', statusCode: 401);
+      throw ApiException('Invalid email/ID or password', statusCode: 401);
     }
 
     if (!user.isActive) {
@@ -82,7 +82,10 @@ class AuthService {
 
   Future<String> sendPasswordResetOtp(String email) async {
     final user = await authRepository.findUserByEmail(email);
-    if (user != null && !user.isActive) {
+    if (user == null) {
+      throw ApiException('No employee account found registered with $email', statusCode: 404);
+    }
+    if (!user.isActive) {
       throw ApiException('Account is inactive. Cannot reset password.', statusCode: 403);
     }
 

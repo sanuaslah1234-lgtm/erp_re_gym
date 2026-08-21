@@ -3,6 +3,7 @@ import 'package:erp_software/frontend/models/employee_model.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/providers/employee_provider.dart';
 import 'package:erp_software/frontend/widgets/erp_sidebar.dart';
+import 'package:erp_software/frontend/widgets/erp_toast.dart';
 import 'package:erp_software/frontend/widgets/erp_topbar.dart';
 import 'package:provider/provider.dart';
 
@@ -75,12 +76,9 @@ class _EditEmployeeScreenState extends State<EditEmployeeScreen> {
         if (!mounted) return;
 
         if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Employee updated successfully!'),
-              backgroundColor: Color(0xFF2563EB),
-              behavior: SnackBarBehavior.floating,
-            ),
+          ErpToast.showSuccess(
+            context,
+            'Employee updated successfully!',
           );
           Navigator.pop(context);
         }

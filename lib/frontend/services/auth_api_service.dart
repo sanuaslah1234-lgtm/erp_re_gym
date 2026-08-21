@@ -8,13 +8,17 @@ import 'package:http/http.dart' as http;
 class AuthApiService {
   final String baseUrl = 'http://localhost:5000/api/auth';
 
-  Future<AuthResponseModel> login(String email, String password) async {
+  Future<AuthResponseModel> login(String identifier, String password) async {
     try {
       final response = await http
           .post(
-            Uri.parse('$baseUrl/login'),
+            Uri.parse('$baseUrl/employee-login'),
             headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'email': email, 'password': password}),
+            body: jsonEncode({
+              'identifier': identifier,
+              'email': identifier,
+              'password': password,
+            }),
           )
           .timeout(const Duration(seconds: 4));
 
@@ -25,8 +29,12 @@ class AuthApiService {
         throw Exception(body['message'] ?? 'Login failed');
       }
     } catch (e) {
-      // Mock Fallback if backend API is not running locally
-      if (email.toLowerCase() == 'admin@erp.com' && password == 'admin123') {
+      final errStr = e.toString();
+      if (!errStr.contains('ClientException') && !errStr.contains('SocketException') && !errStr.contains('TimeoutException')) {
+        rethrow;
+      }
+      // Offline fallback if backend server is unreachable
+      if (identifier.toLowerCase() == 'admin@erp.com' && password == 'admin123') {
         return AuthResponseModel(
           token: 'mock_jwt_admin_token_2026',
           user: UserModel(id: 1, email: 'admin@erp.com', role: 'admin', isActive: true),
@@ -38,22 +46,6 @@ class AuthApiService {
             phone: '+1000000000',
             department: 'Executive',
             designation: 'Administrator',
-            isVerified: true,
-          ),
-        );
-      }
-      if (password.length >= 4) {
-        return AuthResponseModel(
-          token: 'mock_jwt_employee_token_2026',
-          user: UserModel(id: 2, email: email, role: 'employee', isActive: true),
-          employee: EmployeeModel(
-            id: 2,
-            userId: 2,
-            employeeId: 'EMP002',
-            fullName: email.split('@').first,
-            phone: '+1987654321',
-            department: 'Engineering',
-            designation: 'Developer',
             isVerified: true,
           ),
         );
@@ -78,7 +70,11 @@ class AuthApiService {
       } else {
         throw Exception(body['message'] ?? 'Failed to fetch user');
       }
-    } catch (_) {
+    } catch (e) {
+      final errStr = e.toString();
+      if (!errStr.contains('ClientException') && !errStr.contains('SocketException') && !errStr.contains('TimeoutException')) {
+        rethrow;
+      }
       return AuthResponseModel(
         token: token,
         user: UserModel(id: 1, email: 'admin@erp.com', role: 'admin', isActive: true),
@@ -116,7 +112,8 @@ class AuthApiService {
         throw Exception(body['message'] ?? 'Failed to send OTP');
       }
     } catch (e) {
-      if (e.toString().contains('Account is inactive')) {
+      final errStr = e.toString();
+      if (!errStr.contains('ClientException') && !errStr.contains('SocketException') && !errStr.contains('TimeoutException')) {
         rethrow;
       }
       debugPrint('====================================================');
@@ -145,6 +142,10 @@ class AuthApiService {
         throw Exception(body['message'] ?? 'Invalid OTP code');
       }
     } catch (e) {
+      final errStr = e.toString();
+      if (!errStr.contains('ClientException') && !errStr.contains('SocketException') && !errStr.contains('TimeoutException')) {
+        rethrow;
+      }
       if (otp == '123456' || otp.length == 6) {
         return true;
       }
@@ -171,10 +172,13 @@ class AuthApiService {
         throw Exception(body['message'] ?? 'Password reset failed');
       }
     } catch (e) {
+      final errStr = e.toString();
+      if (!errStr.contains('ClientException') && !errStr.contains('SocketException') && !errStr.contains('TimeoutException')) {
+        rethrow;
+      }
       if (newPassword.length < 4) {
         throw Exception('Password must be at least 4 characters');
       }
-      // Mock Fallback successful completion
       return;
     }
   }

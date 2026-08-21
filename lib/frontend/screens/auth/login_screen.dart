@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/screens/auth/forgot_password_modal.dart';
+import 'package:erp_software/frontend/widgets/erp_toast.dart';
 import 'package:provider/provider.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -34,20 +35,16 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
 
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Welcome back, ${authProvider.user?.email}!'),
-            backgroundColor: const Color(0xFF6C5CE7),
-            behavior: SnackBarBehavior.floating,
-          ),
+        ErpToast.showSuccess(
+          context,
+          'Welcome back, ${authProvider.user?.email}!',
+          title: 'Login Successful',
         );
       } else if (authProvider.errorMessage != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(authProvider.errorMessage!),
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-          ),
+        ErpToast.showError(
+          context,
+          authProvider.errorMessage!,
+          title: 'Login Failed',
         );
       }
     }
@@ -130,17 +127,16 @@ class _LoginScreenState extends State<LoginScreen> {
                         controller: _emailController,
                         style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
-                          labelText: 'Email Address',
+                          labelText: 'Email or Employee ID',
                           labelStyle: TextStyle(color: Colors.grey.shade400),
-                          prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF6C5CE7)),
+                          prefixIcon: const Icon(Icons.person_outline_rounded, color: Color(0xFF6C5CE7)),
                           filled: true,
                           fillColor: const Color(0xFF1E1E2E),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        keyboardType: TextInputType.emailAddress,
                         validator: (value) {
-                          if (value == null || !value.contains('@')) {
-                            return 'Please enter a valid email address';
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Please enter your registered email or Employee ID';
                           }
                           return null;
                         },

@@ -3,6 +3,7 @@ import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/providers/cashier/order_provider.dart';
 import 'package:erp_software/frontend/providers/cashier/pos_provider.dart';
 import 'package:erp_software/frontend/screens/cashier/pos/widgets/receipt_dialog.dart';
+import 'package:erp_software/frontend/widgets/erp_toast.dart';
 import 'package:provider/provider.dart';
 
 class CartPanel extends StatefulWidget {
@@ -674,10 +675,9 @@ class _CartPanelState extends State<CartPanel> {
                         ? null
                         : () {
                             posProvider.holdCurrentOrder();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Order Held Successfully'),
-                              ),
+                            ErpToast.showWarning(
+                              context,
+                              'Order Held Successfully',
                             );
                           },
                     style: ElevatedButton.styleFrom(
@@ -712,10 +712,9 @@ class _CartPanelState extends State<CartPanel> {
                         ? null
                         : () {
                             posProvider.holdCurrentOrder();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Order Saved as Draft'),
-                              ),
+                            ErpToast.showInfo(
+                              context,
+                              'Order Saved as Draft',
                             );
                           },
                     style: ElevatedButton.styleFrom(
@@ -749,10 +748,9 @@ class _CartPanelState extends State<CartPanel> {
                     onPressed: posProvider.cart.isEmpty
                         ? null
                         : () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Printing Draft Receipt...'),
-                              ),
+                            ErpToast.showInfo(
+                              context,
+                              'Printing Draft Receipt...',
                             );
                           },
                     style: ElevatedButton.styleFrom(
