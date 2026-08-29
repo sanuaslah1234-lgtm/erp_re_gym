@@ -161,10 +161,10 @@ class ProductManagementRepository {
 
     final sql = '''
       INSERT INTO products (
-        id, name, sku, category_id, brand_id, unit_id,
+        name, sku, category_id, brand_id, unit_id,
         cost_price, selling_price, description, image, status
       ) VALUES (
-        gen_random_uuid()::text, @name, @code, @catId, @brandId, @unitId,
+        @name, @code, @catId, @brandId, @unitId,
         @pPrice, @sPrice, @desc, @img, @status
       ) RETURNING id;
     ''';
@@ -217,12 +217,14 @@ class ProductManagementRepository {
     };
 
     await db.connection.execute(Sql.named(sql), parameters: params);
-    return (await getProductById(id))!;
+    final updated = await getProductById(id);
+    if (updated == null) throw Exception('Product not found after update');
+    return updated;
   }
 
   Future<bool> deactivateProduct(dynamic id) async {
     await db.connection.execute(
-      Sql.named('UPDATE products SET status = \'inactive\', updated_at = CURRENT_TIMESTAMP WHERE id = @id OR id::text = @idStr'),
+      Sql.named("UPDATE products SET status = 'inactive', updated_at = CURRENT_TIMESTAMP WHERE id = @id OR id::text = @idStr"),
       parameters: {'id': id.toString(), 'idStr': id.toString()},
     );
     return true;
@@ -255,8 +257,8 @@ class ProductManagementRepository {
 
   Future<CategoryModel> createCategory(CategoryModel cat) async {
     final sql = '''
-      INSERT INTO categories (id, name, description, status)
-      VALUES (gen_random_uuid()::text, @name, @desc, @status)
+      INSERT INTO categories (name, description, status)
+      VALUES (@name, @desc, @status)
       RETURNING id, name, description, status, created_at, updated_at;
     ''';
 
@@ -329,8 +331,8 @@ class ProductManagementRepository {
 
   Future<BrandModel> createBrand(BrandModel brand) async {
     final sql = '''
-      INSERT INTO brands (id, name, description, status)
-      VALUES (gen_random_uuid()::text, @name, @desc, @status)
+      INSERT INTO brands (name, description, status)
+      VALUES (@name, @desc, @status)
       RETURNING id, name, description, status, created_at, updated_at;
     ''';
 
@@ -402,8 +404,8 @@ class ProductManagementRepository {
 
   Future<UnitModel> createUnit(UnitModel unit) async {
     final sql = '''
-      INSERT INTO units (id, name, code, status)
-      VALUES (gen_random_uuid()::text, @name, @symbol, @status)
+      INSERT INTO units (name, code, status)
+      VALUES (@name, @symbol, @status)
       RETURNING id, name, code as short_symbol, status, created_at, updated_at;
     ''';
 
@@ -478,8 +480,8 @@ class ProductManagementRepository {
 
   Future<SupplierModel> createSupplier(SupplierModel sup) async {
     final sql = '''
-      INSERT INTO suppliers (id, company_name, contact_person, phone, email, address, tax_number, status)
-      VALUES (gen_random_uuid()::text, @name, @name, @phone, @email, @address, @gst, @status)
+      INSERT INTO suppliers (company_name, contact_person, phone, email, address, tax_number, status)
+      VALUES (@name, @name, @phone, @email, @address, @gst, @status)
       RETURNING id, company_name as name, company_name as supplier_code, phone, email, address, tax_number as gst_vat_number, status, created_at, updated_at;
     ''';
 
@@ -565,9 +567,9 @@ class ProductManagementRepository {
   Future<PurchaseModel> createPurchase(PurchaseModel purchase, {int? userId}) async {
     final sql = '''
       INSERT INTO purchases (
-        id, purchase_no, supplier_id, purchase_date, total_amount, status
+        purchase_no, supplier_id, purchase_date, total_amount, status
       ) VALUES (
-        gen_random_uuid()::text, @inv, @supId, @pDate, @total, @status
+        @inv, @supId, @pDate, @total, @status
       ) RETURNING id, purchase_no as invoice_number, supplier_id, purchase_date, total_amount, status, created_at, updated_at;
     ''';
 
@@ -633,7 +635,7 @@ class ProductManagementRepository {
         INSERT INTO stock_movements (
           id, product_id, type, quantity, reference_no, remarks, performed_by
         ) VALUES (
-          gen_random_uuid()::text, @pid, 'ADJUSTMENT', @qty, 'ADJ-MANUAL', @notes, @uid
+          @pid, 'ADJUSTMENT', @qty, 'ADJ-MANUAL', @notes, @uid
         )
       '''),
       parameters: {
