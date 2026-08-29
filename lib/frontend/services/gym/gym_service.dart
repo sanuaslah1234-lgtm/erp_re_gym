@@ -13,9 +13,16 @@ import 'package:erp_software/core/models/gym/gym_schedule_model.dart';
 
 class GymApiService {
   static const String baseUrl = AppConstants.apiBaseUrl;
+  static String? authToken;
+
+  static void setAuthToken(String? token) {
+    authToken = token;
+  }
 
   Map<String, String> get _headers => {
         'Content-Type': 'application/json',
+        if (authToken != null && authToken!.isNotEmpty)
+          'Authorization': 'Bearer $authToken',
       };
 
   String _extractError(http.Response res, String fallback) {

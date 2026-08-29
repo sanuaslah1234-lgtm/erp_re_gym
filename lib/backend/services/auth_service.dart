@@ -49,7 +49,9 @@ class AuthService {
       JwtPayload(
         userId: user.id ?? 'admin',
         email: user.email,
+        roleId: user.roleId,
         role: user.role,
+        permissions: user.permissions,
       ),
     );
 
@@ -74,7 +76,9 @@ class AuthService {
       JwtPayload(
         userId: user.id ?? 'admin',
         email: user.email,
+        roleId: user.roleId,
         role: user.role,
+        permissions: user.permissions,
       ),
     );
 

@@ -92,20 +92,11 @@ class EmployeeController {
       final body =
           jsonDecode(await request.readAsString());
 
-      final fullName =
-          body['fullName']?.toString().trim();
-
-      final email =
-          body['email']?.toString().trim();
-
-      final employeeId =
-          body['employeeId']?.toString().trim();
-
-      final phone =
-          body['phone']?.toString().trim();
-
-      final passwordHash =
-          body['password']?.toString();
+      final fullName = (body['fullName'] ?? body['full_name'])?.toString().trim();
+      final email = body['email']?.toString().trim();
+      final employeeId = (body['employeeId'] ?? body['employee_id'])?.toString().trim();
+      final phone = body['phone']?.toString().trim();
+      final passwordHash = (body['password'] ?? body['passwordHash'] ?? body['password_hash'])?.toString();
 
       if (fullName == null ||
           fullName.isEmpty ||
@@ -138,9 +129,9 @@ class EmployeeController {
         phone: phone,
         passwordHash: passwordHash,
         role: body['role']?.toString(),
-        roleId: body['roleId']?.toString(),
+        roleId: (body['roleId'] ?? body['role_id'])?.toString(),
         type: body['type']?.toString(),
-        branchId: body['branchId']?.toString(),
+        branchId: (body['branchId'] ?? body['branch_id'])?.toString(),
       );
 
       return Response(

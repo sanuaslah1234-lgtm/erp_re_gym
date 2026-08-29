@@ -1,97 +1,137 @@
+import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
+import 'package:erp_software/core/constants/app_permissions.dart';
+import 'package:erp_software/backend/middleware/auth_middleware.dart';
 import '../controllers/gym_controller.dart';
 
 Router gymRoutes(GymController controller) {
   final router = Router();
 
-  // 1. Dashboard
-  router.get('/dashboard', controller.getDashboard);
+  /// RBAC Permission Wrapper for router handlers with 0, 1, or 2 path parameters
+  Function guard(String perm, Function handler) {
+    return (Request request, [String? p1, String? p2]) {
+      final mw = requirePermission(perm);
+      final inner = mw((Request req) async {
+        if (p2 != null) {
+          return await (handler as dynamic)(req, p1, p2);
+        } else if (p1 != null) {
+          return await (handler as dynamic)(req, p1);
+        } else {
+          return await (handler as dynamic)(req);
+        }
+      });
+      return inner(request);
+    };
+  }
 
-  // 2. Members (Special routes before parametric <id> routes)
-  router.get('/members/active', controller.getActiveMembers);
-  router.get('/members/expired', controller.getExpiredMembers);
-  router.get('/members/expiring-soon', controller.getExpiringSoonMembers);
+  // ===========================================================================
+  // 1. DASHBOARD (gym.dashboard.view)
+  // ===========================================================================
+  router.get('/dashboard', guard(AppPermissions.gymDashboardView, controller.getDashboard));
 
-  router.get('/members', controller.getMembers);
-  router.post('/members', controller.createMember);
-  router.get('/members/<id>', controller.getMemberById);
-  router.put('/members/<id>', controller.updateMember);
-  router.delete('/members/<id>', controller.deleteMember);
+  // ===========================================================================
+  // 2. MEMBERS (gym.members.manage)
+  // ===========================================================================
+  router.get('/members/active', guard(AppPermissions.gymMembersManage, controller.getActiveMembers));
+  router.get('/members/expired', guard(AppPermissions.gymMembersManage, controller.getExpiredMembers));
+  router.get('/members/expiring-soon', guard(AppPermissions.gymMembersManage, controller.getExpiringSoonMembers));
 
-  router.get('/members/<id>/membership', controller.getMemberMembership);
-  router.get('/members/<id>/attendance', controller.getMemberAttendance);
-  router.get('/members/<id>/payments', controller.getMemberPayments);
-  router.get('/members/<id>/workouts', controller.getMemberWorkouts);
+  router.get('/members', guard(AppPermissions.gymMembersManage, controller.getMembers));
+  router.post('/members', guard(AppPermissions.gymMembersManage, controller.createMember));
+  router.get('/members/<id>', guard(AppPermissions.gymMembersManage, controller.getMemberById));
+  router.put('/members/<id>', guard(AppPermissions.gymMembersManage, controller.updateMember));
+  router.delete('/members/<id>', guard(AppPermissions.gymMembersManage, controller.deleteMember));
 
-  // 3. Plans
-  router.get('/plans', controller.getPlans);
-  router.post('/plans', controller.createPlan);
-  router.get('/plans/<id>', controller.getPlanById);
-  router.put('/plans/<id>', controller.updatePlan);
-  router.delete('/plans/<id>', controller.deletePlan);
+  router.get('/members/<id>/membership', guard(AppPermissions.gymMembersManage, controller.getMemberMembership));
+  router.get('/members/<id>/attendance', guard(AppPermissions.gymAttendanceManage, controller.getMemberAttendance));
+  router.get('/members/<id>/payments', guard(AppPermissions.gymPaymentsManage, controller.getMemberPayments));
+  router.get('/members/<id>/workouts', guard(AppPermissions.gymWorkoutsManage, controller.getMemberWorkouts));
 
-  // 4. Memberships (Special routes first)
-  router.get('/memberships/active', controller.getActiveMemberships);
-  router.get('/memberships/expired', controller.getExpiredMemberships);
-  router.get('/memberships/renewals', controller.getRenewalMemberships);
-  router.get('/memberships/expiring-soon', controller.getExpiringSoonMemberships);
+  // ===========================================================================
+  // 3. PLANS (gym.plans.manage)
+  // ===========================================================================
+  router.get('/plans', guard(AppPermissions.gymPlansManage, controller.getPlans));
+  router.post('/plans', guard(AppPermissions.gymPlansManage, controller.createPlan));
+  router.get('/plans/<id>', guard(AppPermissions.gymPlansManage, controller.getPlanById));
+  router.put('/plans/<id>', guard(AppPermissions.gymPlansManage, controller.updatePlan));
+  router.delete('/plans/<id>', guard(AppPermissions.gymPlansManage, controller.deletePlan));
 
-  router.get('/memberships', controller.getMemberships);
-  router.post('/memberships', controller.createMembership);
-  router.get('/memberships/<id>', controller.getMembershipById);
-  router.put('/memberships/<id>', controller.updateMembership);
-  router.post('/memberships/<id>/renew', controller.renewMembership);
+  // ===========================================================================
+  // 4. MEMBERSHIPS (gym.memberships.manage)
+  // ===========================================================================
+  router.get('/memberships/active', guard(AppPermissions.gymMembershipsManage, controller.getActiveMemberships));
+  router.get('/memberships/expired', guard(AppPermissions.gymMembershipsManage, controller.getExpiredMemberships));
+  router.get('/memberships/renewals', guard(AppPermissions.gymMembershipsManage, controller.getRenewalMemberships));
+  router.get('/memberships/expiring-soon', guard(AppPermissions.gymMembershipsManage, controller.getExpiringSoonMemberships));
 
-  // 5. Trainers
-  router.get('/trainers', controller.getTrainers);
-  router.post('/trainers', controller.createTrainer);
-  router.get('/trainers/<id>', controller.getTrainerById);
-  router.put('/trainers/<id>', controller.updateTrainer);
-  router.delete('/trainers/<id>', controller.deleteTrainer);
+  router.get('/memberships', guard(AppPermissions.gymMembershipsManage, controller.getMemberships));
+  router.post('/memberships', guard(AppPermissions.gymMembershipsManage, controller.createMembership));
+  router.get('/memberships/<id>', guard(AppPermissions.gymMembershipsManage, controller.getMembershipById));
+  router.put('/memberships/<id>', guard(AppPermissions.gymMembershipsManage, controller.updateMembership));
+  router.post('/memberships/<id>/renew', guard(AppPermissions.gymMembershipsManage, controller.renewMembership));
 
-  router.post('/trainers/<id>/assign-member', controller.assignMemberToTrainer);
-  router.get('/trainers/<id>/members', controller.getTrainerMembers);
-  router.get('/trainers/<id>/schedule', controller.getTrainerSchedule);
+  // ===========================================================================
+  // 5. TRAINERS (gym.trainers.manage)
+  // ===========================================================================
+  router.get('/trainers', guard(AppPermissions.gymTrainersManage, controller.getTrainers));
+  router.post('/trainers', guard(AppPermissions.gymTrainersManage, controller.createTrainer));
+  router.get('/trainers/<id>', guard(AppPermissions.gymTrainersManage, controller.getTrainerById));
+  router.put('/trainers/<id>', guard(AppPermissions.gymTrainersManage, controller.updateTrainer));
+  router.delete('/trainers/<id>', guard(AppPermissions.gymTrainersManage, controller.deleteTrainer));
 
-  // 6. Attendance
-  router.post('/attendance/check-in', controller.checkIn);
-  router.post('/attendance/check-out', controller.checkOut);
-  router.get('/attendance/today', controller.getTodayAttendance);
-  router.get('/attendance/member/<memberId>', (request, memberId) => controller.getMemberAttendance(request, memberId));
-  router.get('/attendance', controller.getAttendance);
+  router.post('/trainers/<id>/assign-member', guard(AppPermissions.gymTrainersManage, controller.assignMemberToTrainer));
+  router.get('/trainers/<id>/members', guard(AppPermissions.gymTrainersManage, controller.getTrainerMembers));
+  router.get('/trainers/<id>/schedule', guard(AppPermissions.gymSchedulesManage, controller.getTrainerSchedule));
 
-  // 7. Payments
-  router.get('/payments/pending', controller.getPendingPayments);
-  router.get('/payments/history', controller.getPaymentHistory);
-  router.get('/payments', controller.getPayments);
-  router.post('/payments', controller.createPayment);
-  router.get('/payments/<id>', controller.getPaymentById);
-  router.post('/payments/<id>/receipt', controller.getPaymentReceipt);
-  router.get('/payments/<id>/receipt', controller.getPaymentReceipt);
+  // ===========================================================================
+  // 6. ATTENDANCE (gym.attendance.manage)
+  // ===========================================================================
+  router.post('/attendance/check-in', guard(AppPermissions.gymAttendanceManage, controller.checkIn));
+  router.post('/attendance/check-out', guard(AppPermissions.gymAttendanceManage, controller.checkOut));
+  router.get('/attendance/today', guard(AppPermissions.gymAttendanceManage, controller.getTodayAttendance));
+  router.get('/attendance/member/<memberId>', guard(AppPermissions.gymAttendanceManage, (Request req, String memberId) => controller.getMemberAttendance(req, memberId)));
+  router.get('/attendance', guard(AppPermissions.gymAttendanceManage, controller.getAttendance));
 
-  // 8. Workouts
-  router.get('/workouts', controller.getWorkouts);
-  router.post('/workouts', controller.createWorkout);
-  router.get('/workouts/<id>', controller.getWorkoutById);
-  router.put('/workouts/<id>', controller.updateWorkout);
-  router.delete('/workouts/<id>', controller.deleteWorkout);
+  // ===========================================================================
+  // 7. PAYMENTS (gym.payments.manage)
+  // ===========================================================================
+  router.get('/payments/pending', guard(AppPermissions.gymPaymentsManage, controller.getPendingPayments));
+  router.get('/payments/history', guard(AppPermissions.gymPaymentsManage, controller.getPaymentHistory));
+  router.get('/payments', guard(AppPermissions.gymPaymentsManage, controller.getPayments));
+  router.post('/payments', guard(AppPermissions.gymPaymentsManage, controller.createPayment));
+  router.get('/payments/<id>', guard(AppPermissions.gymPaymentsManage, controller.getPaymentById));
+  router.post('/payments/<id>/receipt', guard(AppPermissions.gymPaymentsManage, controller.getPaymentReceipt));
+  router.get('/payments/<id>/receipt', guard(AppPermissions.gymPaymentsManage, controller.getPaymentReceipt));
 
-  router.post('/workouts/<id>/exercises', controller.addExercise);
-  router.put('/workouts/<id>/exercises/<exerciseId>', controller.updateExercise);
-  router.delete('/workouts/<id>/exercises/<exerciseId>', controller.deleteExercise);
+  // ===========================================================================
+  // 8. WORKOUTS (gym.workouts.manage)
+  // ===========================================================================
+  router.get('/workouts', guard(AppPermissions.gymWorkoutsManage, controller.getWorkouts));
+  router.post('/workouts', guard(AppPermissions.gymWorkoutsManage, controller.createWorkout));
+  router.get('/workouts/<id>', guard(AppPermissions.gymWorkoutsManage, controller.getWorkoutById));
+  router.put('/workouts/<id>', guard(AppPermissions.gymWorkoutsManage, controller.updateWorkout));
+  router.delete('/workouts/<id>', guard(AppPermissions.gymWorkoutsManage, controller.deleteWorkout));
 
-  // 9. Schedules
-  router.get('/schedules', controller.getSchedules);
-  router.post('/schedules', controller.createSchedule);
-  router.put('/schedules/<id>', controller.updateSchedule);
-  router.delete('/schedules/<id>', controller.deleteSchedule);
+  router.post('/workouts/<id>/exercises', guard(AppPermissions.gymWorkoutsManage, controller.addExercise));
+  router.put('/workouts/<id>/exercises/<exerciseId>', guard(AppPermissions.gymWorkoutsManage, controller.updateExercise));
+  router.delete('/workouts/<id>/exercises/<exerciseId>', guard(AppPermissions.gymWorkoutsManage, controller.deleteExercise));
 
-  // 10. Reports
-  router.get('/reports/members', controller.getMembersReport);
-  router.get('/reports/attendance', controller.getAttendanceReport);
-  router.get('/reports/revenue', controller.getRevenueReport);
-  router.get('/reports/expiry', controller.getExpiryReport);
-  router.get('/reports/trainers', controller.getTrainersReport);
+  // ===========================================================================
+  // 9. SCHEDULES (gym.schedules.manage)
+  // ===========================================================================
+  router.get('/schedules', guard(AppPermissions.gymSchedulesManage, controller.getSchedules));
+  router.post('/schedules', guard(AppPermissions.gymSchedulesManage, controller.createSchedule));
+  router.put('/schedules/<id>', guard(AppPermissions.gymSchedulesManage, controller.updateSchedule));
+  router.delete('/schedules/<id>', guard(AppPermissions.gymSchedulesManage, controller.deleteSchedule));
+
+  // ===========================================================================
+  // 10. REPORTS (gym.reports.view)
+  // ===========================================================================
+  router.get('/reports/members', guard(AppPermissions.gymReportsView, controller.getMembersReport));
+  router.get('/reports/attendance', guard(AppPermissions.gymReportsView, controller.getAttendanceReport));
+  router.get('/reports/revenue', guard(AppPermissions.gymReportsView, controller.getRevenueReport));
+  router.get('/reports/expiry', guard(AppPermissions.gymReportsView, controller.getExpiryReport));
+  router.get('/reports/trainers', guard(AppPermissions.gymReportsView, controller.getTrainersReport));
 
   return router;
 }

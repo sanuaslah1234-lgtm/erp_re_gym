@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:erp_software/core/constants/app_permissions.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/screens/cashier/cashier_dashboard_screen.dart';
 import 'package:erp_software/frontend/screens/customers/customers_screen.dart';
@@ -254,46 +255,85 @@ class _ErpSidebarState extends State<ErpSidebar> {
           children: [
             const SizedBox(height: 16),
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                children: [
-                  // Gym Management Module Section
-                  _buildGroupHeader('GYM MANAGEMENT'),
-                  _buildMenuItem(Icons.grid_view_rounded, 'Gym Dashboard'),
-                  _buildMenuItem(Icons.groups_rounded, 'Members'),
-                  _buildMenuItem(Icons.card_membership_rounded, 'Memberships'),
-                  _buildMenuItem(Icons.add_card_rounded, 'Membership Plans'),
-                  _buildMenuItem(Icons.sports_gymnastics_rounded, 'Trainers'),
-                  _buildMenuItem(Icons.how_to_reg_rounded, 'Attendance'),
-                  _buildMenuItem(Icons.payments_rounded, 'Payments'),
-                  _buildMenuItem(Icons.fitness_center_rounded, 'Workouts'),
-                  _buildMenuItem(Icons.schedule_rounded, 'Schedules'),
-                  _buildMenuItem(Icons.bar_chart_rounded, 'Gym Reports'),
-                  const SizedBox(height: 14),
+              child: Consumer<AuthProvider>(
+                builder: (context, auth, _) {
+                  final canGym = auth.canAccessGym();
+                  final canErp = auth.canAccessErp();
 
-                  // Retail Management Module Section
-                  _buildGroupHeader('RETAIL MANAGEMENT'),
-                  _buildMenuItem(Icons.desktop_windows_outlined, 'POS Terminal'),
-                  _buildMenuItem(Icons.label_outlined, 'Barcode Printing'),
-                  _buildMenuItem(Icons.inventory_2_outlined, 'Products'),
-                  _buildMenuItem(Icons.category_outlined, 'Categories'),
-                  _buildMenuItem(Icons.sell_outlined, 'Brands'),
-                  _buildMenuItem(Icons.straighten_outlined, 'Units of Measure'),
-                  _buildMenuItem(Icons.unarchive_outlined, 'Inventory / Stock'),
-                  _buildMenuItem(Icons.warehouse_outlined, 'Warehouse Management'),
-                  _buildMenuItem(Icons.people_outline_rounded, 'Customers'),
-                  _buildMenuItem(Icons.local_shipping_outlined, 'Goods Vendors & Suppliers'),
-                  _buildMenuItem(Icons.shopping_cart_outlined, 'Purchases'),
-                  _buildMenuItem(Icons.shopping_bag_outlined, 'Sales Orders'),
-                  _buildMenuItem(Icons.receipt_long_outlined, 'Invoices'),
-                  _buildMenuItem(Icons.store_outlined, 'Store Outlets & Branches'),
-                  _buildMenuItem(Icons.badge_outlined, 'Designations & Roles'),
-                  _buildMenuItem(Icons.attach_money_rounded, 'Expenses & Accounts'),
-                  _buildMenuItem(Icons.person_outline_rounded, 'Employees / Staff'),
-                  _buildMenuItem(Icons.analytics_outlined, 'Reports & Analytics'),
-                  _buildMenuItem(Icons.settings_outlined, 'Settings'),
-                  const SizedBox(height: 16),
-                ],
+                  return ListView(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    children: [
+                      // Gym Management Module Section (Two-Branch Navigation)
+                      if (canGym) ...[
+                        _buildGroupHeader('GYM MANAGEMENT'),
+                        if (auth.can(AppPermissions.gymDashboardView))
+                          _buildMenuItem(Icons.grid_view_rounded, 'Gym Dashboard'),
+                        if (auth.can(AppPermissions.gymMembersManage))
+                          _buildMenuItem(Icons.groups_rounded, 'Members'),
+                        if (auth.can(AppPermissions.gymMembershipsManage))
+                          _buildMenuItem(Icons.card_membership_rounded, 'Memberships'),
+                        if (auth.can(AppPermissions.gymPlansManage))
+                          _buildMenuItem(Icons.add_card_rounded, 'Membership Plans'),
+                        if (auth.can(AppPermissions.gymTrainersManage))
+                          _buildMenuItem(Icons.sports_gymnastics_rounded, 'Trainers'),
+                        if (auth.can(AppPermissions.gymAttendanceManage))
+                          _buildMenuItem(Icons.how_to_reg_rounded, 'Attendance'),
+                        if (auth.can(AppPermissions.gymPaymentsManage))
+                          _buildMenuItem(Icons.payments_rounded, 'Payments'),
+                        if (auth.can(AppPermissions.gymWorkoutsManage))
+                          _buildMenuItem(Icons.fitness_center_rounded, 'Workouts'),
+                        if (auth.can(AppPermissions.gymSchedulesManage))
+                          _buildMenuItem(Icons.schedule_rounded, 'Schedules'),
+                        if (auth.can(AppPermissions.gymReportsView))
+                          _buildMenuItem(Icons.bar_chart_rounded, 'Gym Reports'),
+                        const SizedBox(height: 14),
+                      ],
+
+                      // ERP Management Module Section (Two-Branch Navigation)
+                      if (canErp) ...[
+                        _buildGroupHeader('ERP MANAGEMENT'),
+                        if (auth.can(AppPermissions.erpPosManage))
+                          _buildMenuItem(Icons.desktop_windows_outlined, 'POS Terminal'),
+                        if (auth.can(AppPermissions.erpPosManage) || auth.can(AppPermissions.erpProductsManage))
+                          _buildMenuItem(Icons.label_outlined, 'Barcode Printing'),
+                        if (auth.can(AppPermissions.erpProductsManage))
+                          _buildMenuItem(Icons.inventory_2_outlined, 'Products'),
+                        if (auth.can(AppPermissions.erpCategoriesManage)) ...[
+                          _buildMenuItem(Icons.category_outlined, 'Categories'),
+                          _buildMenuItem(Icons.sell_outlined, 'Brands'),
+                          _buildMenuItem(Icons.straighten_outlined, 'Units of Measure'),
+                        ],
+                        if (auth.can(AppPermissions.erpInventoryManage))
+                          _buildMenuItem(Icons.unarchive_outlined, 'Inventory / Stock'),
+                        if (auth.can(AppPermissions.erpWarehouseManage))
+                          _buildMenuItem(Icons.warehouse_outlined, 'Warehouse Management'),
+                        if (auth.can(AppPermissions.erpCustomersManage))
+                          _buildMenuItem(Icons.people_outline_rounded, 'Customers'),
+                        if (auth.can(AppPermissions.erpSuppliersManage))
+                          _buildMenuItem(Icons.local_shipping_outlined, 'Goods Vendors & Suppliers'),
+                        if (auth.can(AppPermissions.erpPurchaseManage))
+                          _buildMenuItem(Icons.shopping_cart_outlined, 'Purchases'),
+                        if (auth.can(AppPermissions.erpSalesManage))
+                          _buildMenuItem(Icons.shopping_bag_outlined, 'Sales Orders'),
+                        if (auth.can(AppPermissions.erpInvoicesManage))
+                          _buildMenuItem(Icons.receipt_long_outlined, 'Invoices'),
+                        if (auth.can(AppPermissions.erpSettingsManage))
+                          _buildMenuItem(Icons.store_outlined, 'Store Outlets & Branches'),
+                        if (auth.can(AppPermissions.erpRolesManage))
+                          _buildMenuItem(Icons.badge_outlined, 'Designations & Roles'),
+                        if (auth.can(AppPermissions.erpPaymentsManage))
+                          _buildMenuItem(Icons.attach_money_rounded, 'Expenses & Accounts'),
+                        if (auth.can(AppPermissions.erpEmployeesManage))
+                          _buildMenuItem(Icons.person_outline_rounded, 'Employees / Staff'),
+                        if (auth.can(AppPermissions.erpReportsView))
+                          _buildMenuItem(Icons.analytics_outlined, 'Reports & Analytics'),
+                        if (auth.can(AppPermissions.erpSettingsManage))
+                          _buildMenuItem(Icons.settings_outlined, 'Settings'),
+                        const SizedBox(height: 16),
+                      ],
+                    ],
+                  );
+                },
               ),
             ),
 
