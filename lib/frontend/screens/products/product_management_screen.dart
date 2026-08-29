@@ -340,9 +340,14 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                                           ),
                                           IconButton(
                                             icon: const Icon(Icons.delete_outline, size: 16, color: Color(0xFFEF4444)),
-                                            onPressed: () {
-                                              provider.deleteProduct(authProvider.token, p.id!);
-                                              ErpToast.showSuccess(context, 'Product deleted');
+                                            onPressed: () async {
+                                              final ctx = context;
+                                              try {
+                                                await provider.deleteProduct(authProvider.token, p.id!);
+                                                if (mounted) ErpToast.showSuccess(ctx, 'Product deleted');
+                                              } catch (e) {
+                                                if (mounted) ErpToast.showError(ctx, e.toString().replaceAll('Exception: ', ''));
+                                              }
                                             },
                                           ),
                                         ],

@@ -25,6 +25,7 @@ Router setupCashierRoutes({
     return posController.getProductByBarcode(req, barcode);
   }));
   router.get('/categories', pipeline.addHandler((req) => posController.getCategories(req)));
+  router.get('/brands', pipeline.addHandler((req) => posController.getBrands(req)));
 
   // 2. Orders
   router.post('/orders', pipeline.addHandler((req) => orderController.createOrder(req)));

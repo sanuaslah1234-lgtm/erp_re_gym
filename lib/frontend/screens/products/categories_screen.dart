@@ -55,16 +55,14 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       status: _selectedStatus.toLowerCase(),
     );
 
-    await provider.addCategory(authProvider.token, category);
-
-    _categoryNameController.clear();
-    _categorySlugController.clear();
-    setState(() {
-      _showAddSection = false;
-    });
-
-    if (mounted) {
-      ErpToast.showSuccess(context, 'Product category created successfully!');
+    try {
+      await provider.addCategory(authProvider.token, category);
+      _categoryNameController.clear();
+      _categorySlugController.clear();
+      setState(() { _showAddSection = false; });
+      if (mounted) ErpToast.showSuccess(context, 'Product category created successfully!');
+    } catch (e) {
+      if (mounted) ErpToast.showError(context, e.toString().replaceAll('Exception: ', ''));
     }
   }
 
@@ -414,10 +412,14 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                                         DataCell(
                                           PopupMenuButton<String>(
                                             icon: const Icon(Icons.more_vert, color: Color(0xFF64748B)),
-                                            onSelected: (val) {
+                                            onSelected: (val) async {
                                               if (val == 'delete') {
-                                                provider.deleteCategory(authProvider.token, c.id!);
-                                                ErpToast.showSuccess(context, 'Category deleted successfully');
+                                                try {
+                                                  await provider.deleteCategory(authProvider.token, c.id!);
+                                                  if (context.mounted) ErpToast.showSuccess(context, 'Category deleted successfully');
+                                                } catch (e) {
+                                                  if (context.mounted) ErpToast.showError(context, e.toString().replaceAll('Exception: ', ''));
+                                                }
                                               }
                                             },
                                             itemBuilder: (_) => [

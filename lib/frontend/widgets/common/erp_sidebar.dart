@@ -5,6 +5,8 @@ import 'package:erp_software/frontend/screens/customers/customers_screen.dart';
 import 'package:erp_software/frontend/screens/employees/employee_screen.dart';
 import 'package:erp_software/frontend/screens/products/brands_screen.dart';
 import 'package:erp_software/frontend/screens/products/categories_screen.dart';
+import 'package:erp_software/frontend/screens/inventory/inventory_screen.dart';
+import 'package:erp_software/frontend/screens/warehouse/warehouse_screen.dart';
 import 'package:erp_software/frontend/screens/products/product_management_screen.dart';
 import 'package:erp_software/frontend/screens/products/units_screen.dart';
 import 'package:erp_software/frontend/screens/reports/reports_screen.dart';
@@ -171,7 +173,21 @@ class _ErpSidebarState extends State<ErpSidebar> {
           MaterialPageRoute(builder: (_) => const EmployeesScreen()),
         );
       }
-    } else if (target == 'Products' || target == 'Inventory / Stock' || target == 'Warehouse Management' || target == 'Suppliers' || target == 'Purchases') {
+    } else if (target == 'Inventory / Stock') {
+      if (current != 'Inventory / Stock') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const InventoryScreen()),
+        );
+      }
+    } else if (target == 'Warehouse Management') {
+      if (current != 'Warehouse Management') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const WarehouseScreen()),
+        );
+      }
+    } else if (target == 'Products' || target == 'Suppliers' || target == 'Purchases') {
       if (current != 'Products') {
         Navigator.pushReplacement(
           context,

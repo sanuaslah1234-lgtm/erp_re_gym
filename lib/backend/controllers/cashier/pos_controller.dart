@@ -52,5 +52,17 @@ class PosController {
       return ResponseUtils.error(message: 'Failed to fetch categories', statusCode: 500, error: e);
     }
   }
+
+  Future<Response> getBrands(Request request) async {
+    try {
+      final brands = await posService.getBrands();
+      return ResponseUtils.success(
+        message: 'Brands fetched successfully',
+        data: brands,
+      );
+    } catch (e) {
+      return ResponseUtils.error(message: 'Failed to fetch brands', statusCode: 500, error: e);
+    }
+  }
 }
 

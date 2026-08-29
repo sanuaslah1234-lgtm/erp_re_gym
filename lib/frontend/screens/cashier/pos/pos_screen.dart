@@ -156,16 +156,24 @@ class _PosScreenState extends State<PosScreen> {
                   border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
                 child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: 'All Brands',
+                  child: DropdownButton<int?>(
+                    value: posProvider.selectedBrandId,
+                    hint: const Text('All Brands', style: TextStyle(fontSize: 12, color: Color(0xFF475569))),
                     isExpanded: true,
                     icon: const Icon(Icons.keyboard_arrow_down, size: 18, color: Color(0xFF64748B)),
-                    items: const [
-                      DropdownMenuItem(value: 'All Brands', child: Text('All Brands', style: TextStyle(fontSize: 12))),
-                      DropdownMenuItem(value: 'Apple', child: Text('Apple', style: TextStyle(fontSize: 12))),
-                      DropdownMenuItem(value: 'Samsung', child: Text('Samsung', style: TextStyle(fontSize: 12))),
+                    items: [
+                      const DropdownMenuItem<int?>(
+                        value: null,
+                        child: Text('All Brands', style: TextStyle(fontSize: 12)),
+                      ),
+                      ...posProvider.brands.map((b) {
+                        return DropdownMenuItem<int?>(
+                          value: b['id'] as int,
+                          child: Text(b['name'].toString(), style: const TextStyle(fontSize: 12)),
+                        );
+                      }),
                     ],
-                    onChanged: (_) {},
+                    onChanged: (val) => posProvider.selectBrand(val, authProvider.token),
                   ),
                 ),
               ),
@@ -191,7 +199,7 @@ class _PosScreenState extends State<PosScreen> {
         ),
         const SizedBox(height: 12),
 
-        // Categories / Tags Filter Pills (All / iphone 15)
+        // Categories / Tags Filter Pills (dynamic from database)
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
@@ -201,39 +209,51 @@ class _PosScreenState extends State<PosScreen> {
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2563EB),
+                    color: posProvider.selectedCategoryId == null
+                        ? const Color(0xFF2563EB)
+                        : const Color(0xFFF1F5F9),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Row(
+                  child: Row(
                     children: [
-                      Icon(Icons.grid_view, color: Colors.white, size: 14),
-                      SizedBox(width: 6),
+                      Icon(Icons.grid_view, color: posProvider.selectedCategoryId == null ? Colors.white : const Color(0xFF64748B), size: 14),
+                      const SizedBox(width: 6),
                       Text(
                         'All',
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: posProvider.selectedCategoryId == null ? Colors.white : const Color(0xFF334155),
+                        ),
                       ),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.more_horiz, color: Color(0xFF64748B), size: 16),
-                    SizedBox(width: 6),
-                    Text(
-                      'iphone 15',
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+              ...posProvider.categories.map((cat) {
+                final isSelected = posProvider.selectedCategoryId == cat['id'];
+                return Padding(
+                  padding: const EdgeInsets.only(left: 10),
+                  child: InkWell(
+                    onTap: () => posProvider.selectCategory(cat['id'] as int, authProvider.token),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        cat['name'].toString(),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: isSelected ? Colors.white : const Color(0xFF334155),
+                        ),
+                      ),
                     ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              }),
             ],
           ),
         ),
