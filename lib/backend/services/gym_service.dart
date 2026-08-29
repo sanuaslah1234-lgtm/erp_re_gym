@@ -291,8 +291,8 @@ class GymService {
       } else {
         final custInsert = await _conn.execute(
           Sql.named('''
-            INSERT INTO customers (id, name, phone, email, address, loyalty_id)
-            VALUES (gen_random_uuid()::text, @name, @phone, @email, @address, @loyalty_id)
+            INSERT INTO customers (name, phone, email, address, loyalty_id)
+            VALUES (@name, @phone, @email, @address, @loyalty_id)
             RETURNING id
           '''),
           parameters: {
@@ -506,40 +506,43 @@ class GymService {
       return {'found': false, 'deleted': false, 'message': 'Plan not found'};
     }
 
-    // Check if any memberships are referencing this plan
-    final checkRes = await _conn.execute(
-      Sql.named('SELECT COUNT(*) as count FROM gym_memberships WHERE plan_id = @id'),
-      parameters: {'id': id},
-    );
-    final count = int.tryParse(checkRes.first.toColumnMap()['count']?.toString() ?? '0') ?? 0;
+    // Wrap count-check + delete in a transaction to avoid race conditions
+    return await postgresService.connection.runTx((session) async {
+      // Check if any memberships are referencing this plan
+      final checkRes = await session.execute(
+        Sql.named('SELECT COUNT(*) as count FROM gym_memberships WHERE plan_id = @id'),
+        parameters: {'id': id},
+      );
+      final count = int.tryParse(checkRes.first.toColumnMap()['count']?.toString() ?? '0') ?? 0;
 
-    if (count > 0) {
-      // Soft-delete / Deactivate plan to preserve historical membership & financial data
-      await _conn.execute(
-        Sql.named("UPDATE gym_membership_plans SET status = 'INACTIVE', updated_at = CURRENT_TIMESTAMP WHERE id = @id"),
+      if (count > 0) {
+        // Soft-delete / Deactivate plan to preserve historical membership & financial data
+        await session.execute(
+          Sql.named("UPDATE gym_membership_plans SET status = 'INACTIVE', updated_at = CURRENT_TIMESTAMP WHERE id = @id"),
+          parameters: {'id': id},
+        );
+        return {
+          'found': true,
+          'deleted': true,
+          'archived': true,
+          'membershipCount': count,
+          'message': 'Plan "${plan.name}" is linked to $count membership record(s) and has been deactivated/archived.',
+        };
+      }
+
+      // Permanently delete if no membership records exist
+      final result = await session.execute(
+        Sql.named('DELETE FROM gym_membership_plans WHERE id = @id'),
         parameters: {'id': id},
       );
       return {
         'found': true,
-        'deleted': true,
-        'archived': true,
-        'membershipCount': count,
-        'message': 'Plan "${plan.name}" is linked to $count membership record(s) and has been deactivated/archived.',
+        'deleted': result.affectedRows > 0,
+        'archived': false,
+        'membershipCount': 0,
+        'message': 'Plan "${plan.name}" deleted permanently.',
       };
-    }
-
-    // Permanently delete if no membership records exist
-    final result = await _conn.execute(
-      Sql.named('DELETE FROM gym_membership_plans WHERE id = @id'),
-      parameters: {'id': id},
-    );
-    return {
-      'found': true,
-      'deleted': result.affectedRows > 0,
-      'archived': false,
-      'membershipCount': 0,
-      'message': 'Plan "${plan.name}" deleted permanently.',
-    };
+    });
   }
 
   // ===========================================================================
@@ -1398,33 +1401,65 @@ class GymService {
   }
 
   Future<WorkoutPlanModel?> updateWorkoutPlan(int id, WorkoutPlanModel plan) async {
-    final result = await _conn.execute(
-      Sql.named('''
-        UPDATE gym_workout_plans
-        SET
-          name = @name,
-          goal = @goal,
-          trainer_id = @trainer_id,
-          start_date = @start_date,
-          end_date = @end_date,
-          status = @status,
-          notes = @notes,
-          updated_at = CURRENT_TIMESTAMP
-        WHERE id = @id
-        RETURNING *
-      '''),
-      parameters: {
-        'id': id,
-        'name': plan.name,
-        'goal': plan.goal,
-        'trainer_id': plan.trainerId,
-        'start_date': plan.startDate.toIso8601String().split('T').first,
-        'end_date': plan.endDate?.toIso8601String().split('T').first,
-        'status': plan.status,
-        'notes': plan.notes,
-      },
-    );
-    if (result.isEmpty) return null;
+    // Wrap plan update + exercise sync in a transaction
+    await postgresService.connection.runTx((session) async {
+      final result = await session.execute(
+        Sql.named('''
+          UPDATE gym_workout_plans
+          SET
+            name = @name,
+            goal = @goal,
+            trainer_id = @trainer_id,
+            start_date = @start_date,
+            end_date = @end_date,
+            status = @status,
+            notes = @notes,
+            updated_at = CURRENT_TIMESTAMP
+          WHERE id = @id
+          RETURNING *
+        '''),
+        parameters: {
+          'id': id,
+          'name': plan.name,
+          'goal': plan.goal,
+          'trainer_id': plan.trainerId,
+          'start_date': plan.startDate.toIso8601String().split('T').first,
+          'end_date': plan.endDate?.toIso8601String().split('T').first,
+          'status': plan.status,
+          'notes': plan.notes,
+        },
+      );
+      if (result.isEmpty) return;
+
+      // Sync exercises: delete all existing, then re-insert the new list
+      await session.execute(
+        Sql.named('DELETE FROM gym_workout_exercises WHERE workout_plan_id = @id'),
+        parameters: {'id': id},
+      );
+
+      for (final ex in plan.exercises) {
+        await session.execute(
+          Sql.named('''
+            INSERT INTO gym_workout_exercises (
+              workout_plan_id, exercise_name, muscle_group, sets, reps, weight, duration, notes
+            ) VALUES (
+              @workout_plan_id, @exercise_name, @muscle_group, @sets, @reps, @weight, @duration, @notes
+            )
+          '''),
+          parameters: {
+            'workout_plan_id': id,
+            'exercise_name': ex.exerciseName,
+            'muscle_group': ex.muscleGroup,
+            'sets': ex.sets,
+            'reps': ex.reps,
+            'weight': ex.weight,
+            'duration': ex.duration,
+            'notes': ex.notes,
+          },
+        );
+      }
+    });
+    // Fetch the updated plan after the transaction commits
     return getWorkoutPlanById(id);
   }
 
@@ -1598,6 +1633,7 @@ class GymService {
   // 10. DETAILED REPORTS
   // ===========================================================================
   Future<List<Map<String, dynamic>>> getMembersReport() async {
+    try {
     final result = await _conn.execute('''
       SELECT 
         m.member_code,
@@ -1623,9 +1659,11 @@ class GymService {
       ORDER BY m.created_at DESC
     ''');
     return result.map((r) => r.toColumnMap()).toList();
+    } catch (e) { print('Members report SQL error: $e'); return []; }
   }
 
   Future<List<Map<String, dynamic>>> getAttendanceReport({DateTime? fromDate, DateTime? toDate}) async {
+    try {
     String query = '''
       SELECT 
         a.id,
@@ -1654,9 +1692,11 @@ class GymService {
     query += ' ORDER BY a.check_in DESC';
     final result = await _conn.execute(Sql.named(query), parameters: params);
     return result.map((r) => r.toColumnMap()).toList();
+    } catch (e) { print('Attendance report SQL error: $e'); return []; }
   }
 
   Future<List<Map<String, dynamic>>> getRevenueReport({DateTime? fromDate, DateTime? toDate}) async {
+    try {
     String query = '''
       SELECT 
         pay.id,
@@ -1690,9 +1730,11 @@ class GymService {
     query += ' ORDER BY pay.payment_date DESC';
     final result = await _conn.execute(Sql.named(query), parameters: params);
     return result.map((r) => r.toColumnMap()).toList();
+    } catch (e) { print('Revenue report SQL error: $e'); return []; }
   }
 
   Future<List<Map<String, dynamic>>> getExpiryReport() async {
+    try {
     final result = await _conn.execute('''
       SELECT 
         m.member_code,
@@ -1714,9 +1756,11 @@ class GymService {
       ORDER BY ms.end_date ASC
     ''');
     return result.map((r) => r.toColumnMap()).toList();
+    } catch (e) { print('Expiry report SQL error: $e'); return []; }
   }
 
   Future<List<Map<String, dynamic>>> getTrainersReport() async {
+    try {
     final result = await _conn.execute('''
       SELECT 
         t.id,
@@ -1735,5 +1779,6 @@ class GymService {
       ORDER BY t.name ASC
     ''');
     return result.map((r) => r.toColumnMap()).toList();
+    } catch (e) { print('Trainers report SQL error: $e'); return []; }
   }
 }

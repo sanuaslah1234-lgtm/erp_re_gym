@@ -76,9 +76,7 @@ Router gymRoutes(GymController controller) {
   router.put('/workouts/<id>', controller.updateWorkout);
   router.delete('/workouts/<id>', controller.deleteWorkout);
 
-  router.post('/workouts/<id>/exercises', controller.addExercise);
-  router.put('/workouts/<id>/exercises/<exerciseId>', controller.updateExercise);
-  router.delete('/workouts/<id>/exercises/<exerciseId>', controller.deleteExercise);
+
 
   // 9. Schedules
   router.get('/schedules', controller.getSchedules);
