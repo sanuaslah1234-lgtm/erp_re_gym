@@ -1401,6 +1401,8 @@ class GymService {
   }
 
   Future<WorkoutPlanModel?> updateWorkoutPlan(int id, WorkoutPlanModel plan) async {
+    WorkoutPlanModel? updatedPlan;
+
     // Wrap plan update + exercise sync in a transaction
     await postgresService.connection.runTx((session) async {
       final result = await session.execute(
@@ -1458,9 +1460,33 @@ class GymService {
           },
         );
       }
+
+      // Build the updated plan inside the transaction using session (not _conn)
+      final planRow = await session.execute(
+        Sql.named('''
+          SELECT 
+            wp.*,
+            m.name AS member_name,
+            m.member_code,
+            t.name AS trainer_name
+          FROM gym_workout_plans wp
+          JOIN gym_members m ON wp.member_id = m.id
+          LEFT JOIN gym_trainers t ON wp.trainer_id = t.id
+          WHERE wp.id = @id
+        '''),
+        parameters: {'id': id},
+      );
+      if (planRow.isNotEmpty) {
+        final map = planRow.first.toColumnMap();
+        final exercisesRes = await session.execute(
+          Sql.named('SELECT * FROM gym_workout_exercises WHERE workout_plan_id = @plan_id ORDER BY id ASC'),
+          parameters: {'plan_id': id},
+        );
+        map['exercises'] = exercisesRes.map((r) => r.toColumnMap()).toList();
+        updatedPlan = WorkoutPlanModel.fromMap(map);
+      }
     });
-    // Fetch the updated plan after the transaction commits
-    return getWorkoutPlanById(id);
+    return updatedPlan;
   }
 
   Future<bool> deleteWorkoutPlan(int id) async {

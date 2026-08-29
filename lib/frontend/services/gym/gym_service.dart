@@ -416,7 +416,7 @@ class GymApiService {
     throw Exception(body['message'] ?? 'Check-out failed');
   }
 
-  Future<GymAttendanceModel> checkOutMember(int attendanceId, {int? memberId}) => checkOut(memberId ?? 0, attendanceId: attendanceId);
+  Future<GymAttendanceModel> checkOutMember(int attendanceId, {required int memberId}) => checkOut(memberId, attendanceId: attendanceId);
 
   Future<List<GymAttendanceModel>> getAttendance({DateTime? date, int? memberId}) async {
     final queryParams = <String, String>{};
@@ -609,10 +609,15 @@ class GymApiService {
   // ===========================================================================
   // 10. REPORTS
   // ===========================================================================
-  Future<List<Map<String, dynamic>>> getMemberReport({DateTime? startDate, DateTime? endDate}) => getMembersReport();
+  Future<List<Map<String, dynamic>>> getMemberReport({DateTime? startDate, DateTime? endDate}) => getMembersReport(startDate: startDate, endDate: endDate);
 
-  Future<List<Map<String, dynamic>>> getMembersReport() async {
-    final res = await http.get(Uri.parse('$baseUrl/api/gym/reports/members'), headers: _headers);
+  Future<List<Map<String, dynamic>>> getMembersReport({DateTime? startDate, DateTime? endDate}) async {
+    final queryParams = <String, String>{};
+    if (startDate != null) queryParams['fromDate'] = startDate.toIso8601String().split('T').first;
+    if (endDate != null) queryParams['toDate'] = endDate.toIso8601String().split('T').first;
+
+    final uri = Uri.parse('$baseUrl/api/gym/reports/members').replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
+    final res = await http.get(uri, headers: _headers);
     if (res.statusCode == 200) {
       final body = jsonDecode(res.body);
       final List data = body['data'] ?? [];
@@ -642,8 +647,8 @@ class GymApiService {
     final from = startDate ?? fromDate;
     final to = endDate ?? toDate;
     final queryParams = <String, String>{};
-    if (from != null) queryParams['fromDate'] = from.toIso8601String();
-    if (to != null) queryParams['toDate'] = to.toIso8601String();
+    if (from != null) queryParams['fromDate'] = from.toIso8601String().split('T').first;
+    if (to != null) queryParams['toDate'] = to.toIso8601String().split('T').first;
 
     final uri = Uri.parse('$baseUrl/api/gym/reports/revenue').replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
     final res = await http.get(uri, headers: _headers);

@@ -27,7 +27,9 @@ class PosProvider extends ChangeNotifier {
 
   List<Product> _products = [];
   List<Map<String, dynamic>> _categories = [];
+  List<Map<String, dynamic>> _brands = [];
   int? _selectedCategoryId;
+  int? _selectedBrandId;
   String _searchQuery = '';
   bool _isLoading = false;
   String? _errorMessage;
@@ -47,7 +49,9 @@ class PosProvider extends ChangeNotifier {
 
   List<Product> get products => _products;
   List<Map<String, dynamic>> get categories => _categories;
+  List<Map<String, dynamic>> get brands => _brands;
   int? get selectedCategoryId => _selectedCategoryId;
+  int? get selectedBrandId => _selectedBrandId;
   String get searchQuery => _searchQuery;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
@@ -75,6 +79,7 @@ class PosProvider extends ChangeNotifier {
     try {
       _products = await _posApiService.getProducts(token, search: _searchQuery, categoryId: _selectedCategoryId);
       _categories = await _posApiService.getCategories(token);
+      _brands = await _posApiService.getBrands(token);
     } catch (e) {
       _errorMessage = e.toString().replaceAll('Exception: ', '');
     } finally {
@@ -90,6 +95,11 @@ class PosProvider extends ChangeNotifier {
 
   void selectCategory(int? catId, String? token) {
     _selectedCategoryId = catId;
+    fetchProducts(token);
+  }
+
+  void selectBrand(int? brandId, String? token) {
+    _selectedBrandId = brandId;
     fetchProducts(token);
   }
 

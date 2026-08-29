@@ -30,17 +30,18 @@ class _CategoryManagementDialogState extends State<CategoryManagementDialog> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final provider = Provider.of<ProductManagementProvider>(context, listen: false);
 
-    final success = await provider.addCategory(
-      authProvider.token,
-      CategoryModel(name: name, description: _descCtrl.text.trim()),
-    );
-
-    if (success && mounted) {
-      _nameCtrl.clear();
-      _descCtrl.clear();
-      ErpToast.showSuccess(context, 'Category "$name" added!');
-    } else if (provider.errorMessage != null && mounted) {
-      ErpToast.showError(context, provider.errorMessage!);
+    try {
+      await provider.addCategory(
+        authProvider.token,
+        CategoryModel(name: name, description: _descCtrl.text.trim()),
+      );
+      if (mounted) {
+        _nameCtrl.clear();
+        _descCtrl.clear();
+        ErpToast.showSuccess(context, 'Category "$name" added!');
+      }
+    } catch (e) {
+      if (mounted) ErpToast.showError(context, e.toString().replaceAll('Exception: ', ''));
     }
   }
 

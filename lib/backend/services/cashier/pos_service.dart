@@ -22,5 +22,9 @@ class PosService {
   Future<List<Map<String, dynamic>>> getCategories() async {
     return await productRepository.getCategories();
   }
+
+  Future<List<Map<String, dynamic>>> getBrands() async {
+    return await productRepository.getBrands();
+  }
 }
 

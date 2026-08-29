@@ -26,19 +26,19 @@ class ProductManagementRepository {
       SELECT 
         p.id,
         p.name,
-        COALESCE(p.sku, '') as product_code,
-        COALESCE(p.sku, '') as barcode,
+        COALESCE(p.sku, p.product_code, '') as product_code,
+        COALESCE(p.barcode, p.sku, '') as barcode,
         p.category_id,
         c.name as category_name,
         p.brand_id,
         b.name as brand,
         p.unit_id,
-        u.name as unit,
-        COALESCE(p.cost_price, 0) as purchase_price,
+        COALESCE(u.name, p.unit, 'pcs') as unit,
+        COALESCE(p.cost_price, p.purchase_price, 0) as purchase_price,
         COALESCE(p.selling_price, 0) as selling_price,
-        0 as tax_percentage,
+        COALESCE(p.tax_percentage, 0) as tax_percentage,
         0 as opening_stock,
-        0 as stock_quantity,
+        COALESCE(p.stock_quantity, 0) as stock_quantity,
         0 as minimum_stock,
         p.description,
         p.image as image_url,
@@ -84,19 +84,19 @@ class ProductManagementRepository {
       SELECT 
         p.id,
         p.name,
-        COALESCE(p.sku, '') as product_code,
-        COALESCE(p.sku, '') as barcode,
+        COALESCE(p.sku, p.product_code, '') as product_code,
+        COALESCE(p.barcode, p.sku, '') as barcode,
         p.category_id,
         c.name as category_name,
         p.brand_id,
         b.name as brand,
         p.unit_id,
-        u.name as unit,
-        COALESCE(p.cost_price, 0) as purchase_price,
+        COALESCE(u.name, p.unit, 'pcs') as unit,
+        COALESCE(p.cost_price, p.purchase_price, 0) as purchase_price,
         COALESCE(p.selling_price, 0) as selling_price,
-        0 as tax_percentage,
+        COALESCE(p.tax_percentage, 0) as tax_percentage,
         0 as opening_stock,
-        0 as stock_quantity,
+        COALESCE(p.stock_quantity, 0) as stock_quantity,
         0 as minimum_stock,
         p.description,
         p.image as image_url,
@@ -121,19 +121,19 @@ class ProductManagementRepository {
       SELECT 
         p.id,
         p.name,
-        COALESCE(p.sku, '') as product_code,
-        COALESCE(p.sku, '') as barcode,
+        COALESCE(p.sku, p.product_code, '') as product_code,
+        COALESCE(p.barcode, p.sku, '') as barcode,
         p.category_id,
         c.name as category_name,
         p.brand_id,
         b.name as brand,
         p.unit_id,
-        u.name as unit,
-        COALESCE(p.cost_price, 0) as purchase_price,
+        COALESCE(u.name, p.unit, 'pcs') as unit,
+        COALESCE(p.cost_price, p.purchase_price, 0) as purchase_price,
         COALESCE(p.selling_price, 0) as selling_price,
-        0 as tax_percentage,
+        COALESCE(p.tax_percentage, 0) as tax_percentage,
         0 as opening_stock,
-        0 as stock_quantity,
+        COALESCE(p.stock_quantity, 0) as stock_quantity,
         0 as minimum_stock,
         p.description,
         p.image as image_url,
@@ -144,7 +144,7 @@ class ProductManagementRepository {
       LEFT JOIN categories c ON p.category_id = c.id
       LEFT JOIN brands b ON p.brand_id = b.id
       LEFT JOIN units u ON p.unit_id = u.id
-      WHERE LOWER(p.sku) = LOWER(@code)
+      WHERE LOWER(COALESCE(p.sku, p.product_code, '')) = LOWER(@code)
       LIMIT 1
     ''';
 
@@ -159,43 +159,147 @@ class ProductManagementRepository {
       throw Exception('Product code / SKU "${p.productCode}" already exists!');
     }
 
+    // Resolve brand name -> brand_id
+    int? brandId;
+    if (p.brand != null && p.brand!.isNotEmpty) {
+      final brandResult = await db.connection.execute(
+        Sql.named('SELECT id FROM brands WHERE LOWER(name) = LOWER(@name) LIMIT 1'),
+        parameters: {'name': p.brand!.trim()},
+      );
+      if (brandResult.isNotEmpty) {
+        brandId = brandResult.first[0] as int;
+      } else {
+        // Auto-create brand
+        final newBrand = await db.connection.execute(
+          Sql.named("INSERT INTO brands (name, status) VALUES (@name, 'active') RETURNING id"),
+          parameters: {'name': p.brand!.trim()},
+        );
+        brandId = newBrand.first[0] as int;
+      }
+    }
+
+    // Resolve unit name -> unit_id
+    int? unitId;
+    if (p.unit.isNotEmpty) {
+      final unitResult = await db.connection.execute(
+        Sql.named('SELECT id FROM units WHERE LOWER(name) = LOWER(@name) OR LOWER(code) = LOWER(@name) LIMIT 1'),
+        parameters: {'name': p.unit.trim()},
+      );
+      if (unitResult.isNotEmpty) {
+        unitId = unitResult.first[0] as int;
+      } else {
+        // Auto-create unit
+        final newUnit = await db.connection.execute(
+          Sql.named("INSERT INTO units (name, code, status) VALUES (@name, @name, 'active') RETURNING id"),
+          parameters: {'name': p.unit.trim()},
+        );
+        unitId = newUnit.first[0] as int;
+      }
+    }
+
     final sql = '''
       INSERT INTO products (
-        name, sku, category_id, brand_id, unit_id,
-        cost_price, selling_price, description, image, status
+        name, product_code, sku, category_id, brand_id, unit_id,
+        cost_price, purchase_price, selling_price, tax_percentage,
+        stock_quantity, description, image, status
       ) VALUES (
-        @name, @code, @catId, @brandId, @unitId,
-        @pPrice, @sPrice, @desc, @img, @status
+        @name, @code, @sku, @catId, @brandId, @unitId,
+        @pPrice, @pPrice, @sPrice, @tax,
+        @stock, @desc, @img, @status
       ) RETURNING id;
     ''';
 
     final params = {
       'code': p.productCode.trim(),
+      'sku': p.productCode.trim(),
       'name': p.name.trim(),
-      'catId': p.categoryId?.toString(),
-      'brandId': p.brand?.toString(),
-      'unitId': p.unit,
+      'catId': p.categoryId,
+      'brandId': brandId,
+      'unitId': unitId,
       'pPrice': p.purchasePrice,
       'sPrice': p.sellingPrice,
+      'tax': p.taxPercentage,
+      'stock': p.stockQuantity.toInt(),
       'img': p.imageUrl?.trim(),
       'desc': p.description?.trim(),
       'status': p.isActive ? 'active' : 'inactive',
     };
 
     final result = await db.connection.execute(Sql.named(sql), parameters: params);
-    final newId = result.first[0];
+    final newId = result.first[0] as int;
+
+    // Auto-create inventory record in the first available warehouse
+    try {
+      final whResult = await db.connection.execute(
+        Sql.named('SELECT id FROM warehouses WHERE is_active = true ORDER BY id ASC LIMIT 1'),
+      );
+      if (whResult.isNotEmpty) {
+        final whId = whResult.first[0] as int;
+        final stockQty = p.stockQuantity.toInt();
+        await db.connection.execute(
+          Sql.named('''
+            INSERT INTO inventory (product_id, warehouse_id, quantity, minimum_stock, maximum_stock, reorder_level)
+            VALUES (@pid, @wid, @qty, @min, @max, @reorder)
+            ON CONFLICT (product_id, warehouse_id) DO NOTHING
+          '''),
+          parameters: {'pid': newId, 'wid': whId, 'qty': stockQty, 'min': 10, 'max': 1000, 'reorder': 20},
+        );
+      }
+    } catch (_) {}
 
     return (await getProductById(newId))!;
   }
 
   Future<ProductModel> updateProduct(dynamic id, ProductModel p) async {
+    // Resolve brand name -> brand_id
+    int? brandId;
+    if (p.brand != null && p.brand!.isNotEmpty) {
+      final brandResult = await db.connection.execute(
+        Sql.named('SELECT id FROM brands WHERE LOWER(name) = LOWER(@name) LIMIT 1'),
+        parameters: {'name': p.brand!.trim()},
+      );
+      if (brandResult.isNotEmpty) {
+        brandId = brandResult.first[0] as int;
+      } else {
+        final newBrand = await db.connection.execute(
+          Sql.named("INSERT INTO brands (name, status) VALUES (@name, 'active') RETURNING id"),
+          parameters: {'name': p.brand!.trim()},
+        );
+        brandId = newBrand.first[0] as int;
+      }
+    }
+
+    // Resolve unit name -> unit_id
+    int? unitId;
+    if (p.unit.isNotEmpty) {
+      final unitResult = await db.connection.execute(
+        Sql.named('SELECT id FROM units WHERE LOWER(name) = LOWER(@name) OR LOWER(code) = LOWER(@name) LIMIT 1'),
+        parameters: {'name': p.unit.trim()},
+      );
+      if (unitResult.isNotEmpty) {
+        unitId = unitResult.first[0] as int;
+      } else {
+        final newUnit = await db.connection.execute(
+          Sql.named("INSERT INTO units (name, code, status) VALUES (@name, @name, 'active') RETURNING id"),
+          parameters: {'name': p.unit.trim()},
+        );
+        unitId = newUnit.first[0] as int;
+      }
+    }
+
     final sql = '''
       UPDATE products SET
-        sku = @code,
+        product_code = @code,
+        sku = @sku,
         name = @name,
         category_id = @catId,
+        brand_id = @brandId,
+        unit_id = @unitId,
         cost_price = @pPrice,
+        purchase_price = @pPrice,
         selling_price = @sPrice,
+        tax_percentage = @tax,
+        stock_quantity = @stock,
         image = @img,
         description = @desc,
         status = @status,
@@ -207,10 +311,15 @@ class ProductManagementRepository {
       'id': id.toString(),
       'idStr': id.toString(),
       'code': p.productCode.trim(),
+      'sku': p.productCode.trim(),
       'name': p.name.trim(),
-      'catId': p.categoryId?.toString(),
+      'catId': p.categoryId,
+      'brandId': brandId,
+      'unitId': unitId,
       'pPrice': p.purchasePrice,
       'sPrice': p.sellingPrice,
+      'tax': p.taxPercentage,
+      'stock': p.stockQuantity.toInt(),
       'img': p.imageUrl?.trim(),
       'desc': p.description?.trim(),
       'status': p.isActive ? 'active' : 'inactive',
@@ -256,6 +365,15 @@ class ProductManagementRepository {
   }
 
   Future<CategoryModel> createCategory(CategoryModel cat) async {
+    // Check for duplicate
+    final existing = await db.connection.execute(
+      Sql.named('SELECT id FROM categories WHERE LOWER(name) = LOWER(@name) LIMIT 1'),
+      parameters: {'name': cat.name.trim()},
+    );
+    if (existing.isNotEmpty) {
+      throw Exception('Category "${cat.name}" already exists!');
+    }
+
     final sql = '''
       INSERT INTO categories (name, description, status)
       VALUES (@name, @desc, @status)
@@ -330,6 +448,15 @@ class ProductManagementRepository {
   }
 
   Future<BrandModel> createBrand(BrandModel brand) async {
+    // Check for duplicate
+    final existing = await db.connection.execute(
+      Sql.named('SELECT id FROM brands WHERE LOWER(name) = LOWER(@name) LIMIT 1'),
+      parameters: {'name': brand.name.trim()},
+    );
+    if (existing.isNotEmpty) {
+      throw Exception('Brand "${brand.name}" already exists!');
+    }
+
     final sql = '''
       INSERT INTO brands (name, description, status)
       VALUES (@name, @desc, @status)
@@ -403,6 +530,15 @@ class ProductManagementRepository {
   }
 
   Future<UnitModel> createUnit(UnitModel unit) async {
+    // Check for duplicate name
+    final existing = await db.connection.execute(
+      Sql.named('SELECT id FROM units WHERE LOWER(name) = LOWER(@name) LIMIT 1'),
+      parameters: {'name': unit.name.trim()},
+    );
+    if (existing.isNotEmpty) {
+      throw Exception('Unit "${unit.name}" already exists!');
+    }
+
     final sql = '''
       INSERT INTO units (name, code, status)
       VALUES (@name, @symbol, @status)
@@ -544,10 +680,10 @@ class ProductManagementRepository {
     final sql = '''
       SELECT 
         pu.id,
-        pu.purchase_no as invoice_number,
+        pu.po_number as invoice_number,
         pu.supplier_id,
         COALESCE(s.company_name, 'General Supplier') as supplier_name,
-        COALESCE(pu.purchase_date, CURRENT_TIMESTAMP) as purchase_date,
+        COALESCE(pu.received_date, pu.created_at, CURRENT_TIMESTAMP) as purchase_date,
         COALESCE(pu.total_amount, 0) as total_amount,
         COALESCE(pu.total_amount, 0) as paid_amount,
         0 as due_amount,
@@ -567,25 +703,26 @@ class ProductManagementRepository {
   Future<PurchaseModel> createPurchase(PurchaseModel purchase, {int? userId}) async {
     final sql = '''
       INSERT INTO purchases (
-        purchase_no, supplier_id, purchase_date, total_amount, status
+        po_number, supplier_id, supplier_name, total_amount, status, received_date
       ) VALUES (
-        @inv, @supId, @pDate, @total, @status
-      ) RETURNING id, purchase_no as invoice_number, supplier_id, purchase_date, total_amount, status, created_at, updated_at;
+        @poNumber, @supplierId, @supplierName, @total, @status, @receivedDate
+      ) RETURNING id, po_number as invoice_number, supplier_id, supplier_name, total_amount, status, created_at, updated_at;
     ''';
 
     final result = await db.connection.execute(
       Sql.named(sql),
       parameters: {
-        'inv': purchase.invoiceNumber.trim(),
-        'supId': purchase.supplierId?.toString(),
-        'pDate': purchase.purchaseDate.toIso8601String(),
+        'poNumber': purchase.invoiceNumber.trim(),
+        'supplierId': purchase.supplierId,
+        'supplierName': purchase.supplierName,
         'total': purchase.totalAmount,
         'status': purchase.paymentStatus,
+        'receivedDate': purchase.purchaseDate.toIso8601String(),
       },
     );
     final row = result.first.toColumnMap();
-    row['supplier_name'] = purchase.supplierName;
     row['payment_status'] = purchase.paymentStatus;
+    row['purchase_date'] = purchase.purchaseDate.toIso8601String();
     return PurchaseModel.fromJson(row);
   }
 
@@ -621,30 +758,58 @@ class ProductManagementRepository {
     return result.map((row) => StockMovementModel.fromJson(row.toColumnMap())).toList();
   }
 
-  Future<void> recordStockAdjustment({
+  Future<Map<String, dynamic>> recordStockAdjustment({
     required dynamic productId,
     required double adjustmentQuantity,
     required String reason,
+    String? movementType,
     int? userId,
   }) async {
     final prod = await getProductById(productId);
     if (prod == null) throw Exception('Product not found!');
 
+    final type = movementType ?? 'ADJUSTMENT';
+    final pid = int.tryParse(productId.toString()) ?? productId;
+
+    // Determine new stock quantity
+    final currentStock = prod.stockQuantity;
+    final newStock = (type.contains('OUT'))
+        ? (currentStock - adjustmentQuantity).clamp(0.0, 999999.0)
+        : currentStock + adjustmentQuantity;
+
     await db.connection.execute(
       Sql.named('''
         INSERT INTO stock_movements (
-          id, product_id, type, quantity, reference_no, remarks, performed_by
+          product_id, type, quantity, reference_no, remarks, performed_by
         ) VALUES (
-          @pid, 'ADJUSTMENT', @qty, 'ADJ-MANUAL', @notes, @uid
+          @pid, @type, @qty, 'ADJ-MANUAL', @notes, @uid
         )
       '''),
       parameters: {
-        'pid': productId.toString(),
+        'pid': pid,
+        'type': type,
         'qty': adjustmentQuantity.toInt(),
         'notes': reason,
         'uid': userId?.toString() ?? 'admin',
       },
     );
+
+    // Update product stock quantity
+    await db.connection.execute(
+      Sql.named('UPDATE products SET stock_quantity = @qty, updated_at = CURRENT_TIMESTAMP WHERE id = @id OR id::text = @idStr'),
+      parameters: {'qty': newStock.toInt(), 'id': pid, 'idStr': pid.toString()},
+    );
+
+    return {
+      'product_id': pid,
+      'product_name': prod.name,
+      'product_code': prod.productCode,
+      'type': type,
+      'quantity': adjustmentQuantity.toInt(),
+      'previous_stock': currentStock.toInt(),
+      'new_stock': newStock.toInt(),
+      'notes': reason,
+    };
   }
 
   // ----------------------------------------------------

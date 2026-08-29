@@ -28,18 +28,17 @@ class WarehouseController {
         );
       }
 
-      final name =
-          body['name']?.toString().trim();
+      final name = body['name']?.toString().trim();
 
       if (name == null || name.isEmpty) {
-        return _badRequest(
-          'Warehouse name is required',
-        );
+        return _badRequest('Warehouse name is required');
       }
 
-      final warehouse =
-          await warehouseService.createWarehouse(
+      final warehouse = await warehouseService.createWarehouse(
         name: name,
+        code: body['code']?.toString().trim(),
+        address: body['address']?.toString().trim(),
+        phone: body['phone']?.toString().trim(),
       );
 
       return Response(
@@ -144,19 +143,19 @@ class WarehouseController {
         );
       }
 
-      final name =
-          body['name']?.toString().trim();
+      final name = body['name']?.toString().trim();
 
       if (name == null || name.isEmpty) {
-        return _badRequest(
-          'Warehouse name is required',
-        );
+        return _badRequest('Warehouse name is required');
       }
 
-      final warehouse =
-          await warehouseService.updateWarehouse(
+      final warehouse = await warehouseService.updateWarehouse(
         id: id,
         name: name,
+        code: body['code']?.toString().trim(),
+        address: body['address']?.toString().trim(),
+        phone: body['phone']?.toString().trim(),
+        isActive: body['is_active'] as bool?,
       );
 
       if (warehouse == null) {

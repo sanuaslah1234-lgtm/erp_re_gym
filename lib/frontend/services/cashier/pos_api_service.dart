@@ -61,14 +61,18 @@ class PosApiService {
     ];
   }
 
+  Future<List<Map<String, dynamic>>> getBrands(String? token) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/brands'), headers: _headers(token)).timeout(const Duration(seconds: 4));
+      final body = jsonDecode(response.body);
+      if (response.statusCode == 200 && body['success'] == true) {
+        return (body['data'] as List).cast<Map<String, dynamic>>();
+      }
+    } catch (_) {}
+    return [];
+  }
+
   List<Product> _getMockProducts() {
-    return [
-      Product(id: 1, productCode: 'PRD-001', barcode: '8901001000011', name: 'Organic Almond Milk 1L', purchasePrice: 3.50, sellingPrice: 4.99, taxPercentage: 5.0, stockQuantity: 150, unit: 'bottle'),
-      Product(id: 2, productCode: 'PRD-002', barcode: '8901001000028', name: 'Dark Chocolate Bar 100g', purchasePrice: 1.20, sellingPrice: 2.50, taxPercentage: 5.0, stockQuantity: 300, unit: 'pcs'),
-      Product(id: 3, productCode: 'PRD-003', barcode: '8901001000035', name: 'Wireless Ergonomic Mouse', purchasePrice: 12.00, sellingPrice: 24.99, taxPercentage: 10.0, stockQuantity: 45, unit: 'pcs'),
-      Product(id: 4, productCode: 'PRD-004', barcode: '8901001000042', name: 'Premium Spiral Notebook A5', purchasePrice: 2.00, sellingPrice: 4.50, taxPercentage: 5.0, stockQuantity: 200, unit: 'pcs'),
-      Product(id: 5, productCode: 'PRD-005', barcode: '8901001000059', name: 'Sparkling Mineral Water 500ml', purchasePrice: 0.80, sellingPrice: 1.75, taxPercentage: 5.0, stockQuantity: 500, unit: 'can'),
-      Product(id: 6, productCode: 'PRD-006', barcode: '8901001000066', name: 'USB-C Fast Charger 30W', purchasePrice: 8.50, sellingPrice: 18.99, taxPercentage: 10.0, stockQuantity: 60, unit: 'pcs'),
-    ];
+    return [];
   }
 }

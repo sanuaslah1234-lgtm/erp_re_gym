@@ -165,10 +165,11 @@ class ProductManagementService {
   }
 
   // Stock Damage & Adjustments
-  Future<void> recordStockAdjustment({
+  Future<Map<String, dynamic>> recordStockAdjustment({
     required dynamic productId,
     required double quantity,
     required String reason,
+    String? movementType,
     int? userId,
   }) async {
     if (quantity <= 0) {
@@ -177,10 +178,11 @@ class ProductManagementService {
     if (reason.trim().isEmpty) {
       throw Exception('Reason / notes required for stock adjustment!');
     }
-    await repository.recordStockAdjustment(
+    return await repository.recordStockAdjustment(
       productId: productId,
       adjustmentQuantity: quantity,
       reason: reason,
+      movementType: movementType,
       userId: userId,
     );
   }
