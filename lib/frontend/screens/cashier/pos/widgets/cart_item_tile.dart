@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:erp_software/frontend/models/cashier/cart_item.dart';
+import 'package:erp_software/core/models/cashier/cart_item.dart';
 
 class CartItemTile extends StatelessWidget {
   final CartItem item;

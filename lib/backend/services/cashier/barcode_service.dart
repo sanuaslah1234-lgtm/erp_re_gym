@@ -1,4 +1,4 @@
-import 'package:erp_software/backend/models/cashier/barcode_model.dart';
+import 'package:erp_software/core/models/cashier/barcode_model.dart';
 import 'package:erp_software/backend/repositories/cashier/barcode_repository.dart';
 
 class BarcodeService {

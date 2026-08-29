@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:erp_software/backend/models/cashier/product_model.dart';
+import 'package:erp_software/core/models/cashier/product_model.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/providers/product_management_provider.dart';
-import 'package:erp_software/frontend/widgets/erp_sidebar.dart';
+import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
 import 'package:erp_software/frontend/widgets/erp_toast.dart';
-import 'package:erp_software/frontend/widgets/erp_topbar.dart';
+import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 import 'package:provider/provider.dart';
 
 class AddProductScreen extends StatefulWidget {
@@ -228,7 +228,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                                   const Text('Category', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
                                                   const SizedBox(height: 6),
                                                   DropdownButtonFormField<String>(
-                                                    value: _selectedCategory,
+                                                    initialValue: _selectedCategory,
                                                     hint: const Text('Choose Category', style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
                                                     decoration: const InputDecoration(isDense: true),
                                                     items: provider.categories.map((c) {
@@ -258,7 +258,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                                   const Text('Brand', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
                                                   const SizedBox(height: 6),
                                                   DropdownButtonFormField<String>(
-                                                    value: _selectedBrand,
+                                                    initialValue: _selectedBrand,
                                                     hint: const Text('Select Brand', style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
                                                     decoration: const InputDecoration(isDense: true),
                                                     items: provider.brands.map((b) {

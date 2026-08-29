@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:erp_software/frontend/models/cashier/cashier_settings.dart';
+import 'package:erp_software/core/models/cashier/cashier_settings.dart';
 
 class PosPreferencesWidget extends StatelessWidget {
   final CashierSettings settings;

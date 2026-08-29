@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/providers/product_management_provider.dart';
-import 'package:erp_software/frontend/widgets/erp_sidebar.dart';
-import 'package:erp_software/frontend/widgets/erp_topbar.dart';
+import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
+import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 import 'package:provider/provider.dart';
 
 class ReportsScreen extends StatefulWidget {
@@ -132,7 +132,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                                       shrinkWrap: true,
                                       physics: const NeverScrollableScrollPhysics(),
                                       itemCount: provider.products.where((p) => p.isLowStock).length,
-                                      separatorBuilder: (_, __) => const Divider(height: 1),
+                                      separatorBuilder: (_, _) => const Divider(height: 1),
                                       itemBuilder: (context, index) {
                                         final lowProd = provider.products.where((p) => p.isLowStock).toList()[index];
                                         return ListTile(

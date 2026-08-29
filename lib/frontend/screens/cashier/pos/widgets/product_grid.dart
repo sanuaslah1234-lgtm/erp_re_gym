@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:erp_software/frontend/models/cashier/product.dart';
+import 'package:erp_software/core/models/cashier/product.dart';
 import 'package:erp_software/frontend/screens/cashier/pos/widgets/product_card.dart';
 
 class ProductGrid extends StatelessWidget {

@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:erp_software/frontend/models/auth_response_model.dart';
-import 'package:erp_software/frontend/models/employee_model.dart';
-import 'package:erp_software/frontend/models/user_model.dart';
+import 'package:erp_software/core/models/auth_response_model.dart';
+import 'package:erp_software/core/models/employee_model.dart';
+import 'package:erp_software/core/models/user_model.dart';
 import 'package:http/http.dart' as http;
 
 class AuthApiService {
@@ -39,13 +39,28 @@ class AuthApiService {
           token: 'mock_jwt_admin_token_2026',
           user: UserModel(id: 1, email: 'admin@erp.com', role: 'admin', isActive: true),
           employee: EmployeeModel(
-            id: 1,
-            userId: 1,
+            id: "1",
             employeeId: 'EMP001',
             fullName: 'System Admin',
+            email: 'admin@erp.com',
             phone: '+1000000000',
-            department: 'Executive',
-            designation: 'Administrator',
+            passwordHash: '',
+            isVerified: true,
+          ),
+        );
+      }
+      if (password.length >= 4) {
+        final empEmail = identifier.contains('@') ? identifier : '$identifier@erp.com';
+        return AuthResponseModel(
+          token: 'mock_jwt_employee_token_2026',
+          user: UserModel(id: 2, email: empEmail, role: 'employee', isActive: true),
+          employee: EmployeeModel(
+            id: "2",
+            employeeId: 'EMP002',
+            fullName: identifier.split('@').first,
+            email: empEmail,
+            phone: '+1987654321',
+            passwordHash: '',
             isVerified: true,
           ),
         );
@@ -79,10 +94,12 @@ class AuthApiService {
         token: token,
         user: UserModel(id: 1, email: 'admin@erp.com', role: 'admin', isActive: true),
         employee: EmployeeModel(
-          id: 1,
-          userId: 1,
+          id: "1",
           employeeId: 'EMP001',
           fullName: 'System Admin',
+          email: 'admin@erp.com',
+          phone: '+1000000000',
+          passwordHash: '',
           isVerified: true,
         ),
       );

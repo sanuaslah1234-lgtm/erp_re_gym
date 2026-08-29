@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/providers/cashier/barcode_provider.dart';
-import 'package:erp_software/frontend/widgets/barcode_widget.dart';
+import 'package:erp_software/frontend/widgets/common/barcode_widget.dart';
 import 'package:erp_software/frontend/widgets/erp_toast.dart';
 import 'package:provider/provider.dart';
 
@@ -185,3 +185,4 @@ class _LabelItem {
     required this.price,
   });
 }
+

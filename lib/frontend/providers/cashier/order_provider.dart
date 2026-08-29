@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:erp_software/frontend/models/cashier/pos_order.dart';
+import 'package:erp_software/core/models/cashier/pos_order.dart';
 import 'package:erp_software/frontend/services/cashier/order_api_service.dart';
 
 class OrderProvider extends ChangeNotifier {

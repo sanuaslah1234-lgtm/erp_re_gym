@@ -1,149 +1,332 @@
 import 'dart:convert';
-import 'package:erp_software/backend/services/employee_service.dart';
-import 'package:erp_software/core/errors/api_exception.dart';
-import 'package:erp_software/core/utils/response_formatter.dart';
+
+import 'package:erp_software/core/errors/app_exception.dart';
 import 'package:shelf/shelf.dart';
-import 'package:shelf_router/shelf_router.dart';
+
+import '../services/employee_service.dart';
 
 class EmployeeController {
-  final EmployeeService employeeService;
+  final EmployeeService service;
 
-  EmployeeController(this.employeeService);
+  EmployeeController(this.service);
 
-  Future<Response> createEmployee(Request request) async {
+  // =========================================================
+  // GET
+  // =========================================================
+
+  Future<Response> getEmployees(
+    Request request,
+  ) async {
     try {
-      final bodyStr = await request.readAsString();
-      if (bodyStr.isEmpty) {
-        return ResponseFormatter.error(message: 'Request body cannot be empty');
-      }
+      final employees =
+          await service.getEmployees();
 
-      final data = jsonDecode(bodyStr) as Map<String, dynamic>;
-      final employee = await employeeService.createEmployee(data);
-
-      return ResponseFormatter.success(
-        message: 'Employee created successfully',
-        data: employee.toJson(),
-        statusCode: 201,
+      return Response.ok(
+        jsonEncode({
+          'success': true,
+          'data': employees
+              .map((e) => e.toMap())
+              .toList(),
+        }),
+        headers: {
+          'content-type': 'application/json',
+        },
       );
-    } on ApiException catch (e) {
-      return ResponseFormatter.error(message: e.message, statusCode: e.statusCode);
     } catch (e) {
-      return ResponseFormatter.error(message: 'Failed to create employee', statusCode: 500, error: e);
+      return _error(
+        'Failed to fetch employees',
+        e,
+      );
     }
   }
 
-  Future<Response> getEmployees(Request request) async {
+  // =========================================================
+  // GET ONE
+  // =========================================================
+
+  Future<Response> getEmployee(
+    Request request,
+    String id,
+  ) async {
     try {
-      final employees = await employeeService.getEmployees();
-      return ResponseFormatter.success(
-        message: 'Employees fetched successfully',
-        data: employees.map((e) => e.toJson()).toList(),
-      );
-    } catch (e) {
-      return ResponseFormatter.error(message: 'Failed to fetch employees', statusCode: 500, error: e);
-    }
-  }
+      final employee =
+          await service.getEmployeeById(id);
 
-  Future<Response> getEmployeeById(Request request) async {
-    try {
-      final idStr = request.params['id'];
-      final id = int.tryParse(idStr ?? '');
-
-      if (id == null) {
-        return ResponseFormatter.error(message: 'Invalid employee ID');
-      }
-
-      final employee = await employeeService.getEmployeeById(id);
       if (employee == null) {
-        return ResponseFormatter.error(message: 'Employee not found', statusCode: 404);
+        return Response.notFound(
+          jsonEncode({
+            'success': false,
+            'message': 'Employee not found',
+          }),
+          headers: {
+            'content-type': 'application/json',
+          },
+        );
       }
 
-      return ResponseFormatter.success(
-        message: 'Employee details fetched successfully',
-        data: employee.toJson(),
+      return Response.ok(
+        jsonEncode({
+          'success': true,
+          'data': employee.toMap(),
+        }),
+        headers: {
+          'content-type': 'application/json',
+        },
       );
     } catch (e) {
-      return ResponseFormatter.error(message: 'Failed to fetch employee details', statusCode: 500, error: e);
+      return _error(
+        'Failed to fetch employee',
+        e,
+      );
     }
   }
 
-  Future<Response> updateEmployee(Request request) async {
+  // =========================================================
+  // CREATE
+  // =========================================================
+
+  Future<Response> createEmployee(
+    Request request,
+  ) async {
     try {
-      final idStr = request.params['id'];
-      final id = int.tryParse(idStr ?? '');
+      final body =
+          jsonDecode(await request.readAsString());
 
-      if (id == null) {
-        return ResponseFormatter.error(message: 'Invalid employee ID');
+      final fullName =
+          body['fullName']?.toString().trim();
+
+      final email =
+          body['email']?.toString().trim();
+
+      final employeeId =
+          body['employeeId']?.toString().trim();
+
+      final phone =
+          body['phone']?.toString().trim();
+
+      final passwordHash =
+          body['password']?.toString();
+
+      if (fullName == null ||
+          fullName.isEmpty ||
+          email == null ||
+          email.isEmpty ||
+          employeeId == null ||
+          employeeId.isEmpty ||
+          phone == null ||
+          phone.isEmpty ||
+          passwordHash == null ||
+          passwordHash.isEmpty) {
+        return Response(
+          400,
+          body: jsonEncode({
+            'success': false,
+            'message':
+                'Required employee fields are missing',
+          }),
+          headers: {
+            'content-type': 'application/json',
+          },
+        );
       }
 
-      final bodyStr = await request.readAsString();
-      if (bodyStr.isEmpty) {
-        return ResponseFormatter.error(message: 'Request body cannot be empty');
-      }
-
-      final data = jsonDecode(bodyStr) as Map<String, dynamic>;
-      final updated = await employeeService.updateEmployee(id, data);
-
-      if (updated == null) {
-        return ResponseFormatter.error(message: 'Employee not found', statusCode: 404);
-      }
-
-      return ResponseFormatter.success(
-        message: 'Employee updated successfully',
-        data: updated.toJson(),
+      final employee =
+          await service.createEmployee(
+        fullName: fullName,
+        email: email,
+        employeeId: employeeId,
+        phone: phone,
+        passwordHash: passwordHash,
+        role: body['role']?.toString(),
+        roleId: body['roleId']?.toString(),
+        type: body['type']?.toString(),
+        branchId: body['branchId']?.toString(),
       );
-    } on ApiException catch (e) {
-      return ResponseFormatter.error(message: e.message, statusCode: e.statusCode);
+
+      return Response(
+        201,
+        body: jsonEncode({
+          'success': true,
+          'message': 'Employee created successfully',
+          'data': employee.toMap(),
+        }),
+        headers: {
+          'content-type': 'application/json',
+        },
+      );
     } catch (e) {
-      return ResponseFormatter.error(message: 'Failed to update employee', statusCode: 500, error: e);
+      return _error(
+        'Failed to create employee',
+        e,
+      );
     }
   }
 
-  Future<Response> toggleEmployeeStatus(Request request) async {
+  // =========================================================
+  // UPDATE
+  // =========================================================
+
+  Future<Response> updateEmployee(
+    Request request,
+    String id,
+  ) async {
     try {
-      final idStr = request.params['id'];
-      final id = int.tryParse(idStr ?? '');
+      final body =
+          jsonDecode(await request.readAsString());
 
-      if (id == null) {
-        return ResponseFormatter.error(message: 'Invalid employee ID');
-      }
-
-      final bodyStr = await request.readAsString();
-      bool isActive = true;
-      if (bodyStr.isNotEmpty) {
-        final data = jsonDecode(bodyStr) as Map<String, dynamic>;
-        isActive = data['is_active'] == true;
-      }
-
-      await employeeService.toggleEmployeeStatus(id, isActive);
-
-      return ResponseFormatter.success(
-        message: 'Employee active status updated to $isActive',
+      final employee =
+          await service.updateEmployee(
+        id: id,
+        fullName:
+            body['fullName']?.toString(),
+        email:
+            body['email']?.toString(),
+        employeeId:
+            body['employeeId']?.toString(),
+        phone:
+            body['phone']?.toString(),
+        role:
+            body['role']?.toString(),
+        roleId:
+            body['roleId']?.toString(),
+        type:
+            body['type']?.toString(),
+        branchId:
+            body['branchId']?.toString(),
       );
-    } on ApiException catch (e) {
-      return ResponseFormatter.error(message: e.message, statusCode: e.statusCode);
+
+      if (employee == null) {
+        return Response.notFound(
+          jsonEncode({
+            'success': false,
+            'message': 'Employee not found',
+          }),
+          headers: {
+            'content-type': 'application/json',
+          },
+        );
+      }
+
+      return Response.ok(
+        jsonEncode({
+          'success': true,
+          'message': 'Employee updated successfully',
+          'data': employee.toMap(),
+        }),
+        headers: {
+          'content-type': 'application/json',
+        },
+      );
     } catch (e) {
-      return ResponseFormatter.error(message: 'Failed to toggle employee status', statusCode: 500, error: e);
+      return _error(
+        'Failed to update employee',
+        e,
+      );
     }
   }
 
-  Future<Response> deleteEmployee(Request request) async {
+  // =========================================================
+  // DELETE
+  // =========================================================
+
+  Future<Response> deleteEmployee(
+    Request request,
+    String id,
+  ) async {
     try {
-      final idStr = request.params['id'];
-      final id = int.tryParse(idStr ?? '');
+      final deleted =
+          await service.deleteEmployee(id);
 
-      if (id == null) {
-        return ResponseFormatter.error(message: 'Invalid employee ID');
-      }
-
-      final deleted = await employeeService.deleteEmployee(id);
       if (!deleted) {
-        return ResponseFormatter.error(message: 'Employee not found', statusCode: 404);
+        return Response.notFound(
+          jsonEncode({
+            'success': false,
+            'message': 'Employee not found',
+          }),
+          headers: {
+            'content-type': 'application/json',
+          },
+        );
       }
 
-      return ResponseFormatter.success(message: 'Employee deleted successfully');
+      return Response.ok(
+        jsonEncode({
+          'success': true,
+          'message':
+              'Employee deleted successfully',
+        }),
+        headers: {
+          'content-type': 'application/json',
+        },
+      );
     } catch (e) {
-      return ResponseFormatter.error(message: 'Failed to delete employee', statusCode: 500, error: e);
+      return _error(
+        'Failed to delete employee',
+        e,
+      );
     }
+  }
+
+  Response _error(
+    String message,
+    Object error,
+  ) {
+    print('Employee error: $error');
+    if (error is ApiException) {
+      return Response(
+        error.statusCode,
+        body: jsonEncode({
+          'success': false,
+          'message': error.message,
+        }),
+        headers: {
+          'content-type': 'application/json',
+        },
+      );
+    }
+
+    final errStr = error.toString();
+    if (errStr.contains('duplicate key') || errStr.contains('23505')) {
+      if (errStr.contains('employee_id')) {
+        return Response(
+          400,
+          body: jsonEncode({
+            'success': false,
+            'message': 'Employee ID is already in use. Please choose a different ID.',
+          }),
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      if (errStr.contains('email')) {
+        return Response(
+          400,
+          body: jsonEncode({
+            'success': false,
+            'message': 'Email address is already registered.',
+          }),
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      if (errStr.contains('phone')) {
+        return Response(
+          400,
+          body: jsonEncode({
+            'success': false,
+            'message': 'Phone number is already registered.',
+          }),
+          headers: {'content-type': 'application/json'},
+        );
+      }
+    }
+
+    return Response.internalServerError(
+      body: jsonEncode({
+        'success': false,
+        'message': message,
+      }),
+      headers: {
+        'content-type': 'application/json',
+      },
+    );
   }
 }

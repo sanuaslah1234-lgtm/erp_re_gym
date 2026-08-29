@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:erp_software/frontend/models/cashier/cashier_settings.dart';
+import 'package:erp_software/core/models/cashier/cashier_settings.dart';
 import 'package:http/http.dart' as http;
 
 class CashierSettingsApiService {

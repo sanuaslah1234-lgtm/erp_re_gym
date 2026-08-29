@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:erp_software/backend/services/cashier/refund_service.dart';
 import 'package:erp_software/backend/services/jwt_service.dart';
-import 'package:erp_software/core/errors/api_exception.dart';
-import 'package:erp_software/core/utils/response_formatter.dart';
+import 'package:erp_software/core/errors/app_exception.dart';
+import 'package:erp_software/backend/utils/response_utils.dart';
 import 'package:shelf/shelf.dart';
 
 class RefundController {
@@ -14,7 +14,7 @@ class RefundController {
     try {
       final bodyStr = await request.readAsString();
       if (bodyStr.isEmpty) {
-        return ResponseFormatter.error(message: 'Request body cannot be empty', statusCode: 400);
+        return ResponseUtils.error(message: 'Request body cannot be empty', statusCode: 400);
       }
 
       final body = jsonDecode(bodyStr) as Map<String, dynamic>;
@@ -23,7 +23,7 @@ class RefundController {
 
       final orderId = body['orderId'] != null ? int.tryParse(body['orderId'].toString()) : null;
       if (orderId == null) {
-        return ResponseFormatter.error(message: 'orderId is required', statusCode: 400);
+        return ResponseUtils.error(message: 'orderId is required', statusCode: 400);
       }
 
       final itemsToRefund = (body['items'] as List? ?? []).cast<Map<String, dynamic>>();
@@ -36,28 +36,28 @@ class RefundController {
         itemsToRefund: itemsToRefund,
       );
 
-      return ResponseFormatter.success(
+      return ResponseUtils.success(
         message: 'Refund ${refund.refundNumber} processed successfully and inventory restored!',
         data: refund.toJson(),
       );
     } on ApiException catch (e) {
-      return ResponseFormatter.error(message: e.message, statusCode: e.statusCode);
+      return ResponseUtils.error(message: e.message, statusCode: e.statusCode);
     } catch (e) {
-      return ResponseFormatter.error(message: 'Failed to process refund: $e', statusCode: 500, error: e);
+      return ResponseUtils.error(message: 'Failed to process refund: $e', statusCode: 500, error: e);
     }
   }
 
   Future<Response> getRefunds(Request request) async {
     try {
       final refunds = await refundService.getAllRefunds();
-      return ResponseFormatter.success(
+      return ResponseUtils.success(
         message: 'Refunds fetched successfully',
         data: refunds.map((r) => r.toJson()).toList(),
       );
     } on ApiException catch (e) {
-      return ResponseFormatter.error(message: e.message, statusCode: e.statusCode);
+      return ResponseUtils.error(message: e.message, statusCode: e.statusCode);
     } catch (e) {
-      return ResponseFormatter.error(message: 'Failed to fetch refunds', statusCode: 500, error: e);
+      return ResponseUtils.error(message: 'Failed to fetch refunds', statusCode: 500, error: e);
     }
   }
 
@@ -65,18 +65,19 @@ class RefundController {
     try {
       final id = int.tryParse(idStr);
       if (id == null) {
-        return ResponseFormatter.error(message: 'Invalid refund ID', statusCode: 400);
+        return ResponseUtils.error(message: 'Invalid refund ID', statusCode: 400);
       }
 
       final refund = await refundService.getRefundById(id);
-      return ResponseFormatter.success(
+      return ResponseUtils.success(
         message: 'Refund details fetched',
         data: refund.toJson(),
       );
     } on ApiException catch (e) {
-      return ResponseFormatter.error(message: e.message, statusCode: e.statusCode);
+      return ResponseUtils.error(message: e.message, statusCode: e.statusCode);
     } catch (e) {
-      return ResponseFormatter.error(message: 'Failed to fetch refund details', statusCode: 500, error: e);
+      return ResponseUtils.error(message: 'Failed to fetch refund details', statusCode: 500, error: e);
     }
   }
 }
+

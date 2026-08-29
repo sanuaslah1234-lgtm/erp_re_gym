@@ -1,6 +1,6 @@
 import 'package:erp_software/backend/services/cashier/pos_service.dart';
-import 'package:erp_software/core/errors/api_exception.dart';
-import 'package:erp_software/core/utils/response_formatter.dart';
+import 'package:erp_software/core/errors/app_exception.dart';
+import 'package:erp_software/backend/utils/response_utils.dart';
 import 'package:shelf/shelf.dart';
 
 class PosController {
@@ -16,40 +16,41 @@ class PosController {
 
       final products = await posService.searchProducts(search: search, categoryId: catId);
 
-      return ResponseFormatter.success(
+      return ResponseUtils.success(
         message: 'Products fetched successfully',
         data: products.map((p) => p.toJson()).toList(),
       );
     } on ApiException catch (e) {
-      return ResponseFormatter.error(message: e.message, statusCode: e.statusCode);
+      return ResponseUtils.error(message: e.message, statusCode: e.statusCode);
     } catch (e) {
-      return ResponseFormatter.error(message: 'Failed to fetch products', statusCode: 500, error: e);
+      return ResponseUtils.error(message: 'Failed to fetch products', statusCode: 500, error: e);
     }
   }
 
   Future<Response> getProductByBarcode(Request request, String barcode) async {
     try {
       final product = await posService.getProductByBarcode(barcode);
-      return ResponseFormatter.success(
+      return ResponseUtils.success(
         message: 'Product found',
         data: product.toJson(),
       );
     } on ApiException catch (e) {
-      return ResponseFormatter.error(message: e.message, statusCode: e.statusCode);
+      return ResponseUtils.error(message: e.message, statusCode: e.statusCode);
     } catch (e) {
-      return ResponseFormatter.error(message: 'Failed to scan product barcode', statusCode: 500, error: e);
+      return ResponseUtils.error(message: 'Failed to scan product barcode', statusCode: 500, error: e);
     }
   }
 
   Future<Response> getCategories(Request request) async {
     try {
       final categories = await posService.getCategories();
-      return ResponseFormatter.success(
+      return ResponseUtils.success(
         message: 'Categories fetched successfully',
         data: categories,
       );
     } catch (e) {
-      return ResponseFormatter.error(message: 'Failed to fetch categories', statusCode: 500, error: e);
+      return ResponseUtils.error(message: 'Failed to fetch categories', statusCode: 500, error: e);
     }
   }
 }
+

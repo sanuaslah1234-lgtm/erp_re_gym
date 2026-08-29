@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:erp_software/frontend/models/cashier/product.dart';
-import 'package:erp_software/frontend/widgets/barcode_widget.dart';
+import 'package:erp_software/core/models/cashier/product.dart';
+import 'package:erp_software/frontend/widgets/common/barcode_widget.dart';
 
 class ProductCard extends StatelessWidget {
   final Product product;
@@ -160,4 +160,5 @@ class ProductCard extends StatelessWidget {
     );
   }
 }
+
 

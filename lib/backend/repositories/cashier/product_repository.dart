@@ -1,5 +1,5 @@
-import 'package:erp_software/backend/models/cashier/product_model.dart';
-import 'package:erp_software/core/database/postgres_service.dart';
+import 'package:erp_software/core/models/cashier/product_model.dart';
+import 'package:erp_software/backend/database/postgres_service.dart';
 import 'package:postgres/postgres.dart';
 
 class ProductRepository {
@@ -78,3 +78,4 @@ class ProductRepository {
     return result.map((row) => {'id': row[0] as int, 'name': row[1] as String}).toList();
   }
 }
+

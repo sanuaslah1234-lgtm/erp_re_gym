@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:erp_software/backend/models/category_model.dart';
+import 'package:erp_software/core/models/category_model.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/providers/product_management_provider.dart';
 import 'package:erp_software/frontend/widgets/erp_toast.dart';
@@ -99,7 +99,7 @@ class _CategoryManagementDialogState extends State<CategoryManagementDialog> {
             Expanded(
               child: ListView.separated(
                 itemCount: provider.categories.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
+                separatorBuilder: (_, _) => const Divider(height: 1),
                 itemBuilder: (context, index) {
                   final cat = provider.categories[index];
                   return ListTile(

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:erp_software/theme/app_colors.dart';
 
 class RefundSummaryWidget extends StatelessWidget {
   final double calculatedTotal;
@@ -25,25 +26,25 @@ class RefundSummaryWidget extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Refund Confirmation Summary', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+          const Text('Refund Confirmation Summary', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Total Refund Amount:'),
-              Text('\$${calculatedTotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Colors.purple)),
+              const Text('Total Refund Amount:', style: TextStyle(color: AppColors.textSecondary)),
+              Text('\$${calculatedTotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.primary)),
             ],
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
-            value: refundMethod,
+            initialValue: refundMethod,
             decoration: const InputDecoration(labelText: 'Refund Method'),
             items: const [
               DropdownMenuItem(value: 'Cash', child: Text('Cash')),
@@ -64,8 +65,8 @@ class RefundSummaryWidget extends StatelessWidget {
             height: 46,
             child: ElevatedButton.icon(
               onPressed: calculatedTotal > 0 && !isLoading ? onSubmitRefund : null,
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.purple, foregroundColor: Colors.white),
-              icon: isLoading ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Icon(Icons.replay),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: AppColors.white),
+              icon: isLoading ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: AppColors.white, strokeWidth: 2)) : const Icon(Icons.replay),
               label: const Text('Process Refund & Restore Stock', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ),

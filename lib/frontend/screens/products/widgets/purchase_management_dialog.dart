@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:erp_software/backend/models/cashier/product_model.dart';
-import 'package:erp_software/backend/models/purchase_model.dart';
+import 'package:erp_software/core/models/cashier/product_model.dart';
+import 'package:erp_software/core/models/purchase_model.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/providers/product_management_provider.dart';
 import 'package:erp_software/frontend/widgets/erp_toast.dart';
@@ -19,7 +19,7 @@ class _PurchaseManagementDialogState extends State<PurchaseManagementDialog> {
   final _priceCtrl = TextEditingController(text: '0');
   final _discountCtrl = TextEditingController(text: '0');
 
-  int? _selectedSupplierId;
+  dynamic _selectedSupplierId;
   ProductModel? _selectedProduct;
 
   @override
@@ -119,10 +119,10 @@ class _PurchaseManagementDialogState extends State<PurchaseManagementDialog> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: DropdownButtonFormField<int>(
-                    value: _selectedSupplierId,
+                  child: DropdownButtonFormField<dynamic>(
+                    initialValue: _selectedSupplierId,
                     decoration: const InputDecoration(labelText: 'Supplier', border: OutlineInputBorder()),
-                    items: provider.suppliers.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))).toList(),
+                    items: provider.suppliers.map((s) => DropdownMenuItem<dynamic>(value: s.id, child: Text(s.name))).toList(),
                     onChanged: (v) => setState(() => _selectedSupplierId = v),
                   ),
                 ),
@@ -131,7 +131,7 @@ class _PurchaseManagementDialogState extends State<PurchaseManagementDialog> {
             const SizedBox(height: 16),
 
             DropdownButtonFormField<ProductModel>(
-              value: _selectedProduct,
+              initialValue: _selectedProduct,
               decoration: const InputDecoration(labelText: 'Select Product *', border: OutlineInputBorder()),
               items: provider.products.map((p) => DropdownMenuItem(value: p, child: Text('${p.name} (${p.productCode}) - Stock: ${p.stockQuantity}'))).toList(),
               onChanged: (p) {

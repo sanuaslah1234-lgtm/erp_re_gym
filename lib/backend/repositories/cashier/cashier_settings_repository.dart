@@ -1,5 +1,5 @@
-import 'package:erp_software/backend/models/cashier/cashier_settings_model.dart';
-import 'package:erp_software/core/database/postgres_service.dart';
+import 'package:erp_software/core/models/cashier/cashier_settings_model.dart';
+import 'package:erp_software/backend/database/postgres_service.dart';
 import 'package:postgres/postgres.dart';
 
 class CashierSettingsRepository {
@@ -83,3 +83,4 @@ class CashierSettingsRepository {
     return CashierSettingsModel.fromJson(result.first.toColumnMap());
   }
 }
+

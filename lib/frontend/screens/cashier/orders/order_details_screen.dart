@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:erp_software/frontend/models/cashier/pos_order.dart';
+import 'package:erp_software/core/models/cashier/pos_order.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/providers/cashier/order_provider.dart';
 import 'package:erp_software/frontend/screens/cashier/pos/widgets/receipt_dialog.dart';

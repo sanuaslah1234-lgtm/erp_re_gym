@@ -1,12 +1,12 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:erp_software/backend/models/brand_model.dart';
+import 'package:erp_software/core/models/brand_model.dart';
 import 'package:erp_software/core/utils/export_print_helper.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/providers/product_management_provider.dart';
-import 'package:erp_software/frontend/widgets/erp_sidebar.dart';
+import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
 import 'package:erp_software/frontend/widgets/erp_toast.dart';
-import 'package:erp_software/frontend/widgets/erp_topbar.dart';
+import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 import 'package:provider/provider.dart';
 
 class BrandsScreen extends StatefulWidget {
@@ -557,12 +557,14 @@ class _BrandsScreenState extends State<BrandsScreen> {
                               // Data Table
                               LayoutBuilder(
                                 builder: (context, constraints) {
-                                  final minWidth = isMobile ? 750.0 : math.max(constraints.maxWidth, 750.0);
-                                  final colBrandW = isMobile ? 140.0 : (minWidth - 40 - 64) * 0.22;
-                                  final colDescW = isMobile ? 220.0 : (minWidth - 40 - 64) * 0.38;
-                                  final colProdW = isMobile ? 120.0 : (minWidth - 40 - 64) * 0.16;
-                                  final colStatusW = isMobile ? 100.0 : (minWidth - 40 - 64) * 0.14;
-                                  final colActionW = isMobile ? 70.0 : (minWidth - 40 - 64) * 0.10;
+                                  final availableW = (constraints.maxWidth.isFinite && constraints.maxWidth > 0) ? constraints.maxWidth : 850.0;
+                                  final minWidth = isMobile ? 750.0 : math.max(availableW, 750.0);
+                                  final contentW = math.max(minWidth - 104.0, 600.0);
+                                  final colBrandW = isMobile ? 140.0 : contentW * 0.22;
+                                  final colDescW = isMobile ? 220.0 : contentW * 0.38;
+                                  final colProdW = isMobile ? 120.0 : contentW * 0.16;
+                                  final colStatusW = isMobile ? 100.0 : contentW * 0.14;
+                                  final colActionW = isMobile ? 70.0 : contentW * 0.10;
 
                                   return SingleChildScrollView(
                                     scrollDirection: Axis.horizontal,
@@ -589,50 +591,44 @@ class _BrandsScreenState extends State<BrandsScreen> {
                                             DataCell(SizedBox(width: colDescW, child: Text(descText, style: const TextStyle(color: Color(0xFF64748B)), overflow: TextOverflow.ellipsis))),
                                             DataCell(SizedBox(width: colProdW, child: Text(prodCountStr, style: const TextStyle(color: Color(0xFF64748B))))),
                                             DataCell(
-                                              SizedBox(
-                                                width: colStatusW,
-                                                child: Align(
-                                                  alignment: Alignment.centerLeft,
-                                                  child: Container(
-                                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                                    decoration: BoxDecoration(
-                                                      color: isActive ? const Color(0xFFD1FAE5) : const Color(0xFFF1F5F9),
-                                                      borderRadius: BorderRadius.circular(6),
-                                                    ),
-                                                    child: Text(
-                                                      b.status.toUpperCase(),
-                                                      style: TextStyle(
-                                                        fontSize: 11,
-                                                        fontWeight: FontWeight.bold,
-                                                        color: isActive ? const Color(0xFF10B981) : const Color(0xFF64748B),
-                                                      ),
+                                              Align(
+                                                alignment: Alignment.centerLeft,
+                                                child: Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                                  decoration: BoxDecoration(
+                                                    color: isActive ? const Color(0xFFD1FAE5) : const Color(0xFFF1F5F9),
+                                                    borderRadius: BorderRadius.circular(6),
+                                                  ),
+                                                  child: Text(
+                                                    b.status.toUpperCase(),
+                                                    style: TextStyle(
+                                                      fontSize: 11,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: isActive ? const Color(0xFF10B981) : const Color(0xFF64748B),
                                                     ),
                                                   ),
                                                 ),
                                               ),
                                             ),
                                             DataCell(
-                                              SizedBox(
-                                                width: colActionW,
-                                                child: PopupMenuButton<String>(
-                                                  icon: const Icon(Icons.more_vert, color: Color(0xFF64748B)),
-                                                  onSelected: (val) async {
-                                                    if (val == 'edit') {
-                                                      _openRightSideBrandForm(editBrand: b);
-                                                    } else if (val == 'delete') {
-                                                      if (b.id != null) {
-                                                        await provider.deleteBrand(authProvider.token, b.id!);
-                                                        if (context.mounted) {
-                                                          ErpToast.showSuccess(context, 'Brand deleted successfully');
-                                                        }
+                                              PopupMenuButton<String>(
+                                                icon: const Icon(Icons.more_vert, color: Color(0xFF64748B)),
+                                                onSelected: (val) async {
+                                                  if (val == 'edit') {
+                                                    _openRightSideBrandForm(editBrand: b);
+                                                  } else if (val == 'delete') {
+                                                    if (b.id != null) {
+                                                      await provider.deleteBrand(authProvider.token, b.id!);
+                                                      if (context.mounted) {
+                                                        ErpToast.showSuccess(context, 'Brand deleted successfully');
                                                       }
                                                     }
-                                                  },
-                                                  itemBuilder: (_) => [
-                                                    const PopupMenuItem(value: 'edit', child: Text('Edit')),
-                                                    const PopupMenuItem(value: 'delete', child: Text('Delete', style: TextStyle(color: Colors.red))),
-                                                  ],
-                                                ),
+                                                  }
+                                                },
+                                                itemBuilder: (_) => [
+                                                  const PopupMenuItem(value: 'edit', child: Text('Edit')),
+                                                  const PopupMenuItem(value: 'delete', child: Text('Delete', style: TextStyle(color: Colors.red))),
+                                                ],
                                               ),
                                             ),
                                           ]);

@@ -2,7 +2,7 @@ import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:erp_software/core/config/app_config.dart';
 
 class JwtPayload {
-  final int userId;
+  final dynamic userId;
   final String email;
   final String role;
 
@@ -39,7 +39,7 @@ class JwtService {
       );
       final payloadData = jwt.payload as Map<String, dynamic>;
       return JwtPayload(
-        userId: (payloadData['userId'] as num).toInt(),
+        userId: payloadData['userId'],
         email: payloadData['email'] as String,
         role: payloadData['role'] as String,
       );

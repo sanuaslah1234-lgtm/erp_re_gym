@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:erp_software/theme/app_colors.dart';
 
 class PrintSettingsWidget extends StatelessWidget {
   final int labelCount;
@@ -17,25 +18,25 @@ class PrintSettingsWidget extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Label Print Settings', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+          const Text('Label Print Settings', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
           const SizedBox(height: 12),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Total Labels to Print:'),
-              Text('$labelCount', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF4F46E5))),
+              const Text('Total Labels to Print:', style: TextStyle(color: AppColors.textSecondary)),
+              Text('$labelCount', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primary)),
             ],
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
-            value: paperSize,
+            initialValue: paperSize,
             decoration: const InputDecoration(labelText: 'Label Size / Roll'),
             items: const [
               DropdownMenuItem(value: '50mm x 30mm (Standard Roll)', child: Text('50mm x 30mm (Standard Roll)')),

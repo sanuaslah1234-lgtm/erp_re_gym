@@ -5,9 +5,9 @@ import 'package:erp_software/frontend/screens/cashier/refunds/refund_details_scr
 import 'package:erp_software/frontend/screens/cashier/refunds/widgets/refund_item_selector.dart';
 import 'package:erp_software/frontend/screens/cashier/refunds/widgets/refund_order_search.dart';
 import 'package:erp_software/frontend/screens/cashier/refunds/widgets/refund_summary.dart';
-import 'package:erp_software/frontend/widgets/erp_sidebar.dart';
+import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
+import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 import 'package:erp_software/frontend/widgets/erp_toast.dart';
-import 'package:erp_software/frontend/widgets/erp_topbar.dart';
 import 'package:provider/provider.dart';
 
 class RefundsScreen extends StatefulWidget {
@@ -163,3 +163,4 @@ class _RefundsScreenState extends State<RefundsScreen> {
     );
   }
 }
+

@@ -5,8 +5,8 @@ import 'package:erp_software/frontend/providers/cashier/pos_provider.dart';
 import 'package:erp_software/frontend/screens/cashier/pos/widgets/cart_panel.dart';
 import 'package:erp_software/frontend/screens/cashier/pos/widgets/product_grid.dart';
 import 'package:erp_software/frontend/screens/cashier/pos/widgets/product_search_bar.dart';
-import 'package:erp_software/frontend/widgets/erp_sidebar.dart';
-import 'package:erp_software/frontend/widgets/erp_topbar.dart';
+import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
+import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 import 'package:provider/provider.dart';
 
 class PosScreen extends StatefulWidget {
@@ -252,3 +252,4 @@ class _PosScreenState extends State<PosScreen> {
     );
   }
 }
+

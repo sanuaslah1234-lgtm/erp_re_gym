@@ -1,6 +1,6 @@
-import 'package:erp_software/backend/models/cashier/product_model.dart';
+import 'package:erp_software/core/models/cashier/product_model.dart';
 import 'package:erp_software/backend/repositories/cashier/product_repository.dart';
-import 'package:erp_software/core/errors/api_exception.dart';
+import 'package:erp_software/core/errors/app_exception.dart';
 
 class PosService {
   final ProductRepository productRepository;
@@ -23,3 +23,4 @@ class PosService {
     return await productRepository.getCategories();
   }
 }
+

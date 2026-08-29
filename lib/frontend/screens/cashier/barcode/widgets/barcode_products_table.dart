@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:erp_software/frontend/providers/cashier/barcode_provider.dart';
-import 'package:erp_software/frontend/widgets/barcode_widget.dart';
+import 'package:erp_software/frontend/widgets/common/barcode_widget.dart';
 import 'package:provider/provider.dart';
 
 class BarcodeProductsTable extends StatelessWidget {
@@ -271,3 +271,4 @@ class BarcodeProductsTable extends StatelessWidget {
     );
   }
 }
+

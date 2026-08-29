@@ -1,7 +1,7 @@
-import 'package:erp_software/backend/models/cashier/pos_order_model.dart';
+import 'package:erp_software/core/models/cashier/pos_order_model.dart';
 import 'package:erp_software/backend/repositories/cashier/cashier_settings_repository.dart';
 import 'package:erp_software/backend/repositories/cashier/order_repository.dart';
-import 'package:erp_software/core/errors/api_exception.dart';
+import 'package:erp_software/core/errors/app_exception.dart';
 
 class OrderService {
   final OrderRepository orderRepository;
@@ -86,3 +86,4 @@ class OrderService {
     await orderRepository.cancelOrder(id);
   }
 }
+

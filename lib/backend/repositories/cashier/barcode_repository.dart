@@ -1,5 +1,5 @@
-import 'package:erp_software/backend/models/cashier/barcode_model.dart';
-import 'package:erp_software/core/database/postgres_service.dart';
+import 'package:erp_software/core/models/cashier/barcode_model.dart';
+import 'package:erp_software/backend/database/postgres_service.dart';
 import 'package:postgres/postgres.dart';
 
 class BarcodeRepository {
@@ -65,3 +65,4 @@ class BarcodeRepository {
     return result.map((row) => BarcodeModel.fromJson(row.toColumnMap())).toList();
   }
 }
+

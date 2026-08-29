@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:erp_software/frontend/models/employee_model.dart';
+import 'package:erp_software/core/models/employee_model.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/providers/employee_provider.dart';
-import 'package:erp_software/frontend/widgets/erp_sidebar.dart';
+import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
 import 'package:erp_software/frontend/widgets/erp_toast.dart';
-import 'package:erp_software/frontend/widgets/erp_topbar.dart';
+import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 import 'package:provider/provider.dart';
 
 class EditEmployeeScreen extends StatefulWidget {
@@ -32,11 +32,11 @@ class _EditEmployeeScreenState extends State<EditEmployeeScreen> {
     super.initState();
     _fullNameController = TextEditingController(text: widget.employee.fullName);
     _empIdController = TextEditingController(text: widget.employee.employeeId);
-    _emailController = TextEditingController(text: widget.employee.user?.email ?? '');
-    _phoneController = TextEditingController(text: widget.employee.phone ?? '');
-    _departmentController = TextEditingController(text: widget.employee.department ?? '');
-    _designationController = TextEditingController(text: widget.employee.designation ?? '');
-    _selectedRole = widget.employee.user?.role;
+    _emailController = TextEditingController(text: widget.employee.email);
+    _phoneController = TextEditingController(text: widget.employee.phone);
+    _departmentController = TextEditingController(text: widget.employee.branchId ?? '');
+    _designationController = TextEditingController(text: widget.employee.type ?? '');
+    _selectedRole = widget.employee.role;
   }
 
   @override

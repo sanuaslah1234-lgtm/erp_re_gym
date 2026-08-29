@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:erp_software/backend/models/cashier/product_model.dart';
+import 'package:erp_software/core/models/cashier/product_model.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/providers/product_management_provider.dart';
 import 'package:erp_software/frontend/widgets/erp_toast.dart';
@@ -104,7 +104,7 @@ class _StockMovementDialogState extends State<StockMovementDialog> {
                     children: [
                       Expanded(
                         child: DropdownButtonFormField<ProductModel>(
-                          value: _selectedProduct,
+                          initialValue: _selectedProduct,
                           decoration: const InputDecoration(labelText: 'Product', border: OutlineInputBorder(), isDense: true),
                           items: provider.products.map((p) => DropdownMenuItem(value: p, child: Text('${p.name} (Stock: ${p.stockQuantity})'))).toList(),
                           onChanged: (p) => setState(() => _selectedProduct = p),
@@ -113,7 +113,7 @@ class _StockMovementDialogState extends State<StockMovementDialog> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: DropdownButtonFormField<String>(
-                          value: _movementType,
+                          initialValue: _movementType,
                           decoration: const InputDecoration(labelText: 'Movement Type', border: OutlineInputBorder(), isDense: true),
                           items: const [
                             DropdownMenuItem(value: 'DAMAGE_OUT', child: Text('DAMAGE (Stock OUT)')),
@@ -163,7 +163,7 @@ class _StockMovementDialogState extends State<StockMovementDialog> {
             Expanded(
               child: ListView.separated(
                 itemCount: provider.stockMovements.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
+                separatorBuilder: (_, _) => const Divider(height: 1),
                 itemBuilder: (context, index) {
                   final sm = provider.stockMovements[index];
                   final isStockOut = sm.movementType.contains('OUT');

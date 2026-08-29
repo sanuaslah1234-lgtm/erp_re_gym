@@ -1,5 +1,5 @@
-import 'package:erp_software/backend/models/user_model.dart';
-import 'package:erp_software/core/database/postgres_service.dart';
+import 'package:erp_software/core/models/user_model.dart';
+import 'package:erp_software/backend/database/postgres_service.dart';
 import 'package:postgres/postgres.dart';
 
 class AuthRepository {
@@ -7,119 +7,135 @@ class AuthRepository {
 
   AuthRepository(this.db);
 
+  UserModel _rowToUser(ResultRow row) {
+    return UserModel(
+      id: row[0],
+      email: row[1]?.toString() ?? '',
+      passwordHash: row[2]?.toString(),
+      role: row[3]?.toString() ?? 'admin',
+      isActive: row[4] == true,
+      lastLoginAt: row[5] != null ? DateTime.tryParse(row[5].toString()) : null,
+      createdAt: row[6] != null ? DateTime.tryParse(row[6].toString()) : null,
+      updatedAt: row[7] != null ? DateTime.tryParse(row[7].toString()) : null,
+      plainPassword: row.length > 8 ? row[8]?.toString() : null,
+      employeeId: row.length > 9 ? row[9]?.toString() : null,
+    );
+  }
+
   Future<UserModel?> findUserByEmail(String email) async {
     final result = await db.connection.execute(
       Sql.named('''
-        SELECT id, email, password_hash, role, is_active, last_login_at, created_at, updated_at
-        FROM users
-        WHERE LOWER(email) = LOWER(@email)
+        SELECT 
+          u.id, 
+          u.email, 
+          u.password_hash, 
+          u.role, 
+          COALESCE(u.is_verified, true) AS is_active, 
+          u.updated_at AS last_login_at, 
+          u.created_at, 
+          u.updated_at,
+          u.plain_password,
+          u.employee_id
+        FROM users u
+        WHERE LOWER(u.email) = LOWER(@email)
         LIMIT 1
       '''),
       parameters: {'email': email},
     );
 
     if (result.isEmpty) return null;
-    final row = result.first;
-
-    return UserModel(
-      id: row[0] as int,
-      email: row[1] as String,
-      passwordHash: row[2] as String,
-      role: row[3] as String,
-      isActive: row[4] as bool,
-      lastLoginAt: row[5] != null ? DateTime.tryParse(row[5].toString()) : null,
-      createdAt: row[6] != null ? DateTime.tryParse(row[6].toString()) : null,
-      updatedAt: row[7] != null ? DateTime.tryParse(row[7].toString()) : null,
-    );
+    return _rowToUser(result.first);
   }
 
   Future<UserModel?> findUserByIdentifier(String identifier) async {
     final result = await db.connection.execute(
       Sql.named('''
-        SELECT u.id, u.email, u.password_hash, u.role, u.is_active, u.last_login_at, u.created_at, u.updated_at
+        SELECT 
+          u.id, 
+          u.email, 
+          u.password_hash, 
+          u.role, 
+          COALESCE(u.is_verified, true) AS is_active, 
+          u.updated_at AS last_login_at, 
+          u.created_at, 
+          u.updated_at,
+          u.plain_password,
+          u.employee_id
         FROM users u
-        LEFT JOIN employees e ON u.id = e.user_id
-        WHERE LOWER(u.email) = LOWER(@identifier) OR LOWER(e.employee_id) = LOWER(@identifier)
+        WHERE LOWER(u.email) = LOWER(@identifier) 
+           OR LOWER(COALESCE(u.employee_id, '')) = LOWER(@identifier)
         LIMIT 1
       '''),
       parameters: {'identifier': identifier},
     );
 
     if (result.isEmpty) return null;
-    final row = result.first;
-
-    return UserModel(
-      id: row[0] as int,
-      email: row[1] as String,
-      passwordHash: row[2] as String,
-      role: row[3] as String,
-      isActive: row[4] as bool,
-      lastLoginAt: row[5] != null ? DateTime.tryParse(row[5].toString()) : null,
-      createdAt: row[6] != null ? DateTime.tryParse(row[6].toString()) : null,
-      updatedAt: row[7] != null ? DateTime.tryParse(row[7].toString()) : null,
-    );
+    return _rowToUser(result.first);
   }
 
-  Future<UserModel?> findUserById(int id) async {
+  Future<UserModel?> findUserById(dynamic id) async {
     final result = await db.connection.execute(
       Sql.named('''
-        SELECT id, email, password_hash, role, is_active, last_login_at, created_at, updated_at
-        FROM users
-        WHERE id = @id
+        SELECT 
+          u.id, 
+          u.email, 
+          u.password_hash, 
+          u.role, 
+          COALESCE(u.is_verified, true) AS is_active, 
+          u.updated_at AS last_login_at, 
+          u.created_at, 
+          u.updated_at,
+          u.plain_password,
+          u.employee_id
+        FROM users u
+        WHERE u.id = @id OR u.id::text = @idStr
         LIMIT 1
       '''),
-      parameters: {'id': id},
+      parameters: {'id': id, 'idStr': id.toString()},
     );
 
     if (result.isEmpty) return null;
-    final row = result.first;
-
-    return UserModel(
-      id: row[0] as int,
-      email: row[1] as String,
-      passwordHash: row[2] as String,
-      role: row[3] as String,
-      isActive: row[4] as bool,
-      lastLoginAt: row[5] != null ? DateTime.tryParse(row[5].toString()) : null,
-      createdAt: row[6] != null ? DateTime.tryParse(row[6].toString()) : null,
-      updatedAt: row[7] != null ? DateTime.tryParse(row[7].toString()) : null,
-    );
+    return _rowToUser(result.first);
   }
 
-  Future<void> updateLastLogin(int userId) async {
-    await db.connection.execute(
-      Sql.named('''
-        UPDATE users
-        SET last_login_at = CURRENT_TIMESTAMP
-        WHERE id = @id
-      '''),
-      parameters: {'id': userId},
-    );
+  Future<void> updateLastLogin(dynamic userId) async {
+    try {
+      await db.connection.execute(
+        Sql.named('''
+          UPDATE users
+          SET updated_at = CURRENT_TIMESTAMP
+          WHERE id = @id OR id::text = @idStr
+        '''),
+        parameters: {'id': userId, 'idStr': userId.toString()},
+      );
+    } catch (_) {}
   }
 
-  Future<void> updateUserRole(int userId, String newRole) async {
+  Future<void> updateUserRole(dynamic userId, String newRole) async {
     await db.connection.execute(
       Sql.named('''
         UPDATE users
         SET role = @role, updated_at = CURRENT_TIMESTAMP
-        WHERE id = @id
+        WHERE id = @id OR id::text = @idStr
       '''),
       parameters: {
         'id': userId,
+        'idStr': userId.toString(),
         'role': newRole,
       },
     );
   }
 
-  Future<void> toggleUserActiveStatus(int userId, bool isActive) async {
+  Future<void> toggleUserActiveStatus(dynamic userId, bool isActive) async {
     await db.connection.execute(
       Sql.named('''
         UPDATE users
-        SET is_active = @is_active, updated_at = CURRENT_TIMESTAMP
-        WHERE id = @id
+        SET is_verified = @is_active, updated_at = CURRENT_TIMESTAMP
+        WHERE id = @id OR id::text = @idStr
       '''),
       parameters: {
         'id': userId,
+        'idStr': userId.toString(),
         'is_active': isActive,
       },
     );
@@ -129,29 +145,34 @@ class AuthRepository {
     required String email,
     required String passwordHash,
     String role = 'employee',
+    String? employeeId,
+    String? plainPassword,
   }) async {
     final result = await db.connection.execute(
       Sql.named('''
-        INSERT INTO users (email, password_hash, role, is_active)
-        VALUES (@email, @password_hash, @role, true)
-        RETURNING id, email, password_hash, role, is_active, last_login_at, created_at, updated_at
+        INSERT INTO users (email, password_hash, role, is_verified, employee_id, plain_password)
+        VALUES (@email, @password_hash, @role, true, @employee_id, @plain_password)
+        RETURNING id, email, password_hash, role, is_verified, created_at, updated_at, plain_password, employee_id
       '''),
       parameters: {
         'email': email,
         'password_hash': passwordHash,
         'role': role,
+        'employee_id': employeeId,
+        'plain_password': plainPassword,
       },
     );
     final row = result.first;
     return UserModel(
-      id: row[0] as int,
-      email: row[1] as String,
-      passwordHash: row[2] as String,
-      role: row[3] as String,
-      isActive: row[4] as bool,
-      lastLoginAt: row[5] != null ? DateTime.tryParse(row[5].toString()) : null,
-      createdAt: row[6] != null ? DateTime.tryParse(row[6].toString()) : null,
-      updatedAt: row[7] != null ? DateTime.tryParse(row[7].toString()) : null,
+      id: row[0],
+      email: row[1]?.toString() ?? '',
+      passwordHash: row[2]?.toString(),
+      role: row[3]?.toString() ?? role,
+      isActive: row[4] == true,
+      createdAt: row[5] != null ? DateTime.tryParse(row[5].toString()) : null,
+      updatedAt: row[6] != null ? DateTime.tryParse(row[6].toString()) : null,
+      plainPassword: row[7]?.toString(),
+      employeeId: row[8]?.toString(),
     );
   }
 

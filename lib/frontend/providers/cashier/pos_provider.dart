@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
-import 'package:erp_software/frontend/models/cashier/cart_item.dart';
-import 'package:erp_software/frontend/models/cashier/pos_order.dart';
-import 'package:erp_software/frontend/models/cashier/product.dart';
+import 'package:erp_software/core/models/cashier/cart_item.dart';
+import 'package:erp_software/core/models/cashier/pos_order.dart';
+import 'package:erp_software/core/models/cashier/product.dart';
 import 'package:erp_software/frontend/services/cashier/pos_api_service.dart';
 import 'package:erp_software/frontend/services/cashier/order_api_service.dart';
 

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:erp_software/backend/models/supplier_model.dart';
+import 'package:erp_software/core/models/supplier_model.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/providers/product_management_provider.dart';
 import 'package:erp_software/frontend/widgets/erp_toast.dart';
@@ -132,7 +132,7 @@ class _SupplierManagementDialogState extends State<SupplierManagementDialog> {
             Expanded(
               child: ListView.separated(
                 itemCount: provider.suppliers.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
+                separatorBuilder: (_, _) => const Divider(height: 1),
                 itemBuilder: (context, index) {
                   final sup = provider.suppliers[index];
                   return ListTile(

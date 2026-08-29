@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:erp_software/frontend/models/employee_model.dart';
-import 'package:erp_software/frontend/models/user_model.dart';
+import 'package:erp_software/core/models/employee_model.dart';
+import 'package:erp_software/core/models/user_model.dart';
 import 'package:erp_software/frontend/services/auth_api_service.dart';
 
 class AuthProvider extends ChangeNotifier {

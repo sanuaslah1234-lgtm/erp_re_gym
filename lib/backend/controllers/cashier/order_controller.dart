@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:erp_software/backend/services/cashier/order_service.dart';
 import 'package:erp_software/backend/services/jwt_service.dart';
-import 'package:erp_software/core/errors/api_exception.dart';
-import 'package:erp_software/core/utils/response_formatter.dart';
+import 'package:erp_software/core/errors/app_exception.dart';
+import 'package:erp_software/backend/utils/response_utils.dart';
 import 'package:shelf/shelf.dart';
 
 class OrderController {
@@ -14,7 +14,7 @@ class OrderController {
     try {
       final bodyStr = await request.readAsString();
       if (bodyStr.isEmpty) {
-        return ResponseFormatter.error(message: 'Request body cannot be empty', statusCode: 400);
+        return ResponseUtils.error(message: 'Request body cannot be empty', statusCode: 400);
       }
 
       final body = jsonDecode(bodyStr) as Map<String, dynamic>;
@@ -44,14 +44,14 @@ class OrderController {
         ],
       );
 
-      return ResponseFormatter.success(
+      return ResponseUtils.success(
         message: 'Order ${order.orderNumber} created successfully!',
         data: order.toJson(),
       );
     } on ApiException catch (e) {
-      return ResponseFormatter.error(message: e.message, statusCode: e.statusCode);
+      return ResponseUtils.error(message: e.message, statusCode: e.statusCode);
     } catch (e) {
-      return ResponseFormatter.error(message: 'Failed to create order: $e', statusCode: 500, error: e);
+      return ResponseUtils.error(message: 'Failed to create order: $e', statusCode: 500, error: e);
     }
   }
 
@@ -74,14 +74,14 @@ class OrderController {
         offset: offset,
       );
 
-      return ResponseFormatter.success(
+      return ResponseUtils.success(
         message: 'Orders fetched successfully',
         data: orders.map((o) => o.toJson()).toList(),
       );
     } on ApiException catch (e) {
-      return ResponseFormatter.error(message: e.message, statusCode: e.statusCode);
+      return ResponseUtils.error(message: e.message, statusCode: e.statusCode);
     } catch (e) {
-      return ResponseFormatter.error(message: 'Failed to fetch orders', statusCode: 500, error: e);
+      return ResponseUtils.error(message: 'Failed to fetch orders', statusCode: 500, error: e);
     }
   }
 
@@ -89,18 +89,18 @@ class OrderController {
     try {
       final id = int.tryParse(idStr);
       if (id == null) {
-        return ResponseFormatter.error(message: 'Invalid order ID', statusCode: 400);
+        return ResponseUtils.error(message: 'Invalid order ID', statusCode: 400);
       }
 
       final order = await orderService.getOrderById(id);
-      return ResponseFormatter.success(
+      return ResponseUtils.success(
         message: 'Order details fetched',
         data: order.toJson(),
       );
     } on ApiException catch (e) {
-      return ResponseFormatter.error(message: e.message, statusCode: e.statusCode);
+      return ResponseUtils.error(message: e.message, statusCode: e.statusCode);
     } catch (e) {
-      return ResponseFormatter.error(message: 'Failed to fetch order', statusCode: 500, error: e);
+      return ResponseUtils.error(message: 'Failed to fetch order', statusCode: 500, error: e);
     }
   }
 
@@ -108,15 +108,16 @@ class OrderController {
     try {
       final id = int.tryParse(idStr);
       if (id == null) {
-        return ResponseFormatter.error(message: 'Invalid order ID', statusCode: 400);
+        return ResponseUtils.error(message: 'Invalid order ID', statusCode: 400);
       }
 
       await orderService.cancelOrder(id);
-      return ResponseFormatter.success(message: 'Order cancelled successfully and stock restored.');
+      return ResponseUtils.success(message: 'Order cancelled successfully and stock restored.');
     } on ApiException catch (e) {
-      return ResponseFormatter.error(message: e.message, statusCode: e.statusCode);
+      return ResponseUtils.error(message: e.message, statusCode: e.statusCode);
     } catch (e) {
-      return ResponseFormatter.error(message: 'Failed to cancel order', statusCode: 500, error: e);
+      return ResponseUtils.error(message: 'Failed to cancel order', statusCode: 500, error: e);
     }
   }
 }
+

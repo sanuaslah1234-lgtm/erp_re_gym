@@ -1,4 +1,4 @@
-import 'package:erp_software/backend/models/cashier/cashier_settings_model.dart';
+import 'package:erp_software/core/models/cashier/cashier_settings_model.dart';
 import 'package:erp_software/backend/repositories/cashier/cashier_settings_repository.dart';
 
 class CashierSettingsService {

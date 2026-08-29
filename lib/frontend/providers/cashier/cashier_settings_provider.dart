@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:erp_software/frontend/models/cashier/cashier_settings.dart';
+import 'package:erp_software/core/models/cashier/cashier_settings.dart';
 import 'package:erp_software/frontend/services/cashier/cashier_settings_api_service.dart';
 
 class CashierSettingsProvider extends ChangeNotifier {

@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:erp_software/frontend/models/cashier/pos_order.dart';
+import 'package:erp_software/core/models/cashier/pos_order.dart';
 import 'package:http/http.dart' as http;
 
 class OrderApiService {
@@ -53,7 +53,7 @@ class OrderApiService {
   }
 
   Future<PosOrder> getOrderById(String? token, int id) async {
-    final response = await http.get(Uri.parse('$baseUrl/$id'), headers: _headers(token)).timeout(const Duration(seconds: 4));
+    final response = await http.get(Uri.parse('$baseUrl/api/$id'), headers: _headers(token)).timeout(const Duration(seconds: 4));
     final body = jsonDecode(response.body);
 
     if (response.statusCode == 200 && body['success'] == true) {
@@ -64,7 +64,7 @@ class OrderApiService {
   }
 
   Future<bool> cancelOrder(String? token, int id) async {
-    final response = await http.post(Uri.parse('$baseUrl/$id/cancel'), headers: _headers(token)).timeout(const Duration(seconds: 5));
+    final response = await http.post(Uri.parse('$baseUrl/api/$id/cancel'), headers: _headers(token)).timeout(const Duration(seconds: 5));
     final body = jsonDecode(response.body);
     return response.statusCode == 200 && body['success'] == true;
   }

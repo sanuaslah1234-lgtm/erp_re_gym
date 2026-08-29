@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:erp_software/backend/models/category_model.dart';
+import 'package:erp_software/core/models/category_model.dart';
 import 'package:erp_software/core/utils/export_print_helper.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/providers/product_management_provider.dart';
-import 'package:erp_software/frontend/widgets/erp_sidebar.dart';
+import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
 import 'package:erp_software/frontend/widgets/erp_toast.dart';
-import 'package:erp_software/frontend/widgets/erp_topbar.dart';
+import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 import 'package:provider/provider.dart';
 
 class CategoriesScreen extends StatefulWidget {

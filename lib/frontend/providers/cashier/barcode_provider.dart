@@ -1,5 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:erp_software/frontend/models/cashier/product.dart';
+import 'package:erp_software/core/models/cashier/product.dart';
 import 'package:erp_software/frontend/services/cashier/barcode_api_service.dart';
 import 'package:erp_software/frontend/services/cashier/pos_api_service.dart';
 

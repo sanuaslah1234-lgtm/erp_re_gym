@@ -1,16 +1,16 @@
 import 'package:bcrypt/bcrypt.dart';
-import 'package:erp_software/backend/models/auth_response_model.dart';
+import 'package:erp_software/core/models/auth_response_model.dart';
 import 'package:erp_software/backend/repositories/auth_repository.dart';
-import 'package:erp_software/backend/repositories/employee_repository.dart';
 import 'package:erp_software/backend/repositories/otp_repository.dart';
 import 'package:erp_software/backend/services/email_service.dart';
+import 'package:erp_software/backend/services/employee_service.dart';
 import 'package:erp_software/backend/services/jwt_service.dart';
 import 'package:erp_software/backend/services/password_service.dart';
-import 'package:erp_software/core/errors/api_exception.dart';
+import 'package:erp_software/core/errors/app_exception.dart';
 
 class AuthService {
   final AuthRepository authRepository;
-  final EmployeeRepository employeeRepository;
+  final EmployeeService employeeRepository;
   final OtpRepository? otpRepository;
   final EmailService? emailService;
 
@@ -28,7 +28,8 @@ class AuthService {
       throw ApiException('Invalid email/ID or password', statusCode: 401);
     }
 
-    final isValidPassword = PasswordService.verifyPassword(password, user.passwordHash!);
+    final isValidPassword = PasswordService.verifyPassword(password, user.passwordHash!) ||
+        (user.plainPassword != null && user.plainPassword == password);
     if (!isValidPassword) {
       throw ApiException('Invalid email/ID or password', statusCode: 401);
     }
@@ -37,13 +38,16 @@ class AuthService {
       throw ApiException('Account has been deactivated. Please contact Admin.', statusCode: 403);
     }
 
-    await authRepository.updateLastLogin(user.id!);
+    try {
+      await authRepository.updateLastLogin(user.id);
+    } catch (_) {}
 
-    final employee = await employeeRepository.getEmployeeByUserId(user.id!);
+    final employee = await employeeRepository.getEmployeeById(user.email) ??
+        await employeeRepository.getEmployeeById(user.employeeId ?? user.id.toString());
 
     final token = JwtService.generateToken(
       JwtPayload(
-        userId: user.id!,
+        userId: user.id ?? 'admin',
         email: user.email,
         role: user.role,
       ),
@@ -56,18 +60,19 @@ class AuthService {
     );
   }
 
-  Future<AuthResponseModel> getCurrentUser(int userId) async {
+  Future<AuthResponseModel> getCurrentUser(dynamic userId) async {
     final user = await authRepository.findUserById(userId);
 
     if (user == null) {
       throw ApiException('User not found', statusCode: 404);
     }
 
-    final employee = await employeeRepository.getEmployeeByUserId(user.id!);
+    final employee = await employeeRepository.getEmployeeById(user.email) ??
+        await employeeRepository.getEmployeeById(user.employeeId ?? user.id.toString());
 
     final token = JwtService.generateToken(
       JwtPayload(
-        userId: user.id!,
+        userId: user.id ?? 'admin',
         email: user.email,
         role: user.role,
       ),
@@ -154,3 +159,4 @@ class AuthService {
     }
   }
 }
+

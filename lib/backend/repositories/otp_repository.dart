@@ -1,4 +1,4 @@
-import 'package:erp_software/core/database/postgres_service.dart';
+import 'package:erp_software/backend/database/postgres_service.dart';
 import 'package:postgres/postgres.dart';
 
 class OtpRecord {
@@ -98,3 +98,4 @@ class OtpRepository {
     );
   }
 }
+

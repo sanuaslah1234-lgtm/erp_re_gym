@@ -1,37 +1,35 @@
-import 'package:erp_software/backend/controllers/employee_controller.dart';
-import 'package:erp_software/backend/middleware/auth_middleware.dart';
-import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
 
-Router setupEmployeeRoutes(EmployeeController employeeController) {
+import '../controllers/employee_controller.dart';
+
+Router employeeRoutes(
+  EmployeeController controller,
+) {
   final router = Router();
 
-  // Protect all employee routes with JWT auth middleware
-  final pipeline = const Pipeline().addMiddleware(authMiddleware());
+  router.get(
+    '/employees',
+    controller.getEmployees,
+  );
+
+  router.get(
+    '/employees/<id>',
+    controller.getEmployee,
+  );
 
   router.post(
-    '/',
-    pipeline.addHandler((req) => employeeController.createEmployee(req)),
+    '/employees',
+    controller.createEmployee,
   );
-  router.get(
-    '/',
-    pipeline.addHandler((req) => employeeController.getEmployees(req)),
-  );
-  router.get(
-    '/<id>',
-    pipeline.addHandler((req) => employeeController.getEmployeeById(req)),
-  );
+
   router.put(
-    '/<id>',
-    pipeline.addHandler((req) => employeeController.updateEmployee(req)),
+    '/employees/<id>',
+    controller.updateEmployee,
   );
-  router.patch(
-    '/<id>/status',
-    pipeline.addHandler((req) => employeeController.toggleEmployeeStatus(req)),
-  );
+
   router.delete(
-    '/<id>',
-    pipeline.addHandler((req) => employeeController.deleteEmployee(req)),
+    '/employees/<id>',
+    controller.deleteEmployee,
   );
 
   return router;

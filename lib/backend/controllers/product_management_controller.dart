@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'package:shelf/shelf.dart';
-import 'package:erp_software/backend/models/brand_model.dart';
-import 'package:erp_software/backend/models/cashier/product_model.dart';
-import 'package:erp_software/backend/models/category_model.dart';
-import 'package:erp_software/backend/models/purchase_model.dart';
-import 'package:erp_software/backend/models/supplier_model.dart';
-import 'package:erp_software/backend/models/unit_model.dart';
+import 'package:erp_software/core/models/brand_model.dart';
+import 'package:erp_software/core/models/cashier/product_model.dart';
+import 'package:erp_software/core/models/category_model.dart';
+import 'package:erp_software/core/models/purchase_model.dart';
+import 'package:erp_software/core/models/supplier_model.dart';
+import 'package:erp_software/core/models/unit_model.dart';
 import 'package:erp_software/backend/services/product_management_service.dart';
 
 class ProductManagementController {
@@ -55,8 +55,7 @@ class ProductManagementController {
 
   Future<Response> getProductById(Request request, String idStr) async {
     try {
-      final id = int.parse(idStr);
-      final product = await service.getProductById(id);
+      final product = await service.getProductById(idStr);
       if (product == null) return _errorResponse('Product not found', statusCode: 404);
       return _jsonResponse(product.toJson());
     } catch (e) {
@@ -79,11 +78,10 @@ class ProductManagementController {
 
   Future<Response> updateProduct(Request request, String idStr) async {
     try {
-      final id = int.parse(idStr);
       final payload = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
       final product = ProductModel.fromJson(payload);
 
-      final updated = await service.updateProduct(id, product);
+      final updated = await service.updateProduct(idStr, product);
       return _jsonResponse(updated.toJson());
     } catch (e) {
       return _errorResponse(e.toString());
@@ -92,8 +90,7 @@ class ProductManagementController {
 
   Future<Response> deleteProduct(Request request, String idStr) async {
     try {
-      final id = int.parse(idStr);
-      final wasDeleted = await service.deactivateProduct(id);
+      final wasDeleted = await service.deactivateProduct(idStr);
       return _jsonResponse({
         'success': true,
         'message': wasDeleted ? 'Product permanently deleted' : 'Product deactivated due to existing transaction history'
@@ -128,10 +125,9 @@ class ProductManagementController {
 
   Future<Response> updateCategory(Request request, String idStr) async {
     try {
-      final id = int.parse(idStr);
       final payload = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
       final category = CategoryModel.fromJson(payload);
-      final updated = await service.updateCategory(id, category);
+      final updated = await service.updateCategory(idStr, category);
       return _jsonResponse(updated.toJson());
     } catch (e) {
       return _errorResponse(e.toString());
@@ -140,8 +136,7 @@ class ProductManagementController {
 
   Future<Response> deleteCategory(Request request, String idStr) async {
     try {
-      final id = int.parse(idStr);
-      await service.deleteCategory(id);
+      await service.deleteCategory(idStr);
       return _jsonResponse({'success': true, 'message': 'Category deleted'});
     } catch (e) {
       return _errorResponse(e.toString());
@@ -173,10 +168,9 @@ class ProductManagementController {
 
   Future<Response> updateBrand(Request request, String idStr) async {
     try {
-      final id = int.parse(idStr);
       final payload = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
       final brand = BrandModel.fromJson(payload);
-      final updated = await service.updateBrand(id, brand);
+      final updated = await service.updateBrand(idStr, brand);
       return _jsonResponse(updated.toJson());
     } catch (e) {
       return _errorResponse(e.toString());
@@ -185,8 +179,7 @@ class ProductManagementController {
 
   Future<Response> deleteBrand(Request request, String idStr) async {
     try {
-      final id = int.parse(idStr);
-      await service.deleteBrand(id);
+      await service.deleteBrand(idStr);
       return _jsonResponse({'success': true, 'message': 'Brand deleted'});
     } catch (e) {
       return _errorResponse(e.toString());
@@ -218,10 +211,9 @@ class ProductManagementController {
 
   Future<Response> updateUnit(Request request, String idStr) async {
     try {
-      final id = int.parse(idStr);
       final payload = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
       final unit = UnitModel.fromJson(payload);
-      final updated = await service.updateUnit(id, unit);
+      final updated = await service.updateUnit(idStr, unit);
       return _jsonResponse(updated.toJson());
     } catch (e) {
       return _errorResponse(e.toString());
@@ -230,14 +222,12 @@ class ProductManagementController {
 
   Future<Response> deleteUnit(Request request, String idStr) async {
     try {
-      final id = int.parse(idStr);
-      await service.deleteUnit(id);
+      await service.deleteUnit(idStr);
       return _jsonResponse({'success': true, 'message': 'Unit deleted'});
     } catch (e) {
       return _errorResponse(e.toString());
     }
   }
-
 
   // ----------------------------------------------------
   // SUPPLIERS HANDLERS
@@ -264,10 +254,9 @@ class ProductManagementController {
 
   Future<Response> updateSupplier(Request request, String idStr) async {
     try {
-      final id = int.parse(idStr);
       final payload = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
       final supplier = SupplierModel.fromJson(payload);
-      final updated = await service.updateSupplier(id, supplier);
+      final updated = await service.updateSupplier(idStr, supplier);
       return _jsonResponse(updated.toJson());
     } catch (e) {
       return _errorResponse(e.toString());
@@ -305,21 +294,19 @@ class ProductManagementController {
   Future<Response> recordStockAdjustment(Request request) async {
     try {
       final payload = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
-      final productId = payload['productId'] as int;
-      final movementType = (payload['movementType'] ?? 'DAMAGE_OUT').toString();
+      final productId = payload['productId'] ?? payload['product_id'];
       final quantity = (payload['quantity'] as num).toDouble();
       final reason = (payload['reason'] ?? '').toString();
       final userId = request.context['userId'] as int?;
 
-      final movement = await service.recordStockAdjustment(
+      await service.recordStockAdjustment(
         productId: productId,
-        movementType: movementType,
         quantity: quantity,
         reason: reason,
         userId: userId,
       );
 
-      return _jsonResponse(movement.toJson(), statusCode: 201);
+      return _jsonResponse({'success': true, 'message': 'Stock adjustment recorded'}, statusCode: 201);
     } catch (e) {
       return _errorResponse(e.toString());
     }
@@ -328,7 +315,7 @@ class ProductManagementController {
   Future<Response> getStockMovements(Request request) async {
     try {
       final params = request.url.queryParameters;
-      final productId = params['productId'] != null ? int.tryParse(params['productId']!) : null;
+      final productId = params['productId'] ?? params['product_id'];
       final movements = await service.getStockMovements(productId: productId);
       return _jsonResponse(movements.map((m) => m.toJson()).toList());
     } catch (e) {

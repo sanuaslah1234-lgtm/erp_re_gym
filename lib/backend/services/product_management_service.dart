@@ -1,10 +1,10 @@
-import 'package:erp_software/backend/models/brand_model.dart';
-import 'package:erp_software/backend/models/cashier/product_model.dart';
-import 'package:erp_software/backend/models/category_model.dart';
-import 'package:erp_software/backend/models/purchase_model.dart';
-import 'package:erp_software/backend/models/stock_movement_model.dart';
-import 'package:erp_software/backend/models/supplier_model.dart';
-import 'package:erp_software/backend/models/unit_model.dart';
+import 'package:erp_software/core/models/brand_model.dart';
+import 'package:erp_software/core/models/cashier/product_model.dart';
+import 'package:erp_software/core/models/category_model.dart';
+import 'package:erp_software/core/models/purchase_model.dart';
+import 'package:erp_software/core/models/stock_movement_model.dart';
+import 'package:erp_software/core/models/supplier_model.dart';
+import 'package:erp_software/core/models/unit_model.dart';
 import 'package:erp_software/backend/repositories/product_management_repository.dart';
 
 class ProductManagementService {
@@ -27,7 +27,7 @@ class ProductManagementService {
     );
   }
 
-  Future<ProductModel?> getProductById(int id) async {
+  Future<ProductModel?> getProductById(dynamic id) async {
     return await repository.getProductById(id);
   }
 
@@ -44,7 +44,7 @@ class ProductManagementService {
     return await repository.createProduct(product, userId: userId);
   }
 
-  Future<ProductModel> updateProduct(int id, ProductModel product) async {
+  Future<ProductModel> updateProduct(dynamic id, ProductModel product) async {
     if (product.name.trim().isEmpty) {
       throw Exception('Product name is required!');
     }
@@ -54,7 +54,7 @@ class ProductManagementService {
     return await repository.updateProduct(id, product);
   }
 
-  Future<bool> deactivateProduct(int id) async {
+  Future<bool> deactivateProduct(dynamic id) async {
     return await repository.deactivateProduct(id);
   }
 
@@ -70,14 +70,14 @@ class ProductManagementService {
     return await repository.createCategory(category);
   }
 
-  Future<CategoryModel> updateCategory(int id, CategoryModel category) async {
+  Future<CategoryModel> updateCategory(dynamic id, CategoryModel category) async {
     if (category.name.trim().isEmpty) {
       throw Exception('Category name is required!');
     }
     return await repository.updateCategory(id, category);
   }
 
-  Future<void> deleteCategory(int id) async {
+  Future<void> deleteCategory(dynamic id) async {
     await repository.deleteCategory(id);
   }
 
@@ -93,14 +93,14 @@ class ProductManagementService {
     return await repository.createBrand(brand);
   }
 
-  Future<BrandModel> updateBrand(int id, BrandModel brand) async {
+  Future<BrandModel> updateBrand(dynamic id, BrandModel brand) async {
     if (brand.name.trim().isEmpty) {
       throw Exception('Brand name is required!');
     }
     return await repository.updateBrand(id, brand);
   }
 
-  Future<void> deleteBrand(int id) async {
+  Future<void> deleteBrand(dynamic id) async {
     await repository.deleteBrand(id);
   }
 
@@ -119,7 +119,7 @@ class ProductManagementService {
     return await repository.createUnit(unit);
   }
 
-  Future<UnitModel> updateUnit(int id, UnitModel unit) async {
+  Future<UnitModel> updateUnit(dynamic id, UnitModel unit) async {
     if (unit.name.trim().isEmpty) {
       throw Exception('Unit name is required!');
     }
@@ -129,10 +129,9 @@ class ProductManagementService {
     return await repository.updateUnit(id, unit);
   }
 
-  Future<void> deleteUnit(int id) async {
+  Future<void> deleteUnit(dynamic id) async {
     await repository.deleteUnit(id);
   }
-
 
   // Suppliers
   Future<List<SupplierModel>> getSuppliers() async {
@@ -143,13 +142,10 @@ class ProductManagementService {
     if (supplier.name.trim().isEmpty) {
       throw Exception('Supplier name is required!');
     }
-    if (supplier.supplierCode.trim().isEmpty) {
-      throw Exception('Supplier code is required!');
-    }
     return await repository.createSupplier(supplier);
   }
 
-  Future<SupplierModel> updateSupplier(int id, SupplierModel supplier) async {
+  Future<SupplierModel> updateSupplier(dynamic id, SupplierModel supplier) async {
     if (supplier.name.trim().isEmpty) {
       throw Exception('Supplier name is required!');
     }
@@ -161,14 +157,6 @@ class ProductManagementService {
     if (purchase.invoiceNumber.trim().isEmpty) {
       throw Exception('Purchase invoice number is required!');
     }
-    if (purchase.items.isEmpty) {
-      throw Exception('Purchase order must contain at least one item!');
-    }
-    for (final item in purchase.items) {
-      if (item.quantity <= 0) {
-        throw Exception('Purchase quantity must be greater than zero!');
-      }
-    }
     return await repository.createPurchase(purchase, userId: userId);
   }
 
@@ -177,9 +165,8 @@ class ProductManagementService {
   }
 
   // Stock Damage & Adjustments
-  Future<StockMovementModel> recordStockAdjustment({
-    required int productId,
-    required String movementType,
+  Future<void> recordStockAdjustment({
+    required dynamic productId,
     required double quantity,
     required String reason,
     int? userId,
@@ -190,17 +177,16 @@ class ProductManagementService {
     if (reason.trim().isEmpty) {
       throw Exception('Reason / notes required for stock adjustment!');
     }
-    return await repository.recordStockAdjustment(
+    await repository.recordStockAdjustment(
       productId: productId,
-      movementType: movementType,
-      quantity: quantity,
+      adjustmentQuantity: quantity,
       reason: reason,
       userId: userId,
     );
   }
 
   // Stock History & Reports
-  Future<List<StockMovementModel>> getStockMovements({int? productId}) async {
+  Future<List<StockMovementModel>> getStockMovements({dynamic productId}) async {
     return await repository.getStockMovements(productId: productId);
   }
 

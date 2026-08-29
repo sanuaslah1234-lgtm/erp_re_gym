@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:erp_software/frontend/models/cashier/product.dart';
+import 'package:erp_software/core/models/cashier/product.dart';
 import 'package:http/http.dart' as http;
 
 class PosApiService {

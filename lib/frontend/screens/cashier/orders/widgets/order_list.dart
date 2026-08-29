@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:erp_software/frontend/models/cashier/pos_order.dart';
+import 'package:erp_software/core/models/cashier/pos_order.dart';
 
 class OrderList extends StatelessWidget {
   final List<PosOrder> orders;

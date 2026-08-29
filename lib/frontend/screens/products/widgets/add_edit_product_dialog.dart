@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:erp_software/backend/models/cashier/product_model.dart';
+import 'package:erp_software/core/models/cashier/product_model.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/providers/product_management_provider.dart';
 import 'package:erp_software/frontend/widgets/erp_toast.dart';
@@ -29,8 +29,8 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
   late TextEditingController _imageCtrl;
   late TextEditingController _descCtrl;
 
-  int? _selectedCategoryId;
-  int? _selectedSupplierId;
+  dynamic _selectedCategoryId;
+  dynamic _selectedSupplierId;
   String _selectedUnit = 'pcs';
   bool _isActive = true;
 
@@ -57,6 +57,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
     _selectedUnit = p?.unit ?? 'pcs';
     _isActive = p?.isActive ?? true;
   }
+
 
   @override
   void dispose() {
@@ -170,22 +171,22 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                       Row(
                         children: [
                           Expanded(
-                            child: DropdownButtonFormField<int>(
-                              value: _selectedCategoryId,
+                            child: DropdownButtonFormField<dynamic>(
+                              initialValue: _selectedCategoryId,
                               decoration: const InputDecoration(labelText: 'Category', border: OutlineInputBorder()),
                               items: provider.categories
-                                  .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
+                                  .map((c) => DropdownMenuItem<dynamic>(value: c.id, child: Text(c.name)))
                                   .toList(),
                               onChanged: (v) => setState(() => _selectedCategoryId = v),
                             ),
                           ),
                           const SizedBox(width: 16),
                           Expanded(
-                            child: DropdownButtonFormField<int>(
-                              value: _selectedSupplierId,
+                            child: DropdownButtonFormField<dynamic>(
+                              initialValue: _selectedSupplierId,
                               decoration: const InputDecoration(labelText: 'Supplier', border: OutlineInputBorder()),
                               items: provider.suppliers
-                                  .map((s) => DropdownMenuItem(value: s.id, child: Text(s.name)))
+                                  .map((s) => DropdownMenuItem<dynamic>(value: s.id, child: Text(s.name)))
                                   .toList(),
                               onChanged: (v) => setState(() => _selectedSupplierId = v),
                             ),
@@ -205,7 +206,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                           const SizedBox(width: 16),
                           Expanded(
                             child: DropdownButtonFormField<String>(
-                              value: _selectedUnit,
+                              initialValue: _selectedUnit,
                               decoration: const InputDecoration(labelText: 'Unit', border: OutlineInputBorder()),
                               items: _units.map((u) => DropdownMenuItem(value: u, child: Text(u.toUpperCase()))).toList(),
                               onChanged: (v) => setState(() => _selectedUnit = v!),

@@ -6,8 +6,8 @@ import 'package:erp_software/frontend/screens/cashier/orders/widgets/order_filte
 import 'package:erp_software/frontend/screens/cashier/orders/widgets/order_list.dart';
 import 'package:erp_software/frontend/screens/cashier/pos/pos_screen.dart';
 import 'package:erp_software/frontend/screens/cashier/pos/widgets/receipt_dialog.dart';
-import 'package:erp_software/frontend/widgets/erp_sidebar.dart';
-import 'package:erp_software/frontend/widgets/erp_topbar.dart';
+import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
+import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 import 'package:provider/provider.dart';
 
 class PosOrdersScreen extends StatefulWidget {
@@ -139,4 +139,5 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
     );
   }
 }
+
 

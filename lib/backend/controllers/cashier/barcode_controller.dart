@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:erp_software/backend/services/cashier/barcode_service.dart';
 import 'package:erp_software/backend/services/jwt_service.dart';
-import 'package:erp_software/core/errors/api_exception.dart';
-import 'package:erp_software/core/utils/response_formatter.dart';
+import 'package:erp_software/core/errors/app_exception.dart';
+import 'package:erp_software/backend/utils/response_utils.dart';
 import 'package:shelf/shelf.dart';
 
 class BarcodeController {
@@ -14,7 +14,7 @@ class BarcodeController {
     try {
       final bodyStr = await request.readAsString();
       if (bodyStr.isEmpty) {
-        return ResponseFormatter.error(message: 'Request body cannot be empty', statusCode: 400);
+        return ResponseUtils.error(message: 'Request body cannot be empty', statusCode: 400);
       }
 
       final body = jsonDecode(bodyStr) as Map<String, dynamic>;
@@ -24,7 +24,7 @@ class BarcodeController {
       final labelQuantity = int.tryParse(body['labelQuantity']?.toString() ?? '1') ?? 1;
 
       if (productId == null || barcode == null || barcode.isEmpty) {
-        return ResponseFormatter.error(message: 'productId and barcode are required', statusCode: 400);
+        return ResponseUtils.error(message: 'productId and barcode are required', statusCode: 400);
       }
 
       final record = await barcodeService.generateBarcodePrint(
@@ -34,26 +34,27 @@ class BarcodeController {
         createdBy: user?.userId,
       );
 
-      return ResponseFormatter.success(
+      return ResponseUtils.success(
         message: 'Barcode label print record created',
         data: record.toJson(),
       );
     } on ApiException catch (e) {
-      return ResponseFormatter.error(message: e.message, statusCode: e.statusCode);
+      return ResponseUtils.error(message: e.message, statusCode: e.statusCode);
     } catch (e) {
-      return ResponseFormatter.error(message: 'Failed to record barcode print', statusCode: 500, error: e);
+      return ResponseUtils.error(message: 'Failed to record barcode print', statusCode: 500, error: e);
     }
   }
 
   Future<Response> getBarcodes(Request request) async {
     try {
       final barcodes = await barcodeService.getBarcodeHistory();
-      return ResponseFormatter.success(
+      return ResponseUtils.success(
         message: 'Barcode print history fetched',
         data: barcodes.map((b) => b.toJson()).toList(),
       );
     } catch (e) {
-      return ResponseFormatter.error(message: 'Failed to fetch barcode history', statusCode: 500, error: e);
+      return ResponseUtils.error(message: 'Failed to fetch barcode history', statusCode: 500, error: e);
     }
   }
 }
+

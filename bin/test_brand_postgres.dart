@@ -1,5 +1,5 @@
-import 'package:erp_software/core/database/postgres_service.dart';
-import 'package:erp_software/backend/models/brand_model.dart';
+import 'package:erp_software/backend/database/postgres_service.dart';
+import 'package:erp_software/core/models/brand_model.dart';
 import 'package:erp_software/backend/repositories/product_management_repository.dart';
 import 'package:erp_software/backend/services/product_management_service.dart';
 
@@ -34,7 +34,7 @@ Future<void> main() async {
       createdBrand.id!,
       BrandModel(
         id: createdBrand.id,
-        name: '${testBrandName} Updated',
+        name: '$testBrandName Updated',
         description: 'Innovative hardware & ecosystem products',
         status: 'active',
       ),

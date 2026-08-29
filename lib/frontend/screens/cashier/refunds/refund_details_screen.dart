@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:erp_software/frontend/models/cashier/refund.dart';
+import 'package:erp_software/core/models/cashier/refund.dart';
 
 class RefundDetailsScreen extends StatelessWidget {
   final Refund refund;

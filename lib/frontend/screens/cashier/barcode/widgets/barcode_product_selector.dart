@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:erp_software/frontend/models/cashier/product.dart';
+import 'package:erp_software/core/models/cashier/product.dart';
 
 class BarcodeProductSelector extends StatelessWidget {
   final List<Product> products;

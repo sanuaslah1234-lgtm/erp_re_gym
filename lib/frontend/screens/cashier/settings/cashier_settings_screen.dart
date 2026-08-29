@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:erp_software/frontend/models/cashier/cashier_settings.dart';
+import 'package:erp_software/core/models/cashier/cashier_settings.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/providers/cashier/cashier_settings_provider.dart';
 import 'package:erp_software/frontend/screens/cashier/settings/widgets/payment_settings.dart';
 import 'package:erp_software/frontend/screens/cashier/settings/widgets/pos_preferences.dart';
 import 'package:erp_software/frontend/screens/cashier/settings/widgets/receipt_settings.dart';
 import 'package:erp_software/frontend/screens/cashier/settings/widgets/tax_settings.dart';
-import 'package:erp_software/frontend/widgets/erp_sidebar.dart';
+import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
+import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 import 'package:erp_software/frontend/widgets/erp_toast.dart';
-import 'package:erp_software/frontend/widgets/erp_topbar.dart';
 import 'package:provider/provider.dart';
 
 class CashierSettingsScreen extends StatefulWidget {
@@ -168,3 +168,4 @@ class _CashierSettingsScreenState extends State<CashierSettingsScreen> {
     );
   }
 }
+
