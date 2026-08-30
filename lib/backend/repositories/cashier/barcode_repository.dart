@@ -29,13 +29,13 @@ class BarcodeRepository {
       },
     );
 
-    final id = result.first[0] as int;
+    final id = int.tryParse(result.first[0].toString());
     final createdAt = DateTime.parse(result.first[1].toString());
 
     // Fetch product details for preview model
     final prodRes = await db.connection.execute(
-      Sql.named('SELECT name, product_code, selling_price FROM products WHERE id = @id'),
-      parameters: {'id': productId},
+      Sql.named('SELECT name, product_code, selling_price FROM products WHERE id = @id OR id::text = @idStr'),
+      parameters: {'id': productId, 'idStr': productId.toString()},
     );
 
     final prodMap = prodRes.isNotEmpty ? prodRes.first.toColumnMap() : <String, dynamic>{};

@@ -68,6 +68,7 @@ Middleware authMiddleware({
 
       final updatedRequest = request.change(context: {
         'user': payload,
+        'userId': payload.userId,
       });
 
       return await innerHandler(updatedRequest);

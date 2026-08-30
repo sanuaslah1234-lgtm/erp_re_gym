@@ -7,6 +7,7 @@ import 'package:erp_software/core/models/purchase_model.dart';
 import 'package:erp_software/core/models/supplier_model.dart';
 import 'package:erp_software/core/models/unit_model.dart';
 import 'package:erp_software/backend/services/product_management_service.dart';
+import 'package:erp_software/backend/services/jwt_service.dart';
 
 class ProductManagementController {
   final ProductManagementService service;
@@ -67,7 +68,8 @@ class ProductManagementController {
     try {
       final payload = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
       final product = ProductModel.fromJson(payload);
-      final userId = request.context['userId'] as int?;
+      final user = request.context['user'];
+      final userId = user is JwtPayload ? user.userId : request.context['userId'];
 
       final created = await service.createProduct(product, userId: userId);
       return _jsonResponse(created.toJson(), statusCode: 201);
@@ -279,7 +281,8 @@ class ProductManagementController {
     try {
       final payload = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
       final purchase = PurchaseModel.fromJson(payload);
-      final userId = request.context['userId'] as int?;
+      final user = request.context['user'];
+      final userId = user is JwtPayload ? user.userId : request.context['userId'];
 
       final created = await service.createPurchase(purchase, userId: userId);
       return _jsonResponse(created.toJson(), statusCode: 201);
@@ -298,7 +301,8 @@ class ProductManagementController {
       final quantity = (payload['quantity'] as num).toDouble();
       final reason = (payload['reason'] ?? '').toString();
       final movementType = payload['movementType']?.toString();
-      final userId = request.context['userId'] as int?;
+      final user = request.context['user'];
+      final userId = user is JwtPayload ? user.userId : request.context['userId'];
 
       final result = await service.recordStockAdjustment(
         productId: productId,

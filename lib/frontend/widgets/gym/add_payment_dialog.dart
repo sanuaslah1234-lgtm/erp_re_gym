@@ -101,6 +101,22 @@ class _AddPaymentDialogState extends State<AddPaymentDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final memberItems = _members.map((m) => DropdownMenuItem<int>(
+      value: m.id,
+      child: Text('${m.name} (${m.memberCode} - ${m.phone})'),
+    )).toList();
+
+    if (_selectedMemberId != null && !memberItems.any((item) => item.value == _selectedMemberId)) {
+      memberItems.insert(0, DropdownMenuItem<int>(
+        value: _selectedMemberId!,
+        child: Text('Member #$_selectedMemberId'),
+      ));
+    }
+
+    final safeMemberValue = (_selectedMemberId != null && memberItems.any((item) => item.value == _selectedMemberId))
+        ? _selectedMemberId
+        : null;
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       backgroundColor: Colors.white,
@@ -153,12 +169,9 @@ class _AddPaymentDialogState extends State<AddPaymentDialog> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           DropdownButtonFormField<int>(
-                            initialValue: _selectedMemberId,
+                            initialValue: safeMemberValue,
                             decoration: _inputDecoration('Select Gym Member *', icon: Icons.person_outline),
-                            items: _members.map((m) => DropdownMenuItem<int>(
-                              value: m.id,
-                              child: Text('${m.name} (${m.memberCode} - ${m.phone})'),
-                            )).toList(),
+                            items: memberItems,
                             onChanged: (v) => setState(() => _selectedMemberId = v),
                             validator: (v) => v == null ? 'Please select a member' : null,
                           ),

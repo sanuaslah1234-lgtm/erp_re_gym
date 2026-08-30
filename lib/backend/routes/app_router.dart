@@ -95,10 +95,11 @@ class AppRouter {
     // Root-prefixed feature routes
     if (productManagementController != null) {
       router.mount('/', setupProductManagementRoutes(productManagementController!).call);
+    } else {
+      router.mount('/', productRoutes(productController).call);
     }
     router.mount('/', customerRoutes(customerController).call);
     router.mount('/', inventoryRoutes(inventoryController).call);
-    router.mount('/', productRoutes(productController).call);
     router.mount('/', warehouseRoutes(warehouseController).call);
     router.mount('/', employeeRoutes(employeeController).call);
 

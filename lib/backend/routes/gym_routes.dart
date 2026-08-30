@@ -8,19 +8,39 @@ Router gymRoutes(GymController controller) {
   final router = Router();
 
   /// RBAC Permission Wrapper for router handlers with 0, 1, or 2 path parameters
-  Function guard(String perm, Function handler) {
+  dynamic guard(String perm, Function handler) {
+    final mw = requirePermission(perm);
+    if (handler is Future<Response> Function(Request, String, String)) {
+      return (Request request, String p1, String p2) {
+        return mw((Request req) => handler(req, p1, p2))(request);
+      };
+    } else if (handler is Future<Response> Function(Request, String)) {
+      return (Request request, String p1) {
+        return mw((Request req) => handler(req, p1))(request);
+      };
+    } else if (handler is Future<Response> Function(Request)) {
+      return (Request request) {
+        return mw(handler)(request);
+      };
+    }
+
     return (Request request, [String? p1, String? p2]) {
-      final mw = requirePermission(perm);
-      final inner = mw((Request req) async {
+      return mw((Request req) async {
         if (p2 != null) {
           return await (handler as dynamic)(req, p1, p2);
         } else if (p1 != null) {
           return await (handler as dynamic)(req, p1);
         } else {
+          final params = req.params;
+          if (params.length >= 2) {
+            final vals = params.values.toList();
+            return await (handler as dynamic)(req, vals[0], vals[1]);
+          } else if (params.length == 1) {
+            return await (handler as dynamic)(req, params.values.first);
+          }
           return await (handler as dynamic)(req);
         }
-      });
-      return inner(request);
+      })(request);
     };
   }
 

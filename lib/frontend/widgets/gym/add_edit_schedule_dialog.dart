@@ -63,7 +63,7 @@ class _AddEditScheduleDialogState extends State<AddEditScheduleDialog> {
 
   Future<void> _loadTrainers() async {
     try {
-      final trainers = await gymService.getTrainers(status: 'ACTIVE');
+      final trainers = await gymService.getTrainers();
       if (!mounted) return;
       setState(() {
         _trainers = trainers;
@@ -115,14 +115,33 @@ class _AddEditScheduleDialogState extends State<AddEditScheduleDialog> {
   Widget build(BuildContext context) {
     final isEdit = widget.schedule != null;
 
+    final trainerItems = <DropdownMenuItem<int?>>[
+      const DropdownMenuItem<int?>(value: null, child: Text('No Specific Trainer')),
+      ..._trainers.map((t) => DropdownMenuItem<int?>(
+        value: t.id,
+        child: Text('${t.name} (${t.specialization})'),
+      )),
+    ];
+
+    if (_selectedTrainerId != null && !trainerItems.any((item) => item.value == _selectedTrainerId)) {
+      trainerItems.add(DropdownMenuItem<int?>(
+        value: _selectedTrainerId,
+        child: Text(widget.schedule?.trainerName ?? 'Trainer #$_selectedTrainerId'),
+      ));
+    }
+
+    final safeTrainerValue = (_selectedTrainerId == null || trainerItems.any((item) => item.value == _selectedTrainerId))
+        ? _selectedTrainerId
+        : null;
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       backgroundColor: Colors.white,
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-      child: SizedBox(
-        width: 560,
+      child: Container(
+        width: 580,
+        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
             // Header
             Container(
@@ -136,15 +155,15 @@ class _AddEditScheduleDialogState extends State<AddEditScheduleDialog> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
-                    child: const Icon(Icons.schedule_rounded, color: AppColors.primary, size: 24),
+                    child: const Icon(Icons.calendar_today_rounded, color: AppColors.primary, size: 24),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(isEdit ? 'Edit Schedule Session' : 'Create Gym Session / Schedule', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                        const Text('Set up trainer timetable and workout sessions', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                        Text(isEdit ? 'Edit Class / Schedule' : 'Schedule New Class / Session', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                        const Text('Set up gym training sessions and assign trainers', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
                       ],
                     ),
                   ),
@@ -157,101 +176,97 @@ class _AddEditScheduleDialogState extends State<AddEditScheduleDialog> {
             ),
 
             // Form
-            _isInitLoading
-                ? const Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator(color: AppColors.primary))
-                : SingleChildScrollView(
-                    padding: const EdgeInsets.all(24),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          TextFormField(
-                            controller: _titleController,
-                            decoration: _inputDecoration('Session Title *', icon: Icons.title_outlined),
-                            validator: (v) => (v == null || v.trim().isEmpty) ? 'Title is required' : null,
-                          ),
-                          const SizedBox(height: 14),
+            Expanded(
+              child: _isInitLoading
+                  ? const Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator(color: AppColors.primary))
+                  : SingleChildScrollView(
+                      padding: const EdgeInsets.all(24),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            TextFormField(
+                              controller: _titleController,
+                              decoration: _inputDecoration('Session Title *', icon: Icons.title_outlined),
+                              validator: (v) => (v == null || v.trim().isEmpty) ? 'Title is required' : null,
+                            ),
+                            const SizedBox(height: 14),
 
-                          DropdownButtonFormField<int>(
-                            initialValue: _selectedTrainerId,
-                            decoration: _inputDecoration('Trainer in Charge', icon: Icons.sports_gymnastics_rounded),
-                            items: [
-                              const DropdownMenuItem<int>(value: null, child: Text('No Specific Trainer')),
-                              ..._trainers.map((t) => DropdownMenuItem<int>(
-                                value: t.id,
-                                child: Text('${t.name} (${t.specialization})'),
-                              )),
-                            ],
-                            onChanged: (v) => setState(() => _selectedTrainerId = v),
-                          ),
-                          const SizedBox(height: 14),
+                            DropdownButtonFormField<int?>(
+                              initialValue: safeTrainerValue,
+                              decoration: _inputDecoration('Trainer in Charge', icon: Icons.sports_gymnastics_rounded),
+                              items: trainerItems,
+                              onChanged: (v) => setState(() => _selectedTrainerId = v),
+                            ),
+                            const SizedBox(height: 14),
 
-                          Row(
-                            children: [
-                              Expanded(
-                                child: InkWell(
-                                  onTap: () async {
-                                    final picked = await showDatePicker(
-                                      context: context,
-                                      initialDate: _date,
-                                      firstDate: DateTime.now().subtract(const Duration(days: 30)),
-                                      lastDate: DateTime.now().add(const Duration(days: 180)),
-                                    );
-                                    if (picked != null) setState(() => _date = picked);
-                                  },
-                                  child: InputDecorator(
-                                    decoration: _inputDecoration('Session Date', icon: Icons.event_outlined),
-                                    child: Text(_date.toIso8601String().split('T').first, style: const TextStyle(fontSize: 13)),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: InkWell(
+                                    onTap: () async {
+                                      final picked = await showDatePicker(
+                                        context: context,
+                                        initialDate: _date,
+                                        firstDate: DateTime.now().subtract(const Duration(days: 30)),
+                                        lastDate: DateTime.now().add(const Duration(days: 180)),
+                                      );
+                                      if (picked != null) setState(() => _date = picked);
+                                    },
+                                    child: InputDecorator(
+                                      decoration: _inputDecoration('Session Date', icon: Icons.event_outlined),
+                                      child: Text(_date.toIso8601String().split('T').first, style: const TextStyle(fontSize: 13)),
+                                    ),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: DropdownButtonFormField<String>(
-                                  initialValue: _status,
-                                  decoration: _inputDecoration('Status', icon: Icons.toggle_on_outlined),
-                                  items: const [
-                                    DropdownMenuItem(value: 'SCHEDULED', child: Text('SCHEDULED')),
-                                    DropdownMenuItem(value: 'ONGOING', child: Text('ONGOING')),
-                                    DropdownMenuItem(value: 'COMPLETED', child: Text('COMPLETED')),
-                                    DropdownMenuItem(value: 'CANCELLED', child: Text('CANCELLED')),
-                                  ],
-                                  onChanged: (v) => setState(() => _status = v ?? 'SCHEDULED'),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: DropdownButtonFormField<String>(
+                                    initialValue: _status,
+                                    decoration: _inputDecoration('Status', icon: Icons.toggle_on_outlined),
+                                    items: const [
+                                      DropdownMenuItem(value: 'SCHEDULED', child: Text('SCHEDULED')),
+                                      DropdownMenuItem(value: 'ONGOING', child: Text('ONGOING')),
+                                      DropdownMenuItem(value: 'COMPLETED', child: Text('COMPLETED')),
+                                      DropdownMenuItem(value: 'CANCELLED', child: Text('CANCELLED')),
+                                    ],
+                                    onChanged: (v) => setState(() => _status = v ?? 'SCHEDULED'),
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 14),
+                              ],
+                            ),
+                            const SizedBox(height: 14),
 
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _startTimeController,
-                                  decoration: _inputDecoration('Start Time', icon: Icons.access_time),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: _startTimeController,
+                                    decoration: _inputDecoration('Start Time', icon: Icons.access_time),
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _endTimeController,
-                                  decoration: _inputDecoration('End Time', icon: Icons.access_time_filled),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: _endTimeController,
+                                    decoration: _inputDecoration('End Time', icon: Icons.access_time_filled),
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 14),
+                              ],
+                            ),
+                            const SizedBox(height: 14),
 
-                          TextFormField(
-                            controller: _descriptionController,
-                            maxLines: 2,
-                            decoration: _inputDecoration('Description / Details', icon: Icons.notes_outlined),
-                          ),
-                        ],
+                            TextFormField(
+                              controller: _descriptionController,
+                              maxLines: 2,
+                              decoration: _inputDecoration('Description / Objectives', icon: Icons.description_outlined),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
+            ),
 
             // Footer
             Container(
@@ -278,7 +293,7 @@ class _AddEditScheduleDialogState extends State<AddEditScheduleDialog> {
                     icon: _isLoading
                         ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                         : const Icon(Icons.check, size: 18),
-                    label: Text(isEdit ? 'Save Changes' : 'Create Session'),
+                    label: Text(isEdit ? 'Save Changes' : 'Schedule Session'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,

@@ -74,7 +74,7 @@ class GymApiService {
       final List data = body['data'] ?? [];
       return data.map((json) => GymMemberModel.fromJson(json as Map<String, dynamic>)).toList();
     }
-    throw Exception('Failed to load members: ${res.body}');
+    throw Exception(_extractError(res, 'Failed to load members'));
   }
 
   Future<GymMemberModel> getMemberById(int id) async {
@@ -321,7 +321,7 @@ class GymApiService {
       final List data = body['data'] ?? [];
       return data.map((json) => GymTrainerModel.fromJson(json as Map<String, dynamic>)).toList();
     }
-    throw Exception('Failed to load trainers: ${res.body}');
+    throw Exception(_extractError(res, 'Failed to load trainers'));
   }
 
   Future<GymTrainerModel> createTrainer(GymTrainerModel trainer) async {

@@ -441,11 +441,10 @@ class _ItemsSection extends StatelessWidget {
                   item['name'].toString();
 
               final quantity =
-                  item['quantity'] as int;
+                  int.tryParse(item['quantity']?.toString() ?? '1') ?? (item['quantity'] is num ? (item['quantity'] as num).toInt() : 1);
 
               final price =
-                  (item['price'] as num)
-                      .toDouble();
+                  item['price'] != null ? (item['price'] is num ? (item['price'] as num).toDouble() : (double.tryParse(item['price'].toString()) ?? 0.0)) : 0.0;
 
               final itemTotal =
                   quantity * price;

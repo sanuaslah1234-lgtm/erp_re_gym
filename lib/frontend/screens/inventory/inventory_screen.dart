@@ -134,11 +134,14 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     final qty = int.tryParse(qtyCtrl.text) ?? 0;
                     if (qty <= 0) { ErpToast.showError(ctx, 'Quantity must be greater than 0'); return; }
                     try {
+                      final wid = item.warehouseId.isNotEmpty && item.warehouseId != 'default'
+                          ? item.warehouseId
+                          : (_selectedWarehouseId ?? '1');
                       if (item.id == '0' || item.id.isEmpty) {
                         // No inventory record yet — create one first
                         await _inventoryService.createInventory(
                           productId: item.productId.toString(),
-                          warehouseId: '1',
+                          warehouseId: wid,
                           quantity: qty,
                           minStock: 10,
                           maxStock: 1000,
