@@ -52,29 +52,44 @@ class _GymReportsScreenState extends State<GymReportsScreen> with SingleTickerPr
       _error = null;
     });
 
-    try {
-      final members = await gymService.getMemberReport(startDate: _startDate, endDate: _endDate);
-      final attendance = await gymService.getAttendanceReport(startDate: _startDate, endDate: _endDate);
-      final revenue = await gymService.getRevenueReport(startDate: _startDate, endDate: _endDate);
-      final expiry = await gymService.getExpiryReport();
-      final trainers = await gymService.getTrainerReport();
+    // Load each report independently so one failure doesn't break the rest
+    List<Map<String, dynamic>> members = [];
+    List<Map<String, dynamic>> attendance = [];
+    List<Map<String, dynamic>> revenue = [];
+    List<Map<String, dynamic>> expiry = [];
+    List<Map<String, dynamic>> trainers = [];
+    final errors = <String>[];
 
-      if (!mounted) return;
-      setState(() {
-        _memberReport = members;
-        _attendanceReport = attendance;
-        _revenueReport = revenue;
-        _expiryReport = expiry;
-        _trainerReport = trainers;
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _error = e.toString().replaceAll('Exception: ', '');
-        _isLoading = false;
-      });
-    }
+    final results = await Future.wait([
+      _safeFetch(() => gymService.getMemberReport(startDate: _startDate, endDate: _endDate)),
+      _safeFetch(() => gymService.getAttendanceReport(startDate: _startDate, endDate: _endDate)),
+      _safeFetch(() => gymService.getRevenueReport(startDate: _startDate, endDate: _endDate)),
+      _safeFetch(() => gymService.getExpiryReport()),
+      _safeFetch(() => gymService.getTrainerReport()),
+    ]);
+
+    members = (results[0].value as List?)?.cast<Map<String, dynamic>>() ?? [];
+    attendance = (results[1].value as List?)?.cast<Map<String, dynamic>>() ?? [];
+    revenue = (results[2].value as List?)?.cast<Map<String, dynamic>>() ?? [];
+    expiry = (results[3].value as List?)?.cast<Map<String, dynamic>>() ?? [];
+    trainers = (results[4].value as List?)?.cast<Map<String, dynamic>>() ?? [];
+
+    if (results[0].error != null) errors.add('Members: ${results[0].error}');
+    if (results[1].error != null) errors.add('Attendance: ${results[1].error}');
+    if (results[2].error != null) errors.add('Revenue: ${results[2].error}');
+    if (results[3].error != null) errors.add('Expiry: ${results[3].error}');
+    if (results[4].error != null) errors.add('Trainers: ${results[4].error}');
+
+    if (!mounted) return;
+    setState(() {
+      _memberReport = members;
+      _attendanceReport = attendance;
+      _revenueReport = revenue;
+      _expiryReport = expiry;
+      _trainerReport = trainers;
+      _error = errors.isNotEmpty ? errors.join('\n') : null;
+      _isLoading = false;
+    });
   }
 
   Future<void> _loadCurrentTabReport() async {
@@ -99,6 +114,16 @@ class _GymReportsScreenState extends State<GymReportsScreen> with SingleTickerPr
       }
     } catch (_) {}
     if (mounted) setState(() => _isLoading = false);
+  }
+
+  /// Wraps an async fetch so a single report failure doesn't crash the whole load.
+  Future<_ReportResult> _safeFetch(Future<List<Map<String, dynamic>>> Function() fn) async {
+    try {
+      final data = await fn();
+      return _ReportResult(data);
+    } catch (e) {
+      return _ReportResult([], error: e.toString().replaceAll('Exception: ', ''));
+    }
   }
 
   void _exportReport() {
@@ -334,4 +359,10 @@ class _GymReportsScreenState extends State<GymReportsScreen> with SingleTickerPr
       ),
     );
   }
+}
+
+class _ReportResult {
+  final List<Map<String, dynamic>> value;
+  final String? error;
+  _ReportResult(this.value, {this.error});
 }

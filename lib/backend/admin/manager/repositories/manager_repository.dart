@@ -34,10 +34,10 @@ class ManagerRepository {
     final insertResult = await connection.execute(
       Sql.named('''
         INSERT INTO employees (
-          employee_id, full_name, email, phone, role, password, is_verified, branch_id
+          employee_id, full_name, email, phone, role, password_hash, is_verified, branch_id
         )
         VALUES (
-          @employee_id, @full_name, @email, @phone, 'manager', @password, @is_verified, @branch_id
+          @employee_id, @full_name, @email, @phone, 'manager', @password_hash, @is_verified, @branch_id
         )
         RETURNING id
       '''),
@@ -46,7 +46,7 @@ class ManagerRepository {
         'full_name': data['full_name'],
         'email': data['email'],
         'phone': data['phone'],
-        'password': data['password'],
+        'password_hash': data['password_hash'] ?? data['password'] ?? '',
         'is_verified': data['is_verified'] ?? true,
         'branch_id': data['branch_id'],
       },
@@ -111,7 +111,7 @@ class ManagerRepository {
           phone = @phone,
           is_verified = @is_verified,
           branch_id = @branch_id,
-          password = COALESCE(NULLIF(@password, ''), password),
+          password_hash = COALESCE(NULLIF(@password_hash, ''), password_hash),
           updated_at = CURRENT_TIMESTAMP
         WHERE id = @id AND role = 'manager'
         RETURNING id

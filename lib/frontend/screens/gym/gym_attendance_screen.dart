@@ -80,7 +80,7 @@ class _GymAttendanceScreenState extends State<GymAttendanceScreen> {
 
   Future<void> _checkOut(GymAttendanceModel attendance) async {
     try {
-      await gymService.checkOutMember(attendance.id!);
+      await gymService.checkOutMember(attendance.id!, memberId: attendance.memberId);
       if (!mounted) return;
       ErpToast.showSuccess(context, 'Member checked out successfully!', title: 'Check-Out Complete');
       loadAttendance();

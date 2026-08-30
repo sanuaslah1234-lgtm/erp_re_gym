@@ -15,7 +15,6 @@ class CustomerService {
     final result = await postgresService.connection.execute(
       Sql.named('''
         INSERT INTO customers (
-          id,
           branch_id,
           name,
           phone,
@@ -26,7 +25,6 @@ class CustomerService {
           current_balance
         )
         VALUES (
-          COALESCE(@id, gen_random_uuid()::text),
           @branch_id,
           @name,
           @phone,
@@ -39,7 +37,6 @@ class CustomerService {
         RETURNING *
       '''),
       parameters: {
-        'id': customer.id,
         'branch_id': customer.branchId,
         'name': customer.name,
         'phone': customer.phone,

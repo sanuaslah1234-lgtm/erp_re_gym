@@ -60,7 +60,8 @@ class _GymPlansScreenState extends State<GymPlansScreen> {
   }
 
   void _applyFilters() {
-    List<GymPlanModel> list = List.from(_allPlans);
+    // Exclude inactive / soft-deleted plans from the visible list
+    List<GymPlanModel> list = _allPlans.where((p) => p.status != 'INACTIVE').toList();
 
     if (_selectedTab == 'Monthly') {
       list = list.where((p) => p.durationDays <= 30).toList();

@@ -85,10 +85,11 @@ class WarehouseService {
           created_at,
           updated_at
         FROM warehouses
-        WHERE id = @id::uuid
+        WHERE id = @id OR id::text = @idStr
       '''),
       parameters: {
         'id': id,
+        'idStr': id,
       },
     );
 
@@ -120,7 +121,7 @@ class WarehouseService {
         SET
           name = @name,
           updated_at = CURRENT_TIMESTAMP
-        WHERE id = @id::uuid
+        WHERE id = @id OR id::text = @idStr
         RETURNING
           id,
           name,
@@ -129,6 +130,7 @@ class WarehouseService {
       '''),
       parameters: {
         'id': id,
+        'idStr': id,
         'name': name,
       },
     );
@@ -157,11 +159,12 @@ class WarehouseService {
     final result = await postgresService.connection.execute(
       Sql.named('''
         DELETE FROM warehouses
-        WHERE id = @id::uuid
+        WHERE id = @id OR id::text = @idStr
         RETURNING id
       '''),
       parameters: {
         'id': id,
+        'idStr': id,
       },
     );
 

@@ -156,22 +156,24 @@ Future<void> main() async {
   print('✅ ERP Backend running securely on http://localhost:${shelfServer.port}');
 
   // Keep server alive indefinitely
-  Timer.periodic(const Duration(hours: 24), (_) {});
+  Timer.periodic(const Duration(seconds: 10), (_) {});
   final completer = Completer<void>();
   try {
-    if (!Platform.isWindows) {
-      ProcessSignal.sigint.watch().listen((_) {
-        print('Shutting down server...');
-        shelfServer.close(force: true);
-        if (!completer.isCompleted) completer.complete();
-      });
+    ProcessSignal.sigint.watch().listen((_) {
+      print('Shutting down server...');
+      shelfServer.close(force: true);
+      if (!completer.isCompleted) completer.complete();
+    });
+  } catch (_) {}
+  if (!Platform.isWindows) {
+    try {
       ProcessSignal.sigterm.watch().listen((_) {
         print('Shutting down server...');
         shelfServer.close(force: true);
         if (!completer.isCompleted) completer.complete();
       });
-    }
-  } catch (_) {}
+    } catch (_) {}
+  }
   await completer.future;
 }
 

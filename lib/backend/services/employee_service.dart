@@ -149,8 +149,9 @@ class EmployeeService {
       if (userCheck.isEmpty) {
         await postgresService.connection.execute(
           Sql.named('''
-            INSERT INTO users (id, full_name, email, employee_id, phone, password_hash, plain_password, is_verified, role)
-            VALUES (gen_random_uuid()::text, @fullName, @email, @employeeId, @phone, @hash, @plain, true, @role);
+            INSERT INTO users (full_name, email, employee_id, phone, password_hash, plain_password, is_verified, role)
+            VALUES (@fullName, @email, @employeeId, @phone, @hash, @plain, true, @role)
+            ON CONFLICT (email) DO NOTHING;
           '''),
           parameters: {
             'fullName': fullName,

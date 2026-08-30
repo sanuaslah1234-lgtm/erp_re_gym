@@ -504,7 +504,7 @@ class GymApiService {
       final List data = body['data'] ?? [];
       return data.map((json) => WorkoutPlanModel.fromJson(json as Map<String, dynamic>)).toList();
     }
-    throw Exception('Failed to load workouts: ${res.body}');
+    throw Exception(_extractError(res, 'Failed to load workouts'));
   }
 
   Future<WorkoutPlanModel> createWorkoutPlan(WorkoutPlanModel plan) async {
@@ -517,7 +517,7 @@ class GymApiService {
       final body = jsonDecode(res.body);
       return WorkoutPlanModel.fromJson(body['data']);
     }
-    throw Exception('Failed to create workout plan: ${res.body}');
+    throw Exception(_extractError(res, 'Failed to create workout plan'));
   }
 
   Future<WorkoutPlanModel> updateWorkoutPlan(int id, WorkoutPlanModel plan) async {
@@ -530,13 +530,13 @@ class GymApiService {
       final body = jsonDecode(res.body);
       return WorkoutPlanModel.fromJson(body['data']);
     }
-    throw Exception('Failed to update workout plan: ${res.body}');
+    throw Exception(_extractError(res, 'Failed to update workout plan'));
   }
 
   Future<void> deleteWorkoutPlan(int id) async {
     final res = await http.delete(Uri.parse('$baseUrl/api/gym/workouts/$id'), headers: _headers);
     if (res.statusCode != 200) {
-      throw Exception('Failed to delete workout plan: ${res.body}');
+      throw Exception(_extractError(res, 'Failed to delete workout plan'));
     }
   }
 

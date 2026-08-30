@@ -101,8 +101,6 @@ Router gymRoutes(GymController controller) {
   router.post('/payments', guard(AppPermissions.gymPaymentsManage, controller.createPayment));
   router.get('/payments/<id>', guard(AppPermissions.gymPaymentsManage, controller.getPaymentById));
   router.post('/payments/<id>/receipt', guard(AppPermissions.gymPaymentsManage, controller.getPaymentReceipt));
-  router.get('/payments/<id>/receipt', guard(AppPermissions.gymPaymentsManage, controller.getPaymentReceipt));
-
   // ===========================================================================
   // 8. WORKOUTS (gym.workouts.manage)
   // ===========================================================================

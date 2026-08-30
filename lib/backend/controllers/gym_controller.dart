@@ -1046,8 +1046,10 @@ class GymController {
         message: 'Members report generated',
         data: report,
       );
-    } catch (e) {
-      return ResponseUtils.error(message: 'Failed to generate members report', error: e.toString());
+    } catch (e, st) {
+      print('Members report error: $e');
+      print('Stack: $st');
+      return ResponseUtils.error(message: 'Failed to generate members report', error: e.toString(), statusCode: 500);
     }
   }
 
@@ -1062,8 +1064,10 @@ class GymController {
         message: 'Attendance report generated',
         data: report,
       );
-    } catch (e) {
-      return ResponseUtils.error(message: 'Failed to generate attendance report', error: e.toString());
+    } catch (e, st) {
+      print('Attendance report error: $e');
+      print('Stack: $st');
+      return ResponseUtils.error(message: 'Failed to generate attendance report', error: e.toString(), statusCode: 500);
     }
   }
 
@@ -1073,13 +1077,16 @@ class GymController {
       final from = queryParams['fromDate'] != null ? DateTime.tryParse(queryParams['fromDate']!) : null;
       final to = queryParams['toDate'] != null ? DateTime.tryParse(queryParams['toDate']!) : null;
 
+      print('Revenue report params: from=$from, to=$to');
       final report = await service.getRevenueReport(fromDate: from, toDate: to);
       return ResponseUtils.success(
         message: 'Revenue report generated',
         data: report,
       );
-    } catch (e) {
-      return ResponseUtils.error(message: 'Failed to generate revenue report', error: e.toString());
+    } catch (e, st) {
+      print('Revenue report error: $e');
+      print('Stack: $st');
+      return ResponseUtils.error(message: 'Failed to generate revenue report', error: e.toString(), statusCode: 500);
     }
   }
 
@@ -1090,8 +1097,10 @@ class GymController {
         message: 'Expiry report generated',
         data: report,
       );
-    } catch (e) {
-      return ResponseUtils.error(message: 'Failed to generate expiry report', error: e.toString());
+    } catch (e, st) {
+      print('Expiry report error: $e');
+      print('Stack: $st');
+      return ResponseUtils.error(message: 'Failed to generate expiry report', error: e.toString(), statusCode: 500);
     }
   }
 
@@ -1102,8 +1111,10 @@ class GymController {
         message: 'Trainers report generated',
         data: report,
       );
-    } catch (e) {
-      return ResponseUtils.error(message: 'Failed to generate trainers report', error: e.toString());
+    } catch (e, st) {
+      print('Trainers report error: $e');
+      print('Stack: $st');
+      return ResponseUtils.error(message: 'Failed to generate trainers report', error: e.toString(), statusCode: 500);
     }
   }
 }

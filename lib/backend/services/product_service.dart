@@ -93,10 +93,11 @@ class ProductService {
           created_at,
           updated_at
         FROM products
-        WHERE id = @id::uuid
+        WHERE id = @id OR id::text = @idStr
       '''),
       parameters: {
         'id': id,
+        'idStr': id,
       },
     );
 
@@ -131,7 +132,7 @@ class ProductService {
           name = @name,
           sku = @sku,
           updated_at = CURRENT_TIMESTAMP
-        WHERE id = @id::uuid
+        WHERE id = @id OR id::text = @idStr
         RETURNING
           id,
           name,
@@ -141,6 +142,7 @@ class ProductService {
       '''),
       parameters: {
         'id': id,
+        'idStr': id,
         'name': name,
         'sku': sku,
       },
@@ -169,11 +171,12 @@ class ProductService {
     final result = await postgresService.connection.execute(
       Sql.named('''
         DELETE FROM products
-        WHERE id = @id::uuid
+        WHERE id = @id OR id::text = @idStr
         RETURNING id
       '''),
       parameters: {
         'id': id,
+        'idStr': id,
       },
     );
 
