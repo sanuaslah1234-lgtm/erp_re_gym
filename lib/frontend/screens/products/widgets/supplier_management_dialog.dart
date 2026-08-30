@@ -36,26 +36,27 @@ class _SupplierManagementDialogState extends State<SupplierManagementDialog> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final provider = Provider.of<ProductManagementProvider>(context, listen: false);
 
-    final success = await provider.addSupplier(
-      authProvider.token,
-      SupplierModel(
-        supplierCode: _codeCtrl.text.trim(),
-        name: name,
-        phone: _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
-        email: _emailCtrl.text.trim().isEmpty ? null : _emailCtrl.text.trim(),
-        gstVatNumber: _gstCtrl.text.trim().isEmpty ? null : _gstCtrl.text.trim(),
-      ),
-    );
-
-    if (success && mounted) {
-      _nameCtrl.clear();
-      _phoneCtrl.clear();
-      _emailCtrl.clear();
-      _gstCtrl.clear();
-      _codeCtrl.text = 'SUP-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
-      ErpToast.showSuccess(context, 'Supplier "$name" added!');
-    } else if (provider.errorMessage != null && mounted) {
-      ErpToast.showError(context, provider.errorMessage!);
+    try {
+      await provider.addSupplier(
+        authProvider.token,
+        SupplierModel(
+          supplierCode: _codeCtrl.text.trim(),
+          name: name,
+          phone: _phoneCtrl.text.trim().isEmpty ? null : _phoneCtrl.text.trim(),
+          email: _emailCtrl.text.trim().isEmpty ? null : _emailCtrl.text.trim(),
+          gstVatNumber: _gstCtrl.text.trim().isEmpty ? null : _gstCtrl.text.trim(),
+        ),
+      );
+      if (mounted) {
+        _nameCtrl.clear();
+        _phoneCtrl.clear();
+        _emailCtrl.clear();
+        _gstCtrl.clear();
+        _codeCtrl.text = 'SUP-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+        ErpToast.showSuccess(context, 'Supplier "$name" added!');
+      }
+    } catch (e) {
+      if (mounted) ErpToast.showError(context, e.toString().replaceAll('Exception: ', ''));
     }
   }
 

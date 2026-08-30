@@ -562,7 +562,7 @@ class _IconAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Tooltip(
-      message: danger ? 'Delete' : null,
+      message: danger ? 'Delete' : 'View',
       child: Material(
         color: danger
             ? AppColors.dangerLight

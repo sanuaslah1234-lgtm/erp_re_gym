@@ -242,16 +242,16 @@ class _BrandsScreenState extends State<BrandsScreen> {
                                     status: _selectedStatus.toLowerCase(),
                                   );
 
-                                  if (_editingBrandId != null) {
-                                    await provider.updateBrand(authProvider.token, _editingBrandId!, brandData);
-                                    if (dialogContext.mounted) {
-                                      ErpToast.showSuccess(dialogContext, 'Product brand updated successfully!');
+                                  try {
+                                    if (_editingBrandId != null) {
+                                      await provider.updateBrand(authProvider.token, _editingBrandId!, brandData);
+                                      if (dialogContext.mounted) ErpToast.showSuccess(dialogContext, 'Product brand updated successfully!');
+                                    } else {
+                                      await provider.addBrand(authProvider.token, brandData);
+                                      if (dialogContext.mounted) ErpToast.showSuccess(dialogContext, 'Product brand created successfully!');
                                     }
-                                  } else {
-                                    await provider.addBrand(authProvider.token, brandData);
-                                    if (dialogContext.mounted) {
-                                      ErpToast.showSuccess(dialogContext, 'Product brand created successfully!');
-                                    }
+                                  } catch (e) {
+                                    if (dialogContext.mounted) ErpToast.showError(dialogContext, e.toString().replaceAll('Exception: ', ''));
                                   }
 
                                   _resetForm();
@@ -618,9 +618,11 @@ class _BrandsScreenState extends State<BrandsScreen> {
                                                     _openRightSideBrandForm(editBrand: b);
                                                   } else if (val == 'delete') {
                                                     if (b.id != null) {
-                                                      await provider.deleteBrand(authProvider.token, b.id!);
-                                                      if (context.mounted) {
-                                                        ErpToast.showSuccess(context, 'Brand deleted successfully');
+                                                      try {
+                                                        await provider.deleteBrand(authProvider.token, b.id!);
+                                                        if (context.mounted) ErpToast.showSuccess(context, 'Brand deleted successfully');
+                                                      } catch (e) {
+                                                        if (context.mounted) ErpToast.showError(context, e.toString().replaceAll('Exception: ', ''));
                                                       }
                                                     }
                                                   }

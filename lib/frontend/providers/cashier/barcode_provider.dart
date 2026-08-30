@@ -27,6 +27,7 @@ class BarcodeProvider extends ChangeNotifier {
   // Search & Category Filter State
   String _searchQuery = '';
   String _selectedCategory = 'All';
+  List<Map<String, dynamic>> _categories = [];
 
   // Selected Checkboxes for Products Table
   final Set<int> _checkedProductIds = {};
@@ -56,6 +57,7 @@ class BarcodeProvider extends ChangeNotifier {
   int get activeTab => _activeTab;
   String get searchQuery => _searchQuery;
   String get selectedCategory => _selectedCategory;
+  List<Map<String, dynamic>> get categories => _categories;
   Set<int> get checkedProductIds => _checkedProductIds;
 
   String get paperPreset => _paperPreset;
@@ -93,6 +95,7 @@ class BarcodeProvider extends ChangeNotifier {
     try {
       _allProducts = await _posApiService.getProducts(token);
       _barcodeHistory = await _barcodeApiService.getBarcodeHistory(token);
+      _categories = await _posApiService.getCategories(token);
 
       // Auto check all products by default for table view
       for (final p in _allProducts) {

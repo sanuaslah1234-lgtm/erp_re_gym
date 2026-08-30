@@ -87,16 +87,16 @@ class _UnitsScreenState extends State<UnitsScreen> {
       status: _selectedStatus.toLowerCase(),
     );
 
-    if (_editingUnit != null && _editingUnit!.id != null) {
-      await provider.updateUnit(authProvider.token, _editingUnit!.id!, unitData);
-      if (mounted) {
-        ErpToast.showSuccess(context, 'Measurement unit updated successfully!');
+    try {
+      if (_editingUnit != null && _editingUnit!.id != null) {
+        await provider.updateUnit(authProvider.token, _editingUnit!.id!, unitData);
+        if (mounted) ErpToast.showSuccess(context, 'Measurement unit updated successfully!');
+      } else {
+        await provider.addUnit(authProvider.token, unitData);
+        if (mounted) ErpToast.showSuccess(context, 'Measurement unit created successfully!');
       }
-    } else {
-      await provider.addUnit(authProvider.token, unitData);
-      if (mounted) {
-        ErpToast.showSuccess(context, 'Measurement unit created successfully!');
-      }
+    } catch (e) {
+      if (mounted) ErpToast.showError(context, e.toString().replaceAll('Exception: ', ''));
     }
 
     _resetForm();
@@ -521,14 +521,17 @@ class _UnitsScreenState extends State<UnitsScreen> {
                                         ),
                                         DataCell(
                                           PopupMenuButton<String>(
-                                            icon: const Icon(Icons.more_vert, color: Color(0xFF64748B)),
-                                            onSelected: (val) {
+                                            icon: const Icon(Icons.more_vert, color: Color(0xFF64748B)),                                            onSelected: (val) async {
                                               if (val == 'edit') {
                                                 _startEdit(u);
                                               } else if (val == 'delete') {
                                                 if (u.id != null) {
-                                                  provider.deleteUnit(authProvider.token, u.id!);
-                                                  ErpToast.showSuccess(context, 'Unit deleted successfully');
+                                                  try {
+                                                    await provider.deleteUnit(authProvider.token, u.id!);
+                                                    if (context.mounted) ErpToast.showSuccess(context, 'Unit deleted successfully');
+                                                  } catch (e) {
+                                                    if (context.mounted) ErpToast.showError(context, e.toString().replaceAll('Exception: ', ''));
+                                                  }
                                                 }
                                               }
                                             },

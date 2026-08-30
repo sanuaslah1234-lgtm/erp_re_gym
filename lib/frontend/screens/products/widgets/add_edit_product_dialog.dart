@@ -100,16 +100,18 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
       isActive: _isActive,
     );
 
-    final success = await provider.saveProduct(authProvider.token, product);
-    if (success && mounted) {
-      ErpToast.showSuccess(
-        context,
-        widget.product == null ? 'Product saved successfully to PostgreSQL database!' : 'Product updated successfully!',
-        title: 'Product Saved',
-      );
-      Navigator.pop(context);
-    } else if (provider.errorMessage != null && mounted) {
-      ErpToast.showError(context, provider.errorMessage!);
+    try {
+      await provider.saveProduct(authProvider.token, product);
+      if (mounted) {
+        ErpToast.showSuccess(
+          context,
+          widget.product == null ? 'Product saved successfully!' : 'Product updated successfully!',
+          title: 'Product Saved',
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) ErpToast.showError(context, e.toString().replaceAll('Exception: ', ''));
     }
   }
 

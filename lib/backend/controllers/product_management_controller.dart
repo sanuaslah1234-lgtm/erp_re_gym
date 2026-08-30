@@ -297,16 +297,18 @@ class ProductManagementController {
       final productId = payload['productId'] ?? payload['product_id'];
       final quantity = (payload['quantity'] as num).toDouble();
       final reason = (payload['reason'] ?? '').toString();
+      final movementType = payload['movementType']?.toString();
       final userId = request.context['userId'] as int?;
 
-      await service.recordStockAdjustment(
+      final result = await service.recordStockAdjustment(
         productId: productId,
         quantity: quantity,
         reason: reason,
+        movementType: movementType,
         userId: userId,
       );
 
-      return _jsonResponse({'success': true, 'message': 'Stock adjustment recorded'}, statusCode: 201);
+      return _jsonResponse(result, statusCode: 201);
     } catch (e) {
       return _errorResponse(e.toString());
     }

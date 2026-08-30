@@ -39,7 +39,7 @@ class StockMovementModel {
       productId: json['productId'] ?? json['product_id'],
       productName: json['productName'] ?? json['product_name'],
       productCode: json['productCode'] ?? json['product_code'],
-      movementType: (json['movementType'] ?? json['movement_type'] ?? '').toString(),
+      movementType: (json['movementType'] ?? json['movement_type'] ?? json['type'] ?? '').toString(),
       quantity: _parseDouble(json['quantity']),
       previousStock: _parseDouble(json['previousStock'] ?? json['previous_stock']),
       newStock: _parseDouble(json['newStock'] ?? json['new_stock']),

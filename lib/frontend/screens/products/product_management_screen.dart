@@ -36,6 +36,18 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
     );
   }
 
+  Future<void> _deleteProduct(String? token, dynamic id) async {
+    try {
+      final provider = Provider.of<ProductManagementProvider>(context, listen: false);
+      await provider.deleteProduct(token, id);
+      if (!mounted) return;
+      ErpToast.showSuccess(context, 'Product deleted');
+    } catch (e) {
+      if (!mounted) return;
+      ErpToast.showError(context, e.toString().replaceAll('Exception: ', ''));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<ProductManagementProvider>(context);
@@ -340,10 +352,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                                           ),
                                           IconButton(
                                             icon: const Icon(Icons.delete_outline, size: 16, color: Color(0xFFEF4444)),
-                                            onPressed: () {
-                                              provider.deleteProduct(authProvider.token, p.id!);
-                                              ErpToast.showSuccess(context, 'Product deleted');
-                                            },
+                                            onPressed: () => _deleteProduct(authProvider.token, p.id!),
                                           ),
                                         ],
                                       ),

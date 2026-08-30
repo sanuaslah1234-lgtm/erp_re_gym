@@ -408,14 +408,10 @@ class PostgresService {
         final statId = catStationery.first[0] as int;
 
         final sampleProducts = [
-          {'code': 'PRD-001', 'barcode': '8901001000011', 'name': 'Organic Almond Milk 1L', 'cat': drinksId, 'pPrice': 3.50, 'sPrice': 4.99, 'tax': 5.0, 'stock': 150.0, 'unit': 'bottle'},
-          {'code': 'PRD-002', 'barcode': '8901001000028', 'name': 'Dark Chocolate Bar 100g', 'cat': foodId, 'pPrice': 1.20, 'sPrice': 2.50, 'tax': 5.0, 'stock': 300.0, 'unit': 'pcs'},
-          {'code': 'PRD-003', 'barcode': '8901001000035', 'name': 'Wireless Ergonomic Mouse', 'cat': elecId, 'pPrice': 12.00, 'sPrice': 24.99, 'tax': 10.0, 'stock': 45.0, 'unit': 'pcs'},
-          {'code': 'PRD-004', 'barcode': '8901001000042', 'name': 'Premium Spiral Notebook A5', 'cat': statId, 'pPrice': 2.00, 'sPrice': 4.50, 'tax': 5.0, 'stock': 200.0, 'unit': 'pcs'},
-          {'code': 'PRD-005', 'barcode': '8901001000059', 'name': 'Sparkling Mineral Water 500ml', 'cat': drinksId, 'pPrice': 0.80, 'sPrice': 1.75, 'tax': 5.0, 'stock': 500.0, 'unit': 'can'},
-          {'code': 'PRD-006', 'barcode': '8901001000066', 'name': 'USB-C Fast Charger 30W', 'cat': elecId, 'pPrice': 8.50, 'sPrice': 18.99, 'tax': 10.0, 'stock': 60.0, 'unit': 'pcs'},
-          {'code': 'PRD-007', 'barcode': '8901001000073', 'name': 'Roasted Cashew Nuts 200g', 'cat': foodId, 'pPrice': 4.00, 'sPrice': 7.49, 'tax': 5.0, 'stock': 120.0, 'unit': 'pack'},
-          {'code': 'PRD-008', 'barcode': '8901001000080', 'name': 'Gel Ink Pen Set (Pack of 5)', 'cat': statId, 'pPrice': 1.50, 'sPrice': 3.99, 'tax': 5.0, 'stock': 250.0, 'unit': 'pack'},
+          {'code': 'PRD001', 'barcode': '890103000001', 'name': 'Organic Almond Milk 1L', 'cat': drinksId, 'pPrice': 2.50, 'sPrice': 4.20, 'tax': 5.0, 'stock': 45.0, 'unit': 'pcs'},
+          {'code': 'PRD002', 'barcode': '890103000002', 'name': 'Whole Grain Wheat Bread', 'cat': foodId, 'pPrice': 1.20, 'sPrice': 2.50, 'tax': 0.0, 'stock': 30.0, 'unit': 'pcs'},
+          {'code': 'PRD003', 'barcode': '890103000003', 'name': 'USB-C Fast Charging Cable 2m', 'cat': elecId, 'pPrice': 3.00, 'sPrice': 8.99, 'tax': 18.0, 'stock': 60.0, 'unit': 'pcs'},
+          {'code': 'PRD004', 'barcode': '890103000004', 'name': 'Executive Ballpoint Pen (Blue)', 'cat': statId, 'pPrice': 0.50, 'sPrice': 1.50, 'tax': 12.0, 'stock': 120.0, 'unit': 'pcs'},
         ];
 
         for (final p in sampleProducts) {

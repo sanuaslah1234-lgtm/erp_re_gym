@@ -38,7 +38,7 @@ class BarcodeProductsTable extends StatelessWidget {
               ),
               const SizedBox(width: 16),
 
-              // Category Dropdown
+              // Category Dropdown (dynamic from database)
               Container(
                 height: 38,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -52,10 +52,14 @@ class BarcodeProductsTable extends StatelessWidget {
                     value: provider.selectedCategory,
                     style: const TextStyle(fontSize: 12, color: Color(0xFF0F172A)),
                     icon: const Icon(Icons.keyboard_arrow_down, size: 16, color: Color(0xFF64748B)),
-                    items: const [
-                      DropdownMenuItem(value: 'All', child: Text('Category: All')),
-                      DropdownMenuItem(value: 'Electronics', child: Text('Category: Electronics')),
-                      DropdownMenuItem(value: 'Groceries', child: Text('Category: Groceries')),
+                    items: [
+                      const DropdownMenuItem(value: 'All', child: Text('Category: All')),
+                      ...provider.categories.map((cat) {
+                        return DropdownMenuItem(
+                          value: cat['name'].toString(),
+                          child: Text('Category: ${cat["name"]}'),
+                        );
+                      }),
                     ],
                     onChanged: (val) {
                       if (val != null) provider.setSelectedCategory(val);

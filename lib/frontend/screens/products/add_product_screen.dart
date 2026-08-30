@@ -113,11 +113,14 @@ class _AddProductScreenState extends State<AddProductScreen> {
       isActive: _selectedStatus == 'Active',
     );
 
-    await provider.saveProduct(authProvider.token, product);
-
-    if (mounted) {
-      ErpToast.showSuccess(context, 'Product saved successfully!');
-      Navigator.pop(context);
+    try {
+      await provider.saveProduct(authProvider.token, product);
+      if (mounted) {
+        ErpToast.showSuccess(context, 'Product saved successfully!');
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) ErpToast.showError(context, e.toString().replaceAll('Exception: ', ''));
     }
   }
 

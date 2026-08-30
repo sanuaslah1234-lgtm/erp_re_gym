@@ -74,16 +74,18 @@ class _PurchaseManagementDialogState extends State<PurchaseManagementDialog> {
       items: [item],
     );
 
-    final success = await provider.createPurchase(authProvider.token, purchase);
-    if (success && mounted) {
-      ErpToast.showSuccess(
-        context,
-        'Purchase Invoice ${_invoiceCtrl.text} saved! Stock IN +$qty recorded in PostgreSQL.',
-        title: 'Stock IN Complete',
-      );
-      Navigator.pop(context);
-    } else if (provider.errorMessage != null && mounted) {
-      ErpToast.showError(context, provider.errorMessage!);
+    try {
+      await provider.createPurchase(authProvider.token, purchase);
+      if (mounted) {
+        ErpToast.showSuccess(
+          context,
+          'Purchase Invoice ${_invoiceCtrl.text} saved!',
+          title: 'Stock IN Complete',
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) ErpToast.showError(context, e.toString().replaceAll('Exception: ', ''));
     }
   }
 

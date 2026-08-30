@@ -46,23 +46,24 @@ class _StockMovementDialogState extends State<StockMovementDialog> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final provider = Provider.of<ProductManagementProvider>(context, listen: false);
 
-    final success = await provider.recordStockAdjustment(
-      authProvider.token,
-      productId: _selectedProduct!.id!,
-      movementType: _movementType,
-      quantity: qty,
-      reason: reason,
-    );
-
-    if (success && mounted) {
-      ErpToast.showSuccess(
-        context,
-        'Stock adjustment recorded! Stock updated in PostgreSQL.',
-        title: 'Stock Adjusted',
+    try {
+      await provider.recordStockAdjustment(
+        authProvider.token,
+        productId: _selectedProduct!.id!,
+        movementType: _movementType,
+        quantity: qty,
+        reason: reason,
       );
-      Navigator.pop(context);
-    } else if (provider.errorMessage != null && mounted) {
-      ErpToast.showError(context, provider.errorMessage!);
+      if (mounted) {
+        ErpToast.showSuccess(
+          context,
+          'Stock adjustment recorded!',
+          title: 'Stock Adjusted',
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) ErpToast.showError(context, e.toString().replaceAll('Exception: ', ''));
     }
   }
 
