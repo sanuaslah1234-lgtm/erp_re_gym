@@ -1,10 +1,14 @@
+import 'package:erp_software/core/constants/app_permissions.dart';
+
 class UserModel {
   final dynamic id;
   final String email;
   final String? passwordHash;
   final String? plainPassword;
   final String? employeeId;
+  final dynamic roleId;
   final String role;
+  final List<String> permissions;
   final bool isActive;
   final DateTime? lastLoginAt;
   final DateTime? createdAt;
@@ -16,7 +20,9 @@ class UserModel {
     this.passwordHash,
     this.plainPassword,
     this.employeeId,
-    this.role = 'employee',
+    this.roleId,
+    this.role = 'SUPER_ADMIN',
+    this.permissions = const [],
     this.isActive = true,
     this.lastLoginAt,
     this.createdAt,
@@ -24,14 +30,25 @@ class UserModel {
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) => UserModel.fromMap(json);
+
   factory UserModel.fromMap(Map<String, dynamic> json) {
+    final roleStr = json['role']?.toString() ?? 'SUPER_ADMIN';
+    List<String> perms = [];
+    if (json['permissions'] != null && json['permissions'] is List) {
+      perms = (json['permissions'] as List).map((e) => e.toString()).toList();
+    } else {
+      perms = AppPermissions.getPermissionsForRole(roleStr);
+    }
+
     return UserModel(
       id: json['id'],
       email: json['email']?.toString() ?? '',
       passwordHash: json['password_hash']?.toString(),
       plainPassword: json['plain_password']?.toString(),
       employeeId: json['employee_id']?.toString(),
-      role: json['role']?.toString() ?? 'employee',
+      roleId: json['role_id'],
+      role: roleStr,
+      permissions: perms,
       isActive: json['is_active'] == true || json['is_verified'] == true,
       lastLoginAt: json['last_login_at'] != null ? DateTime.tryParse(json['last_login_at'].toString()) : null,
       createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at'].toString()) : null,
@@ -45,11 +62,70 @@ class UserModel {
       'email': email,
       if (includePassword && passwordHash != null) 'password_hash': passwordHash,
       if (employeeId != null) 'employee_id': employeeId,
+      if (roleId != null) 'role_id': roleId,
       'role': role,
+      'permissions': permissions,
       'is_active': isActive,
       'last_login_at': lastLoginAt?.toIso8601String(),
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
     };
+  }
+
+  /// Whether user has SUPER_ADMIN role (bypasses all checks)
+  bool get isSuperAdmin =>
+      role.toUpperCase() == AppRoles.superAdmin ||
+      role.toLowerCase() == 'admin';
+
+  /// Permission evaluation
+  bool can(String permission) {
+    if (isSuperAdmin) return true;
+    return permissions.contains(permission) || permissions.contains('*');
+  }
+
+  /// Check if user has at least one of the specified permissions
+  bool hasAnyPermission(List<String> perms) {
+    if (isSuperAdmin) return true;
+    return perms.any((p) => can(p));
+  }
+
+  /// Check if user has access to a specific module namespace ('erp' or 'gym')
+  bool canAccessModule(String module) {
+    if (isSuperAdmin) return true;
+    final prefix = '$module.';
+    return permissions.any((p) => p.startsWith(prefix));
+  }
+
+  bool get canAccessErp => canAccessModule('erp');
+  bool get canAccessGym => canAccessModule('gym');
+
+  UserModel copyWith({
+    dynamic id,
+    String? email,
+    String? passwordHash,
+    String? plainPassword,
+    String? employeeId,
+    int? roleId,
+    String? role,
+    List<String>? permissions,
+    bool? isActive,
+    DateTime? lastLoginAt,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) {
+    return UserModel(
+      id: id ?? this.id,
+      email: email ?? this.email,
+      passwordHash: passwordHash ?? this.passwordHash,
+      plainPassword: plainPassword ?? this.plainPassword,
+      employeeId: employeeId ?? this.employeeId,
+      roleId: roleId ?? this.roleId,
+      role: role ?? this.role,
+      permissions: permissions ?? this.permissions,
+      isActive: isActive ?? this.isActive,
+      lastLoginAt: lastLoginAt ?? this.lastLoginAt,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
   }
 }

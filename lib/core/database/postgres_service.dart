@@ -32,6 +32,139 @@ class PostgresService {
   }
 
   Future<void> _initializeTables() async {
+    // 0. Ensure extensions for UUID generation
+    try {
+      await connection.execute('CREATE EXTENSION IF NOT EXISTS "pgcrypto";');
+    } catch (_) {}
+    try {
+      await connection.execute('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";');
+    } catch (_) {}
+
+    // Explicit fixes for existing tables
+    final tableDefaults = [
+      // Categories
+      "ALTER TABLE categories ALTER COLUMN id SET DEFAULT gen_random_uuid()::text;",
+      "ALTER TABLE categories ALTER COLUMN code DROP NOT NULL;",
+      "ALTER TABLE categories ALTER COLUMN code SET DEFAULT gen_random_uuid()::text;",
+      "ALTER TABLE categories ADD COLUMN IF NOT EXISTS description TEXT;",
+      "ALTER TABLE categories ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'ACTIVE';",
+
+      // Products
+      "ALTER TABLE products ALTER COLUMN id SET DEFAULT gen_random_uuid()::text;",
+      "ALTER TABLE products ALTER COLUMN sku DROP NOT NULL;",
+      "ALTER TABLE products ALTER COLUMN cost_price SET DEFAULT 0.00;",
+      "ALTER TABLE products ALTER COLUMN selling_price SET DEFAULT 0.00;",
+      "ALTER TABLE products ALTER COLUMN purchase_price SET DEFAULT 0.00;",
+      "ALTER TABLE products ALTER COLUMN tax_percentage SET DEFAULT 0.00;",
+      "ALTER TABLE products ALTER COLUMN stock_quantity SET DEFAULT 0;",
+      "ALTER TABLE products ALTER COLUMN is_active SET DEFAULT true;",
+
+      // Brands
+      "ALTER TABLE brands ALTER COLUMN id SET DEFAULT gen_random_uuid()::text;",
+      "ALTER TABLE brands ALTER COLUMN status SET DEFAULT 'ACTIVE';",
+
+      // Units
+      "ALTER TABLE units ALTER COLUMN id SET DEFAULT gen_random_uuid()::text;",
+      "ALTER TABLE units ALTER COLUMN status SET DEFAULT 'ACTIVE';",
+
+      // Suppliers
+      "ALTER TABLE suppliers ALTER COLUMN id SET DEFAULT gen_random_uuid()::text;",
+      "ALTER TABLE suppliers ALTER COLUMN phone DROP NOT NULL;",
+      "ALTER TABLE suppliers ALTER COLUMN status SET DEFAULT 'ACTIVE';",
+
+      // Purchases
+      "ALTER TABLE purchases ALTER COLUMN id SET DEFAULT gen_random_uuid()::text;",
+      "ALTER TABLE purchases ALTER COLUMN purchase_no DROP NOT NULL;",
+      "ALTER TABLE purchases ALTER COLUMN total_amount SET DEFAULT 0.00;",
+      "ALTER TABLE purchases ALTER COLUMN status SET DEFAULT 'received';",
+
+      // Stock Movements
+      "ALTER TABLE stock_movements ALTER COLUMN id SET DEFAULT gen_random_uuid()::text;",
+      "ALTER TABLE stock_movements ALTER COLUMN quantity SET DEFAULT 0;",
+
+      // Warehouses
+      "ALTER TABLE warehouses ALTER COLUMN id SET DEFAULT gen_random_uuid()::text;",
+      "ALTER TABLE warehouses ALTER COLUMN code DROP NOT NULL;",
+      "ALTER TABLE warehouses ADD COLUMN IF NOT EXISTS status VARCHAR DEFAULT 'ACTIVE';",
+      "ALTER TABLE warehouses ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;",
+
+      // Inventory
+      "ALTER TABLE inventory ALTER COLUMN id SET DEFAULT gen_random_uuid()::text;",
+
+      // Foreign Key Cascades & Nullifications
+      "ALTER TABLE products DROP CONSTRAINT IF EXISTS products_unit_id_fkey;",
+      "ALTER TABLE products ADD CONSTRAINT products_unit_id_fkey FOREIGN KEY (unit_id) REFERENCES units(id) ON DELETE SET NULL ON UPDATE CASCADE;",
+      "ALTER TABLE products DROP CONSTRAINT IF EXISTS products_category_id_fkey;",
+      "ALTER TABLE products ADD CONSTRAINT products_category_id_fkey FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL ON UPDATE CASCADE;",
+      "ALTER TABLE products DROP CONSTRAINT IF EXISTS products_brand_id_fkey;",
+      "ALTER TABLE products ADD CONSTRAINT products_brand_id_fkey FOREIGN KEY (brand_id) REFERENCES brands(id) ON DELETE SET NULL ON UPDATE CASCADE;",
+      "ALTER TABLE purchases DROP CONSTRAINT IF EXISTS purchases_supplier_id_fkey;",
+      "ALTER TABLE purchases ADD CONSTRAINT purchases_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL ON UPDATE CASCADE;",
+      "ALTER TABLE purchase_items DROP CONSTRAINT IF EXISTS purchase_items_product_id_fkey;",
+      "ALTER TABLE purchase_items ADD CONSTRAINT purchase_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL ON UPDATE CASCADE;",
+      "ALTER TABLE invoice_items DROP CONSTRAINT IF EXISTS invoice_items_product_id_fkey;",
+      "ALTER TABLE invoice_items ADD CONSTRAINT invoice_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL ON UPDATE CASCADE;",
+      "ALTER TABLE return_items DROP CONSTRAINT IF EXISTS return_items_product_id_fkey;",
+      "ALTER TABLE return_items ADD CONSTRAINT return_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL ON UPDATE CASCADE;",
+      "ALTER TABLE stock_transfer_items DROP CONSTRAINT IF EXISTS stock_transfer_items_product_id_fkey;",
+      "ALTER TABLE stock_transfer_items ADD CONSTRAINT stock_transfer_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL ON UPDATE CASCADE;",
+    ];
+
+    for (final cmd in tableDefaults) {
+      try {
+        await connection.execute(cmd);
+      } catch (_) {}
+    }
+
+    // Helper to fix missing default on any existing table's 'id' column
+    Future<void> ensureAllTableDefaults() async {
+      try {
+        await connection.execute('''
+          DO \$\$
+          DECLARE
+            tbl text;
+            col_type text;
+            col_def text;
+          BEGIN
+            FOR tbl IN 
+              SELECT table_name 
+              FROM information_schema.tables 
+              WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+            LOOP
+              SELECT data_type, column_default INTO col_type, col_def
+              FROM information_schema.columns 
+              WHERE table_schema = 'public' AND table_name = tbl AND column_name = 'id';
+
+              IF col_type IS NOT NULL AND col_def IS NULL THEN
+                IF col_type = 'uuid' THEN
+                  BEGIN
+                    EXECUTE format('ALTER TABLE %I ALTER COLUMN id SET DEFAULT gen_random_uuid()', tbl);
+                  EXCEPTION WHEN OTHERS THEN NULL;
+                  END;
+                ELSIF col_type IN ('character varying', 'varchar', 'text') THEN
+                  BEGIN
+                    EXECUTE format('ALTER TABLE %I ALTER COLUMN id SET DEFAULT gen_random_uuid()::text', tbl);
+                  EXCEPTION WHEN OTHERS THEN NULL;
+                  END;
+                ELSIF col_type IN ('integer', 'bigint', 'smallint') THEN
+                  BEGIN
+                    EXECUTE format('CREATE SEQUENCE IF NOT EXISTS %I_id_seq', tbl);
+                    EXECUTE format('ALTER TABLE %I ALTER COLUMN id SET DEFAULT nextval(''%s_id_seq'')', tbl, tbl);
+                    EXECUTE format('SELECT setval(''%s_id_seq'', COALESCE((SELECT MAX(id) FROM %I), 0) + 1, false)', tbl, tbl);
+                  EXCEPTION WHEN OTHERS THEN NULL;
+                  END;
+                END IF;
+              END IF;
+            END LOOP;
+          END \$\$;
+        ''');
+      } catch (e) {
+        stdout.writeln('Schema default check: $e');
+      }
+    }
+
+    await ensureAllTableDefaults();
+
     // 1. Create users table
     await connection.execute('''
       CREATE TABLE IF NOT EXISTS users (
@@ -45,12 +178,6 @@ class PostgresService {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     ''');
-    await connection.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS name VARCHAR(150);');
-    await connection.execute('ALTER TABLE users ALTER COLUMN name DROP NOT NULL;');
-    await connection.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;');
-    await connection.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMP;');
-    await connection.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;');
-    await connection.execute('ALTER TABLE users ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;');
 
     // 2. Create employees table
     await connection.execute('''
@@ -68,8 +195,6 @@ class PostgresService {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     ''');
-    await connection.execute('ALTER TABLE employees ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;');
-    await connection.execute('ALTER TABLE employees ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;');
 
     // 3. Create otp_verifications table
     await connection.execute('''
@@ -120,9 +245,6 @@ class PostgresService {
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
     ''');
-    await connection.execute('ALTER TABLE categories ADD COLUMN IF NOT EXISTS description TEXT;');
-    await connection.execute('ALTER TABLE categories ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT \'active\';');
-    await connection.execute('ALTER TABLE categories ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;');
 
     await connection.execute('''
       CREATE TABLE IF NOT EXISTS brands (
@@ -169,16 +291,6 @@ class PostgresService {
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
     ''');
-    await connection.execute('ALTER TABLE products ADD COLUMN IF NOT EXISTS brand VARCHAR(100);');
-    await connection.execute('ALTER TABLE products ADD COLUMN IF NOT EXISTS opening_stock NUMERIC(12,3) DEFAULT 0;');
-    await connection.execute('ALTER TABLE products ADD COLUMN IF NOT EXISTS minimum_stock NUMERIC(12,3) DEFAULT 5;');
-    await connection.execute('ALTER TABLE products ADD COLUMN IF NOT EXISTS supplier_id INT REFERENCES suppliers(id) ON DELETE SET NULL;');
-    await connection.execute('ALTER TABLE products ADD COLUMN IF NOT EXISTS image_url TEXT;');
-    await connection.execute('ALTER TABLE products ADD COLUMN IF NOT EXISTS description TEXT;');
-
-    await connection.execute('CREATE INDEX IF NOT EXISTS idx_products_barcode ON products(barcode);');
-    await connection.execute('CREATE INDEX IF NOT EXISTS idx_products_product_code ON products(product_code);');
-    await connection.execute('CREATE INDEX IF NOT EXISTS idx_products_name ON products(name);');
 
     // 5. Purchases & Purchase Items
     await connection.execute('''
@@ -219,36 +331,26 @@ class PostgresService {
         quantity NUMERIC(12,3) NOT NULL,
         previous_stock NUMERIC(12,3) NOT NULL,
         new_stock NUMERIC(12,3) NOT NULL,
-        reference_id VARCHAR(100),
+        reference_type VARCHAR(50),
+        reference_id INT,
         notes TEXT,
         created_by INT REFERENCES users(id),
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     ''');
 
-    // 7. Expenses
-    await connection.execute('''
-      CREATE TABLE IF NOT EXISTS expenses (
-        id SERIAL PRIMARY KEY,
-        category_name VARCHAR(100) NOT NULL,
-        amount NUMERIC(12,2) NOT NULL,
-        description TEXT,
-        expense_date DATE DEFAULT CURRENT_DATE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
-    ''');
-
+    // 7. POS Tables
     await connection.execute('''
       CREATE TABLE IF NOT EXISTS pos_orders (
         id SERIAL PRIMARY KEY,
         order_number VARCHAR(50) UNIQUE NOT NULL,
-        customer_id INT,
-        cashier_id INT NOT NULL REFERENCES users(id),
+        customer_id INT REFERENCES customers(id),
+        cashier_id INT REFERENCES users(id),
         subtotal NUMERIC(12,2) NOT NULL DEFAULT 0,
         discount_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
         tax_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
         grand_total NUMERIC(12,2) NOT NULL DEFAULT 0,
-        payment_status VARCHAR(30) NOT NULL DEFAULT 'pending',
+        payment_status VARCHAR(30) NOT NULL DEFAULT 'paid',
         order_status VARCHAR(30) NOT NULL DEFAULT 'paid',
         amount_received NUMERIC(12,2) NOT NULL DEFAULT 0,
         change_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
@@ -256,9 +358,6 @@ class PostgresService {
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
     ''');
-    await connection.execute('CREATE INDEX IF NOT EXISTS idx_pos_orders_order_number ON pos_orders(order_number);');
-    await connection.execute('CREATE INDEX IF NOT EXISTS idx_pos_orders_created_at ON pos_orders(created_at);');
-    await connection.execute('CREATE INDEX IF NOT EXISTS idx_pos_orders_cashier_id ON pos_orders(cashier_id);');
 
     await connection.execute('''
       CREATE TABLE IF NOT EXISTS pos_order_items (
@@ -266,40 +365,37 @@ class PostgresService {
         order_id INT NOT NULL REFERENCES pos_orders(id) ON DELETE CASCADE,
         product_id INT NOT NULL REFERENCES products(id),
         product_name VARCHAR(255) NOT NULL,
-        quantity NUMERIC(12,3) NOT NULL,
-        unit_price NUMERIC(12,2) NOT NULL,
+        quantity NUMERIC(12,3) NOT NULL DEFAULT 1,
+        unit_price NUMERIC(12,2) NOT NULL DEFAULT 0,
         discount_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
         tax_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
         total_amount NUMERIC(12,2) NOT NULL DEFAULT 0
       );
     ''');
-    await connection.execute('CREATE INDEX IF NOT EXISTS idx_pos_order_items_order_id ON pos_order_items(order_id);');
 
     await connection.execute('''
       CREATE TABLE IF NOT EXISTS payments (
         id SERIAL PRIMARY KEY,
         order_id INT NOT NULL REFERENCES pos_orders(id) ON DELETE CASCADE,
-        payment_method VARCHAR(30) NOT NULL,
-        amount NUMERIC(12,2) NOT NULL,
+        payment_method VARCHAR(50) NOT NULL DEFAULT 'cash',
+        amount NUMERIC(12,2) NOT NULL DEFAULT 0,
         reference_number VARCHAR(100),
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
     ''');
-    await connection.execute('CREATE INDEX IF NOT EXISTS idx_payments_order_id ON payments(order_id);');
 
     await connection.execute('''
       CREATE TABLE IF NOT EXISTS refunds (
         id SERIAL PRIMARY KEY,
         refund_number VARCHAR(50) UNIQUE NOT NULL,
         order_id INT NOT NULL REFERENCES pos_orders(id),
-        refund_amount NUMERIC(12,2) NOT NULL,
-        refund_method VARCHAR(30) NOT NULL,
+        refund_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
+        refund_method VARCHAR(50) NOT NULL DEFAULT 'cash',
         reason TEXT,
-        processed_by INT NOT NULL REFERENCES users(id),
+        processed_by INT REFERENCES users(id),
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
     ''');
-    await connection.execute('CREATE INDEX IF NOT EXISTS idx_refunds_order_id ON refunds(order_id);');
 
     await connection.execute('''
       CREATE TABLE IF NOT EXISTS refund_items (
@@ -307,23 +403,21 @@ class PostgresService {
         refund_id INT NOT NULL REFERENCES refunds(id) ON DELETE CASCADE,
         order_item_id INT NOT NULL REFERENCES pos_order_items(id),
         product_id INT NOT NULL REFERENCES products(id),
-        quantity NUMERIC(12,3) NOT NULL,
-        refund_amount NUMERIC(12,2) NOT NULL
+        quantity NUMERIC(12,3) NOT NULL DEFAULT 1,
+        refund_amount NUMERIC(12,2) NOT NULL DEFAULT 0
       );
     ''');
-    await connection.execute('CREATE INDEX IF NOT EXISTS idx_refund_items_refund_id ON refund_items(refund_id);');
 
     await connection.execute('''
-      CREATE TABLE IF NOT EXISTS barcodes (
+      CREATE TABLE IF NOT EXISTS barcode_labels (
         id SERIAL PRIMARY KEY,
-        product_id INT NOT NULL REFERENCES products(id),
+        product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
         barcode VARCHAR(100) NOT NULL,
         label_quantity INT NOT NULL DEFAULT 1,
         created_by INT REFERENCES users(id),
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
     ''');
-    await connection.execute('CREATE INDEX IF NOT EXISTS idx_barcodes_product_id ON barcodes(product_id);');
 
     await connection.execute('''
       CREATE TABLE IF NOT EXISTS cashier_settings (
@@ -348,6 +442,9 @@ class PostgresService {
       );
     ''');
 
+    // Run table defaults migration once again to cover newly defined tables
+    await ensureAllTableDefaults();
+
     // 5. Seed admin user if users table is empty
     final userCheck = await connection.execute('SELECT COUNT(*) FROM users');
     final count = (userCheck.first[0] as num).toInt();
@@ -367,7 +464,7 @@ class PostgresService {
           },
         );
 
-        final userId = userResult.first[0] as int;
+        final userId = int.tryParse(userResult.first[0].toString()) ?? userResult.first[0];
 
         await session.execute(
           Sql.named('''
@@ -390,36 +487,6 @@ class PostgresService {
         INSERT INTO cashier_settings (store_name, store_address, phone, email, receipt_footer)
         VALUES ('ERP Supermart', '452 Enterprise Ave, Suite 100', '+1 (800) 555-0199', 'billing@erpsupermart.com', 'Thank you for your business!');
       ''');
-    }
-
-    // 7. Seed sample categories & products if products table is empty
-    final productCheck = await connection.execute('SELECT COUNT(*) FROM products');
-    final productCount = (productCheck.first[0] as num).toInt();
-    if (productCount == 0) {
-      await connection.runTx((session) async {
-        final catFood = await session.execute("INSERT INTO categories (name) VALUES ('Food & Snacks') RETURNING id");
-        final catDrinks = await session.execute("INSERT INTO categories (name) VALUES ('Beverages') RETURNING id");
-        final catElec = await session.execute("INSERT INTO categories (name) VALUES ('Electronics') RETURNING id");
-        final catStationery = await session.execute("INSERT INTO categories (name) VALUES ('Stationery') RETURNING id");
-
-        final foodId = catFood.first[0] as int;
-        final drinksId = catDrinks.first[0] as int;
-        final elecId = catElec.first[0] as int;
-        final statId = catStationery.first[0] as int;
-
-        final sampleProducts = [];
-
-        for (final p in sampleProducts) {
-          await session.execute(
-            Sql.named('''
-              INSERT INTO products (product_code, barcode, name, category_id, purchase_price, selling_price, tax_percentage, stock_quantity, unit, is_active)
-              VALUES (@code, @barcode, @name, @cat, @pPrice, @sPrice, @tax, @stock, @unit, true)
-            '''),
-            parameters: p,
-          );
-        }
-      });
-      stdout.writeln('Sample Cashier products and categories seeded successfully.');
     }
   }
 

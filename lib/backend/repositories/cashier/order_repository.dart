@@ -47,12 +47,12 @@ class OrderRepository {
     await db.connection.runTx((session) async {
       // 1. Validate product stock inside transaction
       for (final item in itemsData) {
-        final prodId = item['product_id'] as int;
+        final prodId = int.tryParse(item['product_id'].toString()) ?? item['product_id'];
         final requestedQty = (item['quantity'] as num).toDouble();
 
         final prodRes = await session.execute(
-          Sql.named("SELECT name, stock_quantity FROM products WHERE id = @id FOR UPDATE"),
-          parameters: {'id': prodId},
+          Sql.named("SELECT name, stock_quantity FROM products WHERE id = @id OR id::text = @idStr FOR UPDATE"),
+          parameters: {'id': prodId, 'idStr': prodId.toString()},
         );
 
         if (prodRes.isEmpty) {
@@ -60,7 +60,7 @@ class OrderRepository {
         }
 
         final currentStock = (prodRes.first[1] as num).toDouble();
-        final prodName = prodRes.first[0] as String;
+        final prodName = prodRes.first[0].toString();
 
         if (!allowNegativeStock && currentStock < requestedQty) {
           throw ApiException('Insufficient stock for "$prodName". Available: $currentStock, Requested: $requestedQty', statusCode: 400);
@@ -93,15 +93,15 @@ class OrderRepository {
         },
       );
 
-      final orderId = orderRes.first[0] as int;
+      final orderId = int.tryParse(orderRes.first[0].toString()) ?? orderRes.first[0];
       final createdAt = DateTime.parse(orderRes.first[1].toString());
       final updatedAt = DateTime.parse(orderRes.first[2].toString());
 
       // 3. Insert order items & decrease product stock
       final insertedItems = <OrderItemModel>[];
       for (final item in itemsData) {
-        final prodId = item['product_id'] as int;
-        final prodName = item['product_name'] as String;
+        final prodId = int.tryParse(item['product_id'].toString()) ?? item['product_id'];
+        final prodName = item['product_name'].toString();
         final qty = (item['quantity'] as num).toDouble();
         final unitPrice = (item['unit_price'] as num).toDouble();
         final itemDisc = (item['discount_amount'] as num).toDouble();
@@ -114,32 +114,32 @@ class OrderRepository {
               order_id, product_id, product_name, quantity, unit_price, discount_amount, tax_amount, total_amount
             )
             VALUES (
-              @orderId, @prodId, @prodName, @qty, @unitPrice, @itemDisc, @itemTax, @itemTotal
+              @orderId, @productId, @productName, @quantity, @unitPrice, @discountAmount, @taxAmount, @totalAmount
             )
             RETURNING id
           '''),
           parameters: {
             'orderId': orderId,
-            'prodId': prodId,
-            'prodName': prodName,
-            'qty': qty,
+            'productId': prodId,
+            'productName': prodName,
+            'quantity': qty,
             'unitPrice': unitPrice,
-            'itemDisc': itemDisc,
-            'itemTax': itemTax,
-            'itemTotal': itemTotal,
+            'discountAmount': itemDisc,
+            'taxAmount': itemTax,
+            'totalAmount': itemTotal,
           },
         );
 
-        // Decrease stock
+        // Decrease product stock
         await session.execute(
-          Sql.named("UPDATE products SET stock_quantity = stock_quantity - @qty, updated_at = CURRENT_TIMESTAMP WHERE id = @prodId"),
-          parameters: {'qty': qty, 'prodId': prodId},
+          Sql.named("UPDATE products SET stock_quantity = stock_quantity - @qty, updated_at = CURRENT_TIMESTAMP WHERE id = @prodId OR id::text = @idStr"),
+          parameters: {'qty': qty, 'prodId': prodId, 'idStr': prodId.toString()},
         );
 
         insertedItems.add(OrderItemModel(
-          id: itemRes.first[0] as int,
-          orderId: orderId,
-          productId: prodId,
+          id: int.tryParse(itemRes.first[0].toString()),
+          orderId: int.tryParse(orderId.toString()),
+          productId: int.tryParse(prodId.toString()) ?? 0,
           productName: prodName,
           quantity: qty,
           unitPrice: unitPrice,
@@ -152,9 +152,9 @@ class OrderRepository {
       // 4. Insert payment records
       final insertedPayments = <PaymentModel>[];
       for (final p in paymentsData) {
-        final pMethod = p['payment_method'] as String;
+        final pMethod = p['payment_method'].toString();
         final pAmt = (p['amount'] as num).toDouble();
-        final pRef = p['reference_number'] as String?;
+        final pRef = p['reference_number']?.toString();
 
         final payRes = await session.execute(
           Sql.named('''
@@ -171,8 +171,8 @@ class OrderRepository {
         );
 
         insertedPayments.add(PaymentModel(
-          id: payRes.first[0] as int,
-          orderId: orderId,
+          id: int.tryParse(payRes.first[0].toString()),
+          orderId: int.tryParse(orderId.toString()),
           paymentMethod: pMethod,
           amount: pAmt,
           referenceNumber: pRef,
@@ -181,7 +181,7 @@ class OrderRepository {
       }
 
       createdOrder = PosOrderModel(
-        id: orderId,
+        id: int.tryParse(orderId.toString()),
         orderNumber: orderNumber,
         customerId: customerId,
         cashierId: cashierId,
@@ -250,19 +250,19 @@ class OrderRepository {
     final orders = <PosOrderModel>[];
     for (final row in result) {
       final map = row.toColumnMap();
-      final orderId = map['id'] as int;
+      final orderId = map['id'];
 
       // Fetch items for each order
       final itemsRes = await db.connection.execute(
-        Sql.named('SELECT * FROM pos_order_items WHERE order_id = @orderId'),
-        parameters: {'orderId': orderId},
+        Sql.named('SELECT * FROM pos_order_items WHERE order_id = @orderId OR order_id::text = @orderIdStr'),
+        parameters: {'orderId': orderId, 'orderIdStr': orderId.toString()},
       );
       final items = itemsRes.map((i) => OrderItemModel.fromJson(i.toColumnMap())).toList();
 
       // Fetch payments for each order
       final paymentsRes = await db.connection.execute(
-        Sql.named('SELECT * FROM payments WHERE order_id = @orderId'),
-        parameters: {'orderId': orderId},
+        Sql.named('SELECT * FROM payments WHERE order_id = @orderId OR order_id::text = @orderIdStr'),
+        parameters: {'orderId': orderId, 'orderIdStr': orderId.toString()},
       );
       final payments = paymentsRes.map((p) => PaymentModel.fromJson(p.toColumnMap())).toList();
 
@@ -275,29 +275,29 @@ class OrderRepository {
     return orders;
   }
 
-  Future<PosOrderModel?> findById(int id) async {
+  Future<PosOrderModel?> findById(dynamic id) async {
     final sql = '''
       SELECT o.*, e.full_name as cashier_name,
              (SELECT payment_method FROM payments WHERE order_id = o.id LIMIT 1) as payment_method
       FROM pos_orders o
       LEFT JOIN users u ON o.cashier_id = u.id
       LEFT JOIN employees e ON e.user_id = u.id
-      WHERE o.id = @id
+      WHERE o.id = @id OR o.id::text = @idStr
       LIMIT 1
     ''';
 
-    final result = await db.connection.execute(Sql.named(sql), parameters: {'id': id});
+    final result = await db.connection.execute(Sql.named(sql), parameters: {'id': id, 'idStr': id.toString()});
     if (result.isEmpty) return null;
 
     final map = result.first.toColumnMap();
 
     final itemsRes = await db.connection.execute(
-      Sql.named('SELECT * FROM pos_order_items WHERE order_id = @id'),
-      parameters: {'id': id},
+      Sql.named('SELECT * FROM pos_order_items WHERE order_id = @id OR order_id::text = @idStr'),
+      parameters: {'id': id, 'idStr': id.toString()},
     );
     final paymentsRes = await db.connection.execute(
-      Sql.named('SELECT * FROM payments WHERE order_id = @id'),
-      parameters: {'id': id},
+      Sql.named('SELECT * FROM payments WHERE order_id = @id OR order_id::text = @idStr'),
+      parameters: {'id': id, 'idStr': id.toString()},
     );
 
     map['items'] = itemsRes.map((i) => i.toColumnMap()).toList();
@@ -306,25 +306,25 @@ class OrderRepository {
     return PosOrderModel.fromJson(map);
   }
 
-  Future<void> cancelOrder(int orderId) async {
+  Future<void> cancelOrder(dynamic orderId) async {
     await db.connection.runTx((session) async {
       final items = await session.execute(
-        Sql.named('SELECT product_id, quantity FROM pos_order_items WHERE order_id = @id'),
-        parameters: {'id': orderId},
+        Sql.named('SELECT product_id, quantity FROM pos_order_items WHERE order_id = @id OR order_id::text = @idStr'),
+        parameters: {'id': orderId, 'idStr': orderId.toString()},
       );
 
       for (final row in items) {
-        final prodId = row[0] as int;
+        final prodId = row[0];
         final qty = (row[1] as num).toDouble();
         await session.execute(
-          Sql.named('UPDATE products SET stock_quantity = stock_quantity + @qty WHERE id = @prodId'),
-          parameters: {'qty': qty, 'prodId': prodId},
+          Sql.named('UPDATE products SET stock_quantity = stock_quantity + @qty WHERE id = @prodId OR id::text = @prodIdStr'),
+          parameters: {'qty': qty, 'prodId': prodId, 'prodIdStr': prodId.toString()},
         );
       }
 
       await session.execute(
-        Sql.named("UPDATE pos_orders SET order_status = 'cancelled', payment_status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE id = @id"),
-        parameters: {'id': orderId},
+        Sql.named("UPDATE pos_orders SET order_status = 'cancelled', payment_status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE id = @id OR id::text = @idStr"),
+        parameters: {'id': orderId, 'idStr': orderId.toString()},
       );
     });
   }

@@ -31,7 +31,7 @@ class ProductManagementService {
     return await repository.getProductById(id);
   }
 
-  Future<ProductModel> createProduct(ProductModel product, {int? userId}) async {
+  Future<ProductModel> createProduct(ProductModel product, {dynamic userId}) async {
     if (product.name.trim().isEmpty) {
       throw Exception('Product name is required!');
     }
@@ -113,18 +113,12 @@ class ProductManagementService {
     if (unit.name.trim().isEmpty) {
       throw Exception('Unit name is required!');
     }
-    if (unit.shortSymbol.trim().isEmpty) {
-      throw Exception('Short symbol is required!');
-    }
     return await repository.createUnit(unit);
   }
 
   Future<UnitModel> updateUnit(dynamic id, UnitModel unit) async {
     if (unit.name.trim().isEmpty) {
       throw Exception('Unit name is required!');
-    }
-    if (unit.shortSymbol.trim().isEmpty) {
-      throw Exception('Short symbol is required!');
     }
     return await repository.updateUnit(id, unit);
   }
@@ -153,7 +147,7 @@ class ProductManagementService {
   }
 
   // Purchases (Stock IN)
-  Future<PurchaseModel> createPurchase(PurchaseModel purchase, {int? userId}) async {
+  Future<PurchaseModel> createPurchase(PurchaseModel purchase, {dynamic userId}) async {
     if (purchase.invoiceNumber.trim().isEmpty) {
       throw Exception('Purchase invoice number is required!');
     }
@@ -170,7 +164,7 @@ class ProductManagementService {
     required double quantity,
     required String reason,
     String? movementType,
-    int? userId,
+    dynamic userId,
   }) async {
     if (quantity <= 0) {
       throw Exception('Quantity must be greater than zero!');

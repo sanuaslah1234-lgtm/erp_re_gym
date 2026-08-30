@@ -55,8 +55,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
       _selectedUnit = p.unit;
       _selectedStatus = p.isActive ? 'Active' : 'Inactive';
     } else {
-      _codeController.text = 'PRD001';
-      _skuController.text = 'SKU-${1000 + DateTime.now().millisecond}';
+      final rand = 1000 + (DateTime.now().millisecondsSinceEpoch % 9000);
+      _codeController.text = 'PRD-$rand';
+      _skuController.text = 'SKU-$rand';
     }
   }
 
@@ -93,16 +94,17 @@ class _AddProductScreenState extends State<AddProductScreen> {
     final openingStock = double.tryParse(_openingStockController.text) ?? 0.0;
 
     final catObj = provider.categories.where((c) => c.name == _selectedCategory).firstOrNull;
+    final catId = catObj?.id ?? widget.existingProduct?.categoryId;
 
     final product = ProductModel(
       id: widget.existingProduct?.id,
       productCode: code.isNotEmpty ? code : sku,
-      barcode: sku,
+      barcode: sku.isNotEmpty ? sku : (code.isNotEmpty ? code : null),
       name: name,
-      categoryId: catObj?.id,
-      categoryName: _selectedCategory ?? 'Unassigned',
-      brand: _selectedBrand ?? 'General',
-      unit: _selectedUnit ?? 'pcs',
+      categoryId: catId,
+      categoryName: _selectedCategory ?? widget.existingProduct?.categoryName ?? 'Unassigned',
+      brand: _selectedBrand ?? widget.existingProduct?.brand ?? 'General',
+      unit: _selectedUnit ?? widget.existingProduct?.unit ?? 'pcs',
       purchasePrice: purchasePrice,
       sellingPrice: sellingPrice,
       taxPercentage: tax,
@@ -231,15 +233,18 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                                   const Text('Category', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
                                                   const SizedBox(height: 6),
                                                   DropdownButtonFormField<String>(
-                                                    initialValue: _selectedCategory,
+                                                    initialValue: (_selectedCategory != null && provider.categories.any((c) => c.name == _selectedCategory))
+                                                        ? _selectedCategory
+                                                        : (_selectedCategory != null && _selectedCategory!.isNotEmpty ? _selectedCategory : null),
                                                     hint: const Text('Choose Category', style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
                                                     decoration: const InputDecoration(isDense: true),
-                                                    items: provider.categories.map((c) {
-                                                      return DropdownMenuItem<String>(
-                                                        value: c.name,
-                                                        child: Text(c.name),
-                                                      );
-                                                    }).toList(),
+                                                    items: () {
+                                                      final items = provider.categories.map((c) => c.name).toSet().toList();
+                                                      if (_selectedCategory != null && _selectedCategory!.isNotEmpty && !items.contains(_selectedCategory)) {
+                                                        items.insert(0, _selectedCategory!);
+                                                      }
+                                                      return items.map((name) => DropdownMenuItem<String>(value: name, child: Text(name))).toList();
+                                                    }(),
                                                     onChanged: (val) {
                                                       setState(() => _selectedCategory = val);
                                                     },
@@ -261,15 +266,18 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                                   const Text('Brand', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
                                                   const SizedBox(height: 6),
                                                   DropdownButtonFormField<String>(
-                                                    initialValue: _selectedBrand,
+                                                    initialValue: (_selectedBrand != null && provider.brands.any((b) => b.name == _selectedBrand))
+                                                        ? _selectedBrand
+                                                        : (_selectedBrand != null && _selectedBrand!.isNotEmpty ? _selectedBrand : null),
                                                     hint: const Text('Select Brand', style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
                                                     decoration: const InputDecoration(isDense: true),
-                                                    items: provider.brands.map((b) {
-                                                      return DropdownMenuItem<String>(
-                                                        value: b.name,
-                                                        child: Text(b.name),
-                                                      );
-                                                    }).toList(),
+                                                    items: () {
+                                                      final items = provider.brands.map((b) => b.name).toSet().toList();
+                                                      if (_selectedBrand != null && _selectedBrand!.isNotEmpty && !items.contains(_selectedBrand)) {
+                                                        items.insert(0, _selectedBrand!);
+                                                      }
+                                                      return items.map((name) => DropdownMenuItem<String>(value: name, child: Text(name))).toList();
+                                                    }(),
                                                     onChanged: (val) {
                                                       setState(() => _selectedBrand = val);
                                                     },
@@ -287,15 +295,18 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                                   const Text('Unit', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
                                                   const SizedBox(height: 6),
                                                   DropdownButtonFormField<String>(
-                                                    initialValue: _selectedUnit,
+                                                    initialValue: (_selectedUnit != null && provider.units.any((u) => u.name == _selectedUnit))
+                                                        ? _selectedUnit
+                                                        : (_selectedUnit != null && _selectedUnit!.isNotEmpty ? _selectedUnit : null),
                                                     hint: const Text('Choose Unit', style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
                                                     decoration: const InputDecoration(isDense: true),
-                                                    items: provider.units.map((u) {
-                                                      return DropdownMenuItem<String>(
-                                                        value: u.name,
-                                                        child: Text('${u.name} (${u.shortSymbol})'),
-                                                      );
-                                                    }).toList(),
+                                                    items: () {
+                                                      final items = provider.units.map((u) => u.name).toSet().toList();
+                                                      if (_selectedUnit != null && _selectedUnit!.isNotEmpty && !items.contains(_selectedUnit)) {
+                                                        items.insert(0, _selectedUnit!);
+                                                      }
+                                                      return items.map((name) => DropdownMenuItem<String>(value: name, child: Text(name))).toList();
+                                                    }(),
                                                     onChanged: (val) {
                                                       setState(() => _selectedUnit = val);
                                                     },

@@ -75,12 +75,12 @@ class ProductRepository {
 
   Future<List<Map<String, dynamic>>> getCategories() async {
     final result = await db.connection.execute('SELECT id, name FROM categories ORDER BY name ASC');
-    return result.map((row) => {'id': row[0] as int, 'name': row[1] as String}).toList();
+    return result.map((row) => {'id': int.tryParse(row[0].toString()) ?? row[0], 'name': row[1].toString()}).toList();
   }
 
   Future<List<Map<String, dynamic>>> getBrands() async {
     final result = await db.connection.execute('SELECT id, name FROM brands ORDER BY name ASC');
-    return result.map((row) => {'id': row[0] as int, 'name': row[1] as String}).toList();
+    return result.map((row) => {'id': int.tryParse(row[0].toString()) ?? row[0], 'name': row[1].toString()}).toList();
   }
 }
 

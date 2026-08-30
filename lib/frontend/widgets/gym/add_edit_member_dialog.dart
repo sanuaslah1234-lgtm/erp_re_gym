@@ -88,20 +88,21 @@ class _AddEditMemberDialogState extends State<AddEditMemberDialog> {
 
   Future<void> _loadDependencies() async {
     try {
-      final plans = await gymService.getPlans(status: 'ACTIVE');
-      final trainers = await gymService.getTrainers(status: 'ACTIVE');
-      final customers = await customerService.getCustomers();
+      final results = await Future.wait([
+        gymService.getPlans(),
+        gymService.getTrainers(),
+        customerService.getCustomers(),
+      ]);
 
       if (!mounted) return;
       setState(() {
-        _plans = plans;
-        _trainers = trainers;
-        _customers = customers;
+        _plans = results[0] as List<GymPlanModel>;
+        _trainers = results[1] as List<GymTrainerModel>;
+        _customers = results[2] as List<CustomerModel>;
         _isInitLoading = false;
       });
     } catch (_) {
-      if (!mounted) return;
-      setState(() => _isInitLoading = false);
+      if (mounted) setState(() => _isInitLoading = false);
     }
   }
 
@@ -180,6 +181,69 @@ class _AddEditMemberDialogState extends State<AddEditMemberDialog> {
   Widget build(BuildContext context) {
     final isEdit = widget.member != null;
 
+    final customerItems = <DropdownMenuItem<String?>>[
+      const DropdownMenuItem<String?>(value: null, child: Text('None (Create fresh member record)')),
+      ..._customers.map((c) => DropdownMenuItem<String?>(
+            value: c.id?.toString(),
+            child: Text('${c.name} (${c.phone})'),
+          )),
+    ];
+
+    if (_selectedCustomerId != null && !customerItems.any((item) => item.value == _selectedCustomerId)) {
+      customerItems.add(DropdownMenuItem<String?>(
+        value: _selectedCustomerId,
+        child: Text('Customer #$_selectedCustomerId'),
+      ));
+    }
+
+    final planItems = <DropdownMenuItem<int?>>[
+      const DropdownMenuItem<int?>(value: null, child: Text('No plan (Assign later)')),
+      ..._plans.map((p) => DropdownMenuItem<int?>(
+            value: p.id,
+            child: Text('${p.name} (${p.durationDays}d - \$${p.totalAmount.toStringAsFixed(0)})'),
+          )),
+    ];
+
+    if (_selectedPlanId != null && !planItems.any((item) => item.value == _selectedPlanId)) {
+      planItems.add(DropdownMenuItem<int?>(
+        value: _selectedPlanId,
+        child: Text('Plan #$_selectedPlanId'),
+      ));
+    }
+
+    final trainerItems = <DropdownMenuItem<int?>>[
+      const DropdownMenuItem<int?>(value: null, child: Text('No Trainer')),
+      ..._trainers.map((t) => DropdownMenuItem<int?>(
+            value: t.id,
+            child: Text('${t.name} (${t.specialization})'),
+          )),
+    ];
+
+    if (_selectedTrainerId != null && !trainerItems.any((item) => item.value == _selectedTrainerId)) {
+      trainerItems.add(DropdownMenuItem<int?>(
+        value: _selectedTrainerId,
+        child: Text('Trainer #$_selectedTrainerId'),
+      ));
+    }
+
+    final safeCustomerValue = (_selectedCustomerId == null || customerItems.any((item) => item.value == _selectedCustomerId))
+        ? _selectedCustomerId
+        : null;
+
+    final safePlanValue = (_selectedPlanId == null || planItems.any((item) => item.value == _selectedPlanId))
+        ? _selectedPlanId
+        : null;
+
+    final safeTrainerValue = (_selectedTrainerId == null || trainerItems.any((item) => item.value == _selectedTrainerId))
+        ? _selectedTrainerId
+        : null;
+
+    const genderList = ['Male', 'Female', 'Other'];
+    final safeGenderValue = genderList.contains(_gender) ? _gender : 'Male';
+
+    const statusList = ['ACTIVE', 'INACTIVE', 'EXPIRED', 'SUSPENDED'];
+    final safeStatusValue = statusList.contains(_status) ? _status : 'ACTIVE';
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       backgroundColor: Colors.white,
@@ -245,16 +309,10 @@ class _AddEditMemberDialogState extends State<AddEditMemberDialog> {
                             if (!isEdit && _customers.isNotEmpty) ...[
                               _buildSectionTitle('1. ERP Customer Link (Optional)'),
                               const SizedBox(height: 8),
-                              DropdownButtonFormField<String>(
-                                initialValue: _selectedCustomerId,
+                              DropdownButtonFormField<String?>(
+                                initialValue: safeCustomerValue,
                                 decoration: _inputDecoration('Select Existing Customer or leave blank to create new', icon: Icons.business_outlined),
-                                items: [
-                                  const DropdownMenuItem<String>(value: null, child: Text('None (Create fresh member record)')),
-                                  ..._customers.map((c) => DropdownMenuItem<String>(
-                                        value: c.id?.toString(),
-                                        child: Text('${c.name} (${c.phone})'),
-                                      )),
-                                ],
+                                items: customerItems,
                                 onChanged: _onCustomerSelected,
                               ),
                               const SizedBox(height: 20),
@@ -298,7 +356,7 @@ class _AddEditMemberDialogState extends State<AddEditMemberDialog> {
                                 const SizedBox(width: 14),
                                 Expanded(
                                   child: DropdownButtonFormField<String>(
-                                    initialValue: _gender,
+                                    initialValue: safeGenderValue,
                                     decoration: _inputDecoration('Gender', icon: Icons.wc_outlined),
                                     items: const [
                                       DropdownMenuItem(value: 'Male', child: Text('Male')),
@@ -358,31 +416,19 @@ class _AddEditMemberDialogState extends State<AddEditMemberDialog> {
                               Row(
                                 children: [
                                   Expanded(
-                                    child: DropdownButtonFormField<int>(
-                                      initialValue: _selectedPlanId,
+                                    child: DropdownButtonFormField<int?>(
+                                      initialValue: safePlanValue,
                                       decoration: _inputDecoration('Select Membership Plan', icon: Icons.card_membership_outlined),
-                                      items: [
-                                        const DropdownMenuItem<int>(value: null, child: Text('No plan (Assign later)')),
-                                        ..._plans.map((p) => DropdownMenuItem<int>(
-                                              value: p.id,
-                                              child: Text('${p.name} (${p.durationDays}d - \$${p.totalAmount.toStringAsFixed(0)})'),
-                                            )),
-                                      ],
+                                      items: planItems,
                                       onChanged: _onPlanSelected,
                                     ),
                                   ),
                                   const SizedBox(width: 14),
                                   Expanded(
-                                    child: DropdownButtonFormField<int>(
-                                      initialValue: _selectedTrainerId,
+                                    child: DropdownButtonFormField<int?>(
+                                      initialValue: safeTrainerValue,
                                       decoration: _inputDecoration('Assign Trainer (Optional)', icon: Icons.fitness_center_outlined),
-                                      items: [
-                                        const DropdownMenuItem<int>(value: null, child: Text('No Trainer')),
-                                        ..._trainers.map((t) => DropdownMenuItem<int>(
-                                              value: t.id,
-                                              child: Text('${t.name} (${t.specialization})'),
-                                            )),
-                                      ],
+                                      items: trainerItems,
                                       onChanged: (v) => setState(() => _selectedTrainerId = v),
                                     ),
                                   ),
@@ -423,7 +469,7 @@ class _AddEditMemberDialogState extends State<AddEditMemberDialog> {
                               children: [
                                 Expanded(
                                   child: DropdownButtonFormField<String>(
-                                    initialValue: _status,
+                                    initialValue: safeStatusValue,
                                     decoration: _inputDecoration('Member Status', icon: Icons.toggle_on_outlined),
                                     items: const [
                                       DropdownMenuItem(value: 'ACTIVE', child: Text('ACTIVE')),

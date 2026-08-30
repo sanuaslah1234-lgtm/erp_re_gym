@@ -135,8 +135,9 @@ class _PosScreenState extends State<PosScreen> {
                         child: Text('All Categories', style: TextStyle(fontSize: 12)),
                       ),
                       ...posProvider.categories.map((cat) {
+                        final catId = int.tryParse(cat['id'].toString());
                         return DropdownMenuItem<int?>(
-                          value: cat['id'] as int,
+                          value: catId,
                           child: Text(cat['name'].toString(), style: const TextStyle(fontSize: 12)),
                         );
                       }),
@@ -167,8 +168,9 @@ class _PosScreenState extends State<PosScreen> {
                         child: Text('All Brands', style: TextStyle(fontSize: 12)),
                       ),
                       ...posProvider.brands.map((b) {
+                        final bId = int.tryParse(b['id'].toString());
                         return DropdownMenuItem<int?>(
-                          value: b['id'] as int,
+                          value: bId,
                           child: Text(b['name'].toString(), style: const TextStyle(fontSize: 12)),
                         );
                       }),
@@ -235,7 +237,12 @@ class _PosScreenState extends State<PosScreen> {
                 return Padding(
                   padding: const EdgeInsets.only(left: 10),
                   child: InkWell(
-                    onTap: () => posProvider.selectCategory(cat['id'] as int, authProvider.token),
+                    onTap: () {
+                      final cId = int.tryParse(cat['id'].toString());
+                      if (cId != null) {
+                        posProvider.selectCategory(cId, authProvider.token);
+                      }
+                    },
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(

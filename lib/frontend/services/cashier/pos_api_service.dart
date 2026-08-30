@@ -27,8 +27,7 @@ class PosApiService {
         throw Exception(body['message'] ?? 'Failed to fetch POS products');
       }
     } catch (e) {
-      // Fallback mock sample products if server is offline
-      return _getMockProducts();
+      return [];
     }
   }
 
@@ -53,12 +52,7 @@ class PosApiService {
         return (body['data'] as List).cast<Map<String, dynamic>>();
       }
     } catch (_) {}
-    return [
-      {'id': 1, 'name': 'Food & Snacks'},
-      {'id': 2, 'name': 'Beverages'},
-      {'id': 3, 'name': 'Electronics'},
-      {'id': 4, 'name': 'Stationery'},
-    ];
+    return [];
   }
 
   Future<List<Map<String, dynamic>>> getBrands(String? token) async {
@@ -69,10 +63,6 @@ class PosApiService {
         return (body['data'] as List).cast<Map<String, dynamic>>();
       }
     } catch (_) {}
-    return [];
-  }
-
-  List<Product> _getMockProducts() {
     return [];
   }
 }

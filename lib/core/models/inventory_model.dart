@@ -39,19 +39,32 @@ class InventoryModel {
 
   factory InventoryModel.fromJson(Map<String, dynamic> json) => InventoryModel.fromMap(json);
   factory InventoryModel.fromMap(Map<String, dynamic> map) {
+    int parseInt(dynamic val, int fallback) {
+      if (val == null) return fallback;
+      if (val is int) return val;
+      if (val is num) return val.toInt();
+      return int.tryParse(val.toString()) ?? fallback;
+    }
+
+    DateTime? parseDate(dynamic val) {
+      if (val == null) return null;
+      if (val is DateTime) return val;
+      return DateTime.tryParse(val.toString());
+    }
+
     return InventoryModel(
-      id: map['id'].toString(),
-      productId: map['product_id'].toString(),
-      warehouseId: map['warehouse_id'].toString(),
-      productName: map['product_name']?.toString(),
-      sku: map['sku']?.toString(),
-      warehouseName: map['warehouse_name']?.toString(),
-      quantity: map['quantity'] as int? ?? 0,
-      minimumStock: map['minimum_stock'] as int? ?? 10,
-      maximumStock: map['maximum_stock'] as int? ?? 1000,
-      reorderLevel: map['reorder_level'] as int? ?? 20,
-      createdAt: map['created_at'] as DateTime?,
-      updatedAt: map['updated_at'] as DateTime?,
+      id: map['id']?.toString() ?? '',
+      productId: map['product_id']?.toString() ?? map['productId']?.toString() ?? '',
+      warehouseId: map['warehouse_id']?.toString() ?? map['warehouseId']?.toString() ?? '',
+      productName: map['product_name']?.toString() ?? map['productName']?.toString() ?? map['product']?.toString() ?? map['name']?.toString(),
+      sku: map['sku']?.toString() ?? map['product_code']?.toString() ?? map['barcode']?.toString(),
+      warehouseName: map['warehouse_name']?.toString() ?? map['warehouseName']?.toString() ?? map['warehouse']?.toString(),
+      quantity: parseInt(map['quantity'], 0),
+      minimumStock: parseInt(map['minimum_stock'] ?? map['minimumStock'] ?? map['minStock'], 10),
+      maximumStock: parseInt(map['maximum_stock'] ?? map['maximumStock'] ?? map['maxStock'], 1000),
+      reorderLevel: parseInt(map['reorder_level'] ?? map['reorderLevel'], 20),
+      createdAt: parseDate(map['created_at'] ?? map['createdAt']),
+      updatedAt: parseDate(map['updated_at'] ?? map['updatedAt']),
     );
   }
 
@@ -60,17 +73,29 @@ class InventoryModel {
     return {
       'id': id,
       'productId': productId,
+      'product_id': productId,
       'warehouseId': warehouseId,
+      'warehouse_id': warehouseId,
       'productName': productName,
+      'product_name': productName,
+      'product': productName,
       'sku': sku,
+      'product_code': sku,
       'warehouseName': warehouseName,
+      'warehouse_name': warehouseName,
+      'warehouse': warehouseName,
       'quantity': quantity,
       'minimumStock': minimumStock,
+      'minimum_stock': minimumStock,
       'maximumStock': maximumStock,
+      'maximum_stock': maximumStock,
       'reorderLevel': reorderLevel,
+      'reorder_level': reorderLevel,
       'status': status,
       'createdAt': createdAt?.toIso8601String(),
+      'created_at': createdAt?.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String(),
     };
   }
 

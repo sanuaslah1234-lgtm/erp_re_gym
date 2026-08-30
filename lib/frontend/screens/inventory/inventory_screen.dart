@@ -134,11 +134,14 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     final qty = int.tryParse(qtyCtrl.text) ?? 0;
                     if (qty <= 0) { ErpToast.showError(ctx, 'Quantity must be greater than 0'); return; }
                     try {
+                      final wid = item.warehouseId.isNotEmpty && item.warehouseId != 'default'
+                          ? item.warehouseId
+                          : (_selectedWarehouseId ?? '1');
                       if (item.id == '0' || item.id.isEmpty) {
                         // No inventory record yet — create one first
                         await _inventoryService.createInventory(
                           productId: item.productId.toString(),
-                          warehouseId: '1',
+                          warehouseId: wid,
                           quantity: qty,
                           minStock: 10,
                           maxStock: 1000,
@@ -147,9 +150,13 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       } else {
                         await _inventoryService.updateQuantity(id: item.id, quantity: item.quantity + qty);
                       }
-                      if (mounted) { Navigator.pop(ctx); ErpToast.showSuccess(context, 'Stock updated: +$qty for ${item.product}'); _loadInventory(); }
+                      if (!mounted) return;
+                      if (ctx.mounted) Navigator.pop(ctx);
+                      ErpToast.showSuccess(context, 'Stock updated: +$qty for ${item.product}');
+                      _loadInventory();
                     } catch (e) {
-                      if (mounted) ErpToast.showError(ctx, e.toString().replaceAll('Exception: ', ''));
+                      if (!mounted) return;
+                      ErpToast.showError(context, e.toString().replaceAll('Exception: ', ''));
                     }
                   },
                   icon: const Icon(Icons.add, size: 16),
@@ -232,7 +239,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 const Text('Product *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
                 const SizedBox(height: 6),
                 DropdownButtonFormField<String>(
-                  value: selectedProductId,
+                  initialValue: selectedProductId,
                   isExpanded: true,
                   isDense: true,
                   decoration: const InputDecoration(border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10)),
@@ -245,7 +252,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 const Text('Warehouse *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
                 const SizedBox(height: 6),
                 DropdownButtonFormField<String>(
-                  value: selectedWarehouseId,
+                  initialValue: selectedWarehouseId,
                   isExpanded: true,
                   isDense: true,
                   decoration: const InputDecoration(border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10)),
@@ -311,15 +318,13 @@ class _InventoryScreenState extends State<InventoryScreen> {
                         maxStock: int.tryParse(maxCtrl.text) ?? 1000,
                         reorderLevel: int.tryParse(reorderCtrl.text) ?? 20,
                       );
-                      if (mounted) {
-                        Navigator.pop(ctx);
-                        ErpToast.showSuccess(context, 'Inventory record created');
-                        _loadInventory();
-                      }
+                      if (!mounted) return;
+                      if (ctx.mounted) Navigator.pop(ctx);
+                      ErpToast.showSuccess(context, 'Inventory record created');
+                      _loadInventory();
                     } catch (e) {
-                      if (mounted) {
-                        ErpToast.showError(ctx, e.toString().replaceAll('Exception: ', ''));
-                      }
+                      if (!mounted) return;
+                      ErpToast.showError(context, e.toString().replaceAll('Exception: ', ''));
                     }
                   },
                   icon: const Icon(Icons.add, size: 16),
@@ -428,15 +433,13 @@ class _InventoryScreenState extends State<InventoryScreen> {
                           reorderLevel: int.tryParse(reorderCtrl.text) ?? item.reorderLevel,
                         );
                       }
-                      if (mounted) {
-                        Navigator.pop(ctx);
-                        ErpToast.showSuccess(context, 'Inventory saved');
-                        _loadInventory();
-                      }
+                      if (!mounted) return;
+                      if (ctx.mounted) Navigator.pop(ctx);
+                      ErpToast.showSuccess(context, 'Inventory saved');
+                      _loadInventory();
                     } catch (e) {
-                      if (mounted) {
-                        ErpToast.showError(ctx, e.toString().replaceAll('Exception: ', ''));
-                      }
+                      if (!mounted) return;
+                      ErpToast.showError(context, e.toString().replaceAll('Exception: ', ''));
                     }
                   },
                   icon: const Icon(Icons.save, size: 16),
@@ -474,15 +477,13 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   return;
                 }
                 await _inventoryService.deleteInventory(item.id);
-                if (mounted) {
-                  Navigator.pop(ctx);
-                  ErpToast.showSuccess(context, 'Inventory record deleted');
-                  _loadInventory();
-                }
+                if (!mounted) return;
+                if (ctx.mounted) Navigator.pop(ctx);
+                ErpToast.showSuccess(context, 'Inventory record deleted');
+                _loadInventory();
               } catch (e) {
-                if (mounted) {
-                  ErpToast.showError(ctx, e.toString().replaceAll('Exception: ', ''));
-                }
+                if (!mounted) return;
+                ErpToast.showError(context, e.toString().replaceAll('Exception: ', ''));
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),

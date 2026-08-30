@@ -17,6 +17,7 @@ class CategoriesScreen extends StatefulWidget {
 
 class _CategoriesScreenState extends State<CategoriesScreen> {
   bool _showAddSection = false;
+  CategoryModel? _editingCategory;
 
   final TextEditingController _categoryNameController = TextEditingController();
   final TextEditingController _categorySlugController = TextEditingController();
@@ -40,6 +41,23 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     super.dispose();
   }
 
+  void _resetForm() {
+    _categoryNameController.clear();
+    _categorySlugController.clear();
+    _selectedStatus = 'Active';
+    _editingCategory = null;
+  }
+
+  void _startEdit(CategoryModel cat) {
+    setState(() {
+      _editingCategory = cat;
+      _categoryNameController.text = cat.name;
+      _categorySlugController.text = cat.description ?? '';
+      _selectedStatus = cat.status.toLowerCase() == 'active' ? 'Active' : 'Inactive';
+      _showAddSection = true;
+    });
+  }
+
   void _handleSaveCategory(ProductManagementProvider provider, AuthProvider authProvider) async {
     final name = _categoryNameController.text.trim();
     final slug = _categorySlugController.text.trim();
@@ -50,17 +68,24 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     }
 
     final category = CategoryModel(
+      id: _editingCategory?.id,
       name: name,
       description: slug.isNotEmpty ? slug : name.toLowerCase().replaceAll(' ', '-'),
       status: _selectedStatus.toLowerCase(),
     );
 
     try {
-      await provider.addCategory(authProvider.token, category);
-      _categoryNameController.clear();
-      _categorySlugController.clear();
-      setState(() { _showAddSection = false; });
-      if (mounted) ErpToast.showSuccess(context, 'Product category created successfully!');
+      if (_editingCategory != null && _editingCategory!.id != null) {
+        await provider.updateCategory(authProvider.token, _editingCategory!.id!, category);
+        _resetForm();
+        setState(() { _showAddSection = false; });
+        if (mounted) ErpToast.showSuccess(context, 'Product category updated successfully!');
+      } else {
+        await provider.addCategory(authProvider.token, category);
+        _resetForm();
+        setState(() { _showAddSection = false; });
+        if (mounted) ErpToast.showSuccess(context, 'Product category created successfully!');
+      }
     } catch (e) {
       if (mounted) ErpToast.showError(context, e.toString().replaceAll('Exception: ', ''));
     }
@@ -413,7 +438,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                                           PopupMenuButton<String>(
                                             icon: const Icon(Icons.more_vert, color: Color(0xFF64748B)),
                                             onSelected: (val) async {
-                                              if (val == 'delete') {
+                                              if (val == 'edit') {
+                                                _startEdit(c);
+                                              } else if (val == 'delete') {
                                                 try {
                                                   await provider.deleteCategory(authProvider.token, c.id!);
                                                   if (context.mounted) ErpToast.showSuccess(context, 'Category deleted successfully');
