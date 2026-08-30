@@ -50,8 +50,8 @@ class InventoryModel {
       minimumStock: map['minimum_stock'] as int? ?? 10,
       maximumStock: map['maximum_stock'] as int? ?? 1000,
       reorderLevel: map['reorder_level'] as int? ?? 20,
-      createdAt: map['created_at'] as DateTime?,
-      updatedAt: map['updated_at'] as DateTime?,
+      createdAt: _parseDateTime(map['created_at']),
+      updatedAt: _parseDateTime(map['updated_at']),
     );
   }
 
@@ -59,18 +59,18 @@ class InventoryModel {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'productId': productId,
-      'warehouseId': warehouseId,
-      'productName': productName,
+      'product_id': productId,
+      'warehouse_id': warehouseId,
+      'product_name': productName,
       'sku': sku,
-      'warehouseName': warehouseName,
+      'warehouse_name': warehouseName,
       'quantity': quantity,
-      'minimumStock': minimumStock,
-      'maximumStock': maximumStock,
-      'reorderLevel': reorderLevel,
+      'minimum_stock': minimumStock,
+      'maximum_stock': maximumStock,
+      'reorder_level': reorderLevel,
       'status': status,
-      'createdAt': createdAt?.toIso8601String(),
-      'updatedAt': updatedAt?.toIso8601String(),
+      'created_at': createdAt?.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String(),
     };
   }
 
@@ -79,4 +79,17 @@ class InventoryModel {
   String get warehouse => warehouseName ?? 'Main Warehouse';
   int get minStock => minimumStock;
   int get maxStock => maximumStock;
+
+  static DateTime? _parseDateTime(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    if (value is String) {
+      try {
+        return DateTime.parse(value);
+      } catch (_) {
+        return null;
+      }
+    }
+    return null;
+  }
 }

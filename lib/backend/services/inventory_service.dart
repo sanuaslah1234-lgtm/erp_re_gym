@@ -136,11 +136,11 @@ class InventoryService {
     // STATUS
     if (status != null && status != 'All Statuses') {
       if (status == 'Out of Stock') {
-        conditions.add('COALESCE(i.quantity, p.stock_quantity::int, 0) <= 0');
+        conditions.add('COALESCE(i.quantity, 0) <= 0');
       } else if (status == 'Low Stock') {
-        conditions.add('COALESCE(i.quantity, p.stock_quantity::int, 0) > 0 AND COALESCE(i.quantity, p.stock_quantity::int, 0) <= COALESCE(i.minimum_stock, 10)');
+        conditions.add('COALESCE(i.quantity, 0) > 0 AND COALESCE(i.quantity, 0) <= COALESCE(i.minimum_stock, 10)');
       } else if (status == 'In Stock') {
-        conditions.add('COALESCE(i.quantity, p.stock_quantity::int, 0) > COALESCE(i.minimum_stock, 10)');
+        conditions.add('COALESCE(i.quantity, 0) > COALESCE(i.minimum_stock, 10)');
       }
     }
 
@@ -169,32 +169,17 @@ class InventoryService {
           i.quantity,
           i.minimum_stock,
           i.maximum_stock,
-          COALESCE(i.id, 0) AS id,
-          p.id AS product_id,
-          COALESCE(i.warehouse_id, 0) AS warehouse_id,
-          COALESCE(i.quantity, p.stock_quantity::int, 0) AS quantity,
-          COALESCE(i.minimum_stock, 10) AS minimum_stock,
-          COALESCE(i.maximum_stock, 1000) AS maximum_stock,
-          COALESCE(i.reorder_level, 20) AS reorder_level,
-          COALESCE(i.created_at, p.created_at) AS created_at,
-          COALESCE(i.updated_at, p.updated_at) AS updated_at,
-
+          i.reorder_level,
+          i.created_at,
+          i.updated_at,
           p.name AS product_name,
           p.product_code AS sku,
-
-          w.name AS warehouse_name
-
+          COALESCE(w.name, 'No Warehouse') AS warehouse_name
         FROM products p
-
-        LEFT JOIN inventory i
-          ON p.id = i.product_id
-
-        LEFT JOIN warehouses w
-          ON w.id = i.warehouse_id
-
-        WHERE p.status = 'active'
+        LEFT JOIN inventory i ON p.id = i.product_id
+        LEFT JOIN warehouses w ON w.id = i.warehouse_id
+        WHERE COALESCE(p.is_active, true) = true
         ${conditions.isNotEmpty ? 'AND ${conditions.join(' AND ')}' : ''}
-
         ORDER BY $orderBy
       '''),
       parameters: parameters,

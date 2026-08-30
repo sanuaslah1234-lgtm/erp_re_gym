@@ -694,7 +694,7 @@ class ProductManagementRepository {
         COALESCE(pu.updated_at, CURRENT_TIMESTAMP) as updated_at
       FROM purchases pu
       LEFT JOIN suppliers s ON pu.supplier_id = s.id
-      ORDER BY pu.purchase_date DESC
+      ORDER BY pu.created_at DESC
     ''';
     final result = await db.connection.execute(sql);
     return result.map((row) => PurchaseModel.fromJson(row.toColumnMap())).toList();
