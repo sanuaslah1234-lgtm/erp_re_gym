@@ -7,6 +7,7 @@ import 'package:erp_software/frontend/screens/cashier/pos/widgets/product_grid.d
 import 'package:erp_software/frontend/screens/cashier/pos/widgets/product_search_bar.dart';
 import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
 import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
+import 'package:erp_software/frontend/widgets/erp_toast.dart';
 import 'package:provider/provider.dart';
 
 class PosScreen extends StatefulWidget {
@@ -53,6 +54,18 @@ class _PosScreenState extends State<PosScreen> {
     final posProvider = Provider.of<PosProvider>(context);
     final authProvider = Provider.of<AuthProvider>(context);
     final isMobile = MediaQuery.of(context).size.width < 900;
+
+    // Show error/warning toast when posProvider has a message
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (posProvider.errorMessage != null && mounted) {
+        ErpToast.showError(context, posProvider.errorMessage!);
+        posProvider.clearError();
+      }
+      if (posProvider.warningMessage != null && mounted) {
+        ErpToast.showWarning(context, posProvider.warningMessage!);
+        posProvider.clearWarning();
+      }
+    });
 
     return KeyboardListener(
       focusNode: FocusNode()..requestFocus(),

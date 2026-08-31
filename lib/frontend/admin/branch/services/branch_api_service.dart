@@ -1,11 +1,11 @@
 import 'package:erp_software/core/constants/app_constants.dart';
-import '/core/network/api_client.dart';
+import 'package:erp_software/core/network/api_client.dart';
 import 'package:erp_software/core/models/branch_model.dart';
 
 class BranchApiService {
   final ApiClient _client;
 
-  BranchApiService({ApiClient? client}) : _client = client ?? ApiClient();
+  BranchApiService({ApiClient? client, String? token}) : _client = client ?? ApiClient(token: token);
 
   Future<List<BranchModel>> getBranches() async {
     final data = await _client.get(AppConstants.branches) as List<dynamic>;

@@ -13,8 +13,9 @@ class PosController {
       final queryParams = request.url.queryParameters;
       final search = queryParams['search'];
       final catId = queryParams['categoryId'] != null ? int.tryParse(queryParams['categoryId']!) : null;
+      final brandId = queryParams['brandId'] != null ? int.tryParse(queryParams['brandId']!) : null;
 
-      final products = await posService.searchProducts(search: search, categoryId: catId);
+      final products = await posService.searchProducts(search: search, categoryId: catId, brandId: brandId);
 
       return ResponseUtils.success(
         message: 'Products fetched successfully',

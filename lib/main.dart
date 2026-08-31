@@ -40,7 +40,7 @@ class ErpApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => BarcodeProvider()),
         ChangeNotifierProvider(create: (_) => RefundProvider()),
         ChangeNotifierProvider(create: (_) => CashierSettingsProvider()),
-        ChangeNotifierProvider(create: (_) => BranchProvider()),
+        // BranchProvider created by sidebar with auth token
         ChangeNotifierProvider(create: (_) => ReportsProvider()),
         ChangeNotifierProvider(create: (_) => PurchaseReportsProvider()),
         ChangeNotifierProvider(create: (_) => InventoryReportsProvider()),

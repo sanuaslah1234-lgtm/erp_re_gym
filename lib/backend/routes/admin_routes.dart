@@ -62,6 +62,7 @@ Router adminRoutes({
   // Branches (erp.settings.manage)
   router.post('/branches', guard(AppPermissions.erpSettingsManage, branchController.createBranch));
   router.get('/branches', guard(AppPermissions.erpSettingsManage, branchController.getBranches));
+  router.get('/branches/<id>', guard(AppPermissions.erpSettingsManage, branchController.getBranchById));
   router.put('/branches/<id>', guard(AppPermissions.erpSettingsManage, branchController.updateBranch));
   router.delete('/branches/<id>', guard(AppPermissions.erpSettingsManage, branchController.deleteBranch));
 

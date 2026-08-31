@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:erp_software/core/constants/app_constants.dart';
+import 'package:erp_software/core/config/app_config.dart';
 import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
 import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 import 'package:erp_software/theme/app_colors.dart';
@@ -50,7 +50,7 @@ class _ExpensesAccountsScreenState extends State<ExpensesAccountsScreen> {
   Future<void> _loadExpenses() async {
     setState(() { _isLoading = true; _error = null; });
     try {
-      final res = await http.get(Uri.parse('${AppConstants.apiBaseUrl}/api/expenses'));
+      final res = await http.get(Uri.parse('${AppConfig.apiBaseUrl}/api/expenses'));
       if (res.statusCode == 200) {
         final decoded = jsonDecode(res.body);
         final List data = decoded is List ? decoded : (decoded is Map ? (decoded['data'] ?? []) : []);

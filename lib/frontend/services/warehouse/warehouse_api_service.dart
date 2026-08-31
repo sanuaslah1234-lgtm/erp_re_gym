@@ -1,9 +1,10 @@
 import 'dart:convert';
+import 'package:erp_software/core/config/app_config.dart';
 import 'package:http/http.dart' as http;
 import 'package:erp_software/core/models/warehouse_model.dart';
 
 class WarehouseApiService {
-  final String baseUrl = 'http://localhost:5000/api';
+  final String baseUrl = '${AppConfig.apiBaseUrl}/api';
 
   Map<String, String> _headers(String? token) => {
     'Content-Type': 'application/json',

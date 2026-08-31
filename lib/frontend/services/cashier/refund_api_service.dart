@@ -1,9 +1,10 @@
 import 'dart:convert';
+import 'package:erp_software/core/config/app_config.dart';
 import 'package:erp_software/core/models/cashier/refund.dart';
 import 'package:http/http.dart' as http;
 
 class RefundApiService {
-  final String baseUrl = 'http://localhost:5000/api/cashier/refunds';
+  final String baseUrl = '${AppConfig.apiBaseUrl}/api/cashier/refunds';
 
   Map<String, String> _headers(String? token) => {
         'Content-Type': 'application/json',

@@ -77,7 +77,7 @@ class PosProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _products = await _posApiService.getProducts(token, search: _searchQuery, categoryId: _selectedCategoryId);
+      _products = await _posApiService.getProducts(token, search: _searchQuery, categoryId: _selectedCategoryId, brandId: _selectedBrandId);
       _categories = await _posApiService.getCategories(token);
       _brands = await _posApiService.getBrands(token);
     } catch (e) {
@@ -115,22 +115,18 @@ class PosProvider extends ChangeNotifier {
     }
   }
 
+  String? _warningMessage;
+  String? get warningMessage => _warningMessage;
+
   void addToCart(Product product) {
     final index = _cart.indexWhere((item) => item.product.id == product.id);
     if (index >= 0) {
-      if (_cart[index].quantity + 1 > product.stockQuantity) {
-        _errorMessage = 'Cannot add more. Available stock: ${product.stockQuantity}';
-        notifyListeners();
-        return;
-      }
       _cart[index].quantity += 1;
     } else {
-      if (product.stockQuantity < 1) {
-        _errorMessage = 'Product "${product.name}" is out of stock!';
-        notifyListeners();
-        return;
-      }
       _cart.add(CartItem(product: product, quantity: 1.0, tax: product.taxPercentage));
+      if (product.stockQuantity < 1) {
+        _warningMessage = '"${product.name}" is out of stock — backorder item added';
+      }
     }
     _errorMessage = null;
     notifyListeners();
@@ -142,11 +138,6 @@ class PosProvider extends ChangeNotifier {
       if (newQty <= 0) {
         _cart.removeAt(index);
       } else {
-        if (newQty > _cart[index].product.stockQuantity) {
-          _errorMessage = 'Quantity exceeds available stock (${_cart[index].product.stockQuantity})';
-          notifyListeners();
-          return;
-        }
         _cart[index].quantity = newQty;
       }
       _errorMessage = null;
@@ -159,11 +150,20 @@ class PosProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void clearError() {
+    _errorMessage = null;
+  }
+
+  void clearWarning() {
+    _warningMessage = null;
+  }
+
   void clearCart() {
     _cart.clear();
     _cartDiscountPercentage = 0.0;
     _customerName = 'Walk-in Customer';
     _customerId = null;
+    _warningMessage = null;
     notifyListeners();
   }
 

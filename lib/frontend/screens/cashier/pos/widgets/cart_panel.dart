@@ -1,7 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:erp_software/core/config/app_config.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/providers/cashier/order_provider.dart';
 import 'package:erp_software/frontend/providers/cashier/pos_provider.dart';
+import 'package:erp_software/frontend/screens/cashier/pos/widgets/receipt_dialog.dart';
 import 'package:erp_software/frontend/screens/cashier/pos/widgets/receipt_dialog.dart';
 import 'package:erp_software/frontend/widgets/erp_toast.dart';
 import 'package:provider/provider.dart';
@@ -18,6 +22,34 @@ class _CartPanelState extends State<CartPanel> {
   final TextEditingController _amountReceivedController = TextEditingController(
     text: '0',
   );
+  bool _amountAutoFilled = false;
+  List<Map<String, dynamic>> _customers = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCustomers();
+  }
+
+  Future<void> _loadCustomers() async {
+    try {
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      final response = await http.get(
+        Uri.parse('${AppConfig.apiBaseUrl}/api/customers'),
+        headers: {
+          'Content-Type': 'application/json',
+          if (auth.token != null) 'Authorization': 'Bearer ${auth.token}',
+        },
+      ).timeout(const Duration(seconds: 5));
+      final body = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        final data = body['data'];
+        if (data is List) {
+          setState(() => _customers = data.cast<Map<String, dynamic>>());
+        }
+      }
+    } catch (_) {}
+  }
 
   @override
   void dispose() {
@@ -29,6 +61,20 @@ class _CartPanelState extends State<CartPanel> {
   Widget build(BuildContext context) {
     final posProvider = Provider.of<PosProvider>(context);
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    // Auto-fill amount received with grand total when cart changes and payment is Cash
+    if (_selectedPaymentMethod == 'Cash' && !_amountAutoFilled && posProvider.grandTotal > 0) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_amountAutoFilled) {
+          _amountReceivedController.text = posProvider.grandTotal.toStringAsFixed(2);
+          _amountAutoFilled = true;
+          setState(() {});
+        }
+      });
+    }
+    if (posProvider.cart.isEmpty) {
+      _amountAutoFilled = false;
+    }
 
     final double amountReceived =
         double.tryParse(_amountReceivedController.text) ?? 0.0;
@@ -72,7 +118,9 @@ class _CartPanelState extends State<CartPanel> {
                     const SizedBox(width: 8),
                     DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
-                        value: posProvider.customerName,
+                        value: _customers.any((c) => c['name']?.toString() == posProvider.customerName)
+                            ? posProvider.customerName
+                            : 'Walk-in Customer',
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
@@ -82,22 +130,30 @@ class _CartPanelState extends State<CartPanel> {
                           Icons.keyboard_arrow_down,
                           color: Color(0xFF64748B),
                         ),
-                        items: const [
-                          DropdownMenuItem(
+                        items: [
+                          const DropdownMenuItem(
                             value: 'Walk-in Customer',
                             child: Text('Walk-in Customer'),
                           ),
-                          DropdownMenuItem(
-                            value: 'John Doe (Regular)',
-                            child: Text('John Doe (Regular)'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'Ahmed Al-Mansoor',
-                            child: Text('Ahmed Al-Mansoor'),
-                          ),
+                          ..._customers.map((c) {
+                            final name = c['name']?.toString() ?? '';
+                            final phone = c['phone']?.toString();
+                            final label = phone != null && phone.isNotEmpty ? '$name ($phone)' : name;
+                            return DropdownMenuItem(
+                              value: name,
+                              child: Text(label, style: const TextStyle(fontSize: 12)),
+                            );
+                          }),
                         ],
                         onChanged: (val) {
-                          if (val != null) posProvider.setCustomer(val, null);
+                          if (val != null) {
+                            final match = _customers.firstWhere(
+                              (c) => c['name']?.toString() == val,
+                              orElse: () => {},
+                            );
+                            final id = match.isNotEmpty ? int.tryParse(match['id'].toString()) : null;
+                            posProvider.setCustomer(val, id);
+                          }
                         },
                       ),
                     ),
@@ -745,12 +801,12 @@ class _CartPanelState extends State<CartPanel> {
                 // Print Receipt (Soft Light Purple)
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: posProvider.cart.isEmpty
+                    onPressed: posProvider.lastCompletedOrder == null
                         ? null
                         : () {
-                            ErpToast.showInfo(
-                              context,
-                              'Printing Draft Receipt...',
+                            showDialog(
+                              context: context,
+                              builder: (_) => ReceiptDialog(order: posProvider.lastCompletedOrder!),
                             );
                           },
                     style: ElevatedButton.styleFrom(
@@ -853,8 +909,16 @@ class _CartPanelState extends State<CartPanel> {
   Widget _buildPaymentTile(String label, IconData icon, Color activeColor) {
     final isSelected = _selectedPaymentMethod == label;
 
-    return InkWell(
-      onTap: () => setState(() => _selectedPaymentMethod = label),
+    return InkWell(                    onTap: () {
+                      final pp = Provider.of<PosProvider>(context, listen: false);
+                      setState(() {
+                        _selectedPaymentMethod = label;
+                        if (label == 'Cash' && pp.grandTotal > 0) {
+                          _amountReceivedController.text = pp.grandTotal.toStringAsFixed(2);
+                          _amountAutoFilled = true;
+                        }
+                      });
+                    },
       borderRadius: BorderRadius.circular(8),
       child: Container(
         padding: const EdgeInsets.all(4),

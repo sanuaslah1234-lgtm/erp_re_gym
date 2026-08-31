@@ -32,6 +32,14 @@ import 'product_management_routes.dart';
 import '../controllers/gym_controller.dart';
 import 'gym_routes.dart';
 
+// Cashier Imports
+import '../controllers/cashier/pos_controller.dart';
+import '../controllers/cashier/order_controller.dart';
+import '../controllers/cashier/refund_controller.dart';
+import '../controllers/cashier/barcode_controller.dart';
+import '../controllers/cashier/cashier_settings_controller.dart';
+import 'cashier_routes.dart';
+
 class AppRouter {
   final AuthController authController;
   final CustomerController customerController;
@@ -41,6 +49,13 @@ class AppRouter {
   final WarehouseController warehouseController;
   final ProductManagementController? productManagementController;
   final GymController? gymController;
+  
+  // Cashier Controllers
+  final PosController? posController;
+  final OrderController? orderController;
+  final RefundController? refundController;
+  final BarcodeController? barcodeController;
+  final CashierSettingsController? settingsController2;
   
   final AuditLogController auditLogController;
   final BranchController branchController;
@@ -59,6 +74,11 @@ class AppRouter {
     required this.warehouseController,
     this.productManagementController,
     this.gymController,
+    this.posController,
+    this.orderController,
+    this.refundController,
+    this.barcodeController,
+    this.settingsController2,
     required this.auditLogController,
     required this.branchController,
     required this.landingPageController,
@@ -97,6 +117,17 @@ class AppRouter {
       router.mount('/gym', gymRoutes(gymController!).call);
     }
 
+    // Cashier Routes mounted at /cashier
+    if (posController != null && orderController != null) {
+      router.mount('/cashier', setupCashierRoutes(
+        posController: posController!,
+        orderController: orderController!,
+        refundController: refundController!,
+        barcodeController: barcodeController!,
+        settingsController: settingsController2!,
+      ).call);
+    }
+
     // Root-prefixed feature routes
     if (productManagementController != null) {
       router.mount('/', setupProductManagementRoutes(productManagementController!).call);
@@ -127,6 +158,15 @@ class AppRouter {
     router.get('/expenses', (Request request) async {
       if (postgresService == null) return ResponseUtils.error(message: 'Database not available');
       try {
+        // Check if payments table exists first
+        final tableCheck = await postgresService!.connection.execute(
+          "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'payments')",
+        );
+        final tableExists = (tableCheck.first[0] as bool?) ?? false;
+        if (!tableExists) {
+          return ResponseUtils.success(message: 'No expenses yet', data: []);
+        }
+
         final result = await postgresService!.connection.execute(Sql.named(
           '''SELECT p.id, p.payment_method, p.amount, p.reference_number, p.created_at,
                   o.order_number
@@ -147,7 +187,7 @@ class AppRouter {
         }).toList();
         return ResponseUtils.success(message: 'Expenses retrieved', data: expenses);
       } catch (e) {
-        return ResponseUtils.error(message: 'Failed to fetch expenses', error: e.toString());
+        return ResponseUtils.success(message: 'No expenses yet', data: []);
       }
     });
 

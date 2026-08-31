@@ -4,7 +4,7 @@ import 'package:erp_software/frontend/providers/cashier/order_provider.dart';
 import 'package:erp_software/frontend/screens/cashier/orders/order_details_screen.dart';
 import 'package:erp_software/frontend/screens/cashier/orders/widgets/order_filter_bar.dart';
 import 'package:erp_software/frontend/screens/cashier/orders/widgets/order_list.dart';
-import 'package:erp_software/frontend/screens/cashier/pos/pos_screen.dart';
+import 'package:erp_software/frontend/screens/cashier/orders/new_sale_dialog.dart';
 import 'package:erp_software/frontend/screens/cashier/pos/widgets/receipt_dialog.dart';
 import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
 import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
@@ -77,11 +77,15 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
                               ],
                             ),
                             ElevatedButton.icon(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (_) => const PosScreen()),
+                              onPressed: () async {
+                                final result = await showDialog(
+                                  context: context,
+                                  builder: (_) => const NewSaleDialog(),
                                 );
+                                if (result == true && mounted) {
+                                  final auth = Provider.of<AuthProvider>(context, listen: false);
+                                  Provider.of<OrderProvider>(context, listen: false).fetchOrders(auth.token);
+                                }
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF2563EB),
