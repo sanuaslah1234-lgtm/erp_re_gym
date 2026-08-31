@@ -7,24 +7,30 @@ class ProductRepository {
 
   ProductRepository(this.db);
 
-  Future<List<ProductModel>> getAllProducts({String? search, int? categoryId}) async {
+  Future<List<ProductModel>> getAllProducts({String? search, int? categoryId, int? brandId}) async {
     String sql = '''
       SELECT p.*, c.name as category_name
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
-      WHERE p.is_active = true
+      LEFT JOIN brands b ON p.brand_id = b.id
+      WHERE LOWER(COALESCE(p.status, 'active')) = 'active'
     ''';
 
     final params = <String, dynamic>{};
 
     if (search != null && search.trim().isNotEmpty) {
-      sql += ' AND (LOWER(p.name) LIKE LOWER(@search) OR LOWER(p.product_code) LIKE LOWER(@search) OR p.barcode LIKE @search)';
+      sql += ' AND (LOWER(p.name) LIKE LOWER(@search) OR LOWER(COALESCE(p.sku, p.product_code, \'\')) LIKE LOWER(@search) OR COALESCE(p.barcode, \'\') LIKE @search)';
       params['search'] = '%${search.trim()}%';
     }
 
     if (categoryId != null && categoryId > 0) {
       sql += ' AND p.category_id = @catId';
       params['catId'] = categoryId;
+    }
+
+    if (brandId != null && brandId > 0) {
+      sql += ' AND p.brand_id = @brandId';
+      params['brandId'] = brandId;
     }
 
     sql += ' ORDER BY p.name ASC';

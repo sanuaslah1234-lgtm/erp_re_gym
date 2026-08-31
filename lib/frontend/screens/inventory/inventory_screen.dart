@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:erp_software/core/config/app_config.dart';
 import 'package:erp_software/core/models/inventory_model.dart';
 import 'package:erp_software/frontend/services/inventory_service.dart';
 import 'package:erp_software/frontend/screens/products/widgets/stock_movement_dialog.dart';
@@ -183,7 +184,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
     List<Map<String, dynamic>> products = [];
     List<Map<String, dynamic>> warehouses = [];
     try {
-      final resProd = await http.get(Uri.parse('http://localhost:5000/api/products'));
+      final resProd = await http.get(Uri.parse('${AppConfig.apiBaseUrl}/api/products'));
       if (resProd.statusCode == 200) {
         final decoded = jsonDecode(resProd.body);
         final List data = decoded is List ? decoded : (decoded is Map ? (decoded['data'] ?? []) : []);
@@ -191,7 +192,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
       }
     } catch (_) {}
     try {
-      final resWh = await http.get(Uri.parse('http://localhost:5000/api/warehouses'));
+      final resWh = await http.get(Uri.parse('${AppConfig.apiBaseUrl}/api/warehouses'));
       if (resWh.statusCode == 200) {
         final decoded = jsonDecode(resWh.body);
         final List data = decoded is List ? decoded : (decoded is Map ? (decoded['data'] ?? []) : []);

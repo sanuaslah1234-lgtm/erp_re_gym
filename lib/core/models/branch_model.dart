@@ -46,8 +46,21 @@ class BranchModel {
     );
   }
 
-  /// Used for POST/PUT bodies — backend validates these exact keys.
-  Map<String, dynamic> toJson() => toRequestJson();
+  /// Used for serializing model to JSON (includes id)
+  Map<String, dynamic> toJson() {
+    return {
+      if (id != null) 'id': id,
+      'code': code,
+      'name': name,
+      'address': address,
+      'city': city,
+      'state': state,
+      'phone': phone,
+      'email': email,
+      'is_active': isActive,
+    };
+  }
+  /// Used for POST/PUT request bodies — backend validates these exact keys.
   Map<String, dynamic> toRequestJson() {
     return {
       'code': code,

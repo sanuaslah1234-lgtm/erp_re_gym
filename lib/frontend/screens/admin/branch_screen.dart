@@ -79,8 +79,8 @@ class _BranchScreenState extends State<BranchScreen> {
 
     return SingleChildScrollView(
       child: isNarrow
-          ? BranchCardList(branches: branches)
-          : BranchDataTable(branches: branches),
+          ? BranchCardList(branches: branches, branchProvider: provider)
+          : BranchDataTable(branches: branches, branchProvider: provider),
     );
   }
 }

@@ -7,12 +7,17 @@ import '../errors/app_exception.dart';
 ///  - throws ApiException with the server message on failure
 class ApiClient {
   final http.Client _client;
+  String? _token;
 
-  ApiClient({http.Client? client}) : _client = client ?? http.Client();
+  ApiClient({http.Client? client, String? token}) : _client = client ?? http.Client(), _token = token;
 
-  static const Map<String, String> _headers = {
+  /// Update the auth token (e.g. after login)
+  void setToken(String? token) => _token = token;
+
+  Map<String, String> get _headers => {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
+    if (_token != null && _token!.isNotEmpty) 'Authorization': 'Bearer $_token',
   };
 
   Future<dynamic> get(String url) async {

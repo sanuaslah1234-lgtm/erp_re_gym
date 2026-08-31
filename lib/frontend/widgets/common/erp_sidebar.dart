@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:erp_software/core/constants/app_permissions.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/screens/cashier/cashier_dashboard_screen.dart';
+import 'package:erp_software/frontend/screens/cashier/orders/pos_orders_screen.dart';
 import 'package:erp_software/frontend/screens/customers/customers_screen.dart';
 import 'package:erp_software/frontend/screens/employees/employee_screen.dart';
 import 'package:erp_software/frontend/screens/products/brands_screen.dart';
@@ -270,10 +271,23 @@ class _ErpSidebarState extends State<ErpSidebar> {
       if (current != 'Branches') {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => ChangeNotifierProvider(create: (_) => BranchProvider()..fetchBranches(), child: const StoreBranchesScreen())),
+          MaterialPageRoute(builder: (_) {
+          final auth = Provider.of<AuthProvider>(context, listen: false);
+          return ChangeNotifierProvider(
+            create: (_) => BranchProvider(token: auth.token)..fetchBranches(),
+            child: const StoreBranchesScreen(),
+          );
+        }),
         );
       }
-    } else if (target == 'Dashboard' || target == 'POS Terminal' || target == 'Barcode Printing' || target == 'Sales Orders' || target == 'Settings') {
+    } else if (target == 'Sales Orders') {
+      if (current != 'Sales Orders') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const PosOrdersScreen()),
+        );
+      }
+    } else if (target == 'Dashboard' || target == 'POS Terminal' || target == 'Barcode Printing' || target == 'Settings') {
       final tab = target == 'Dashboard' ? 'POS Terminal' : target;
       if (current != tab) {
         Navigator.pushReplacement(

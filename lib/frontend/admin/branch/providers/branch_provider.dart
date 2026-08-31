@@ -9,7 +9,7 @@ enum BranchSort { defaultOrder, nameAZ, nameZA, newest, oldest }
 class BranchProvider extends ChangeNotifier {
   final BranchApiService _api;
 
-  BranchProvider({BranchApiService? api}) : _api = api ?? BranchApiService();
+  BranchProvider({BranchApiService? api, String? token}) : _api = api ?? BranchApiService(token: token);
 
   List<BranchModel> _branches = [];
   bool isLoading = false;

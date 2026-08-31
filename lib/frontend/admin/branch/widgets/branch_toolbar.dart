@@ -87,7 +87,7 @@ class BranchToolbar extends StatelessWidget {
     final addButton = FilledButton.icon(
       onPressed: () => showDialog(
         context: context,
-        builder: (_) => const BranchFormDialog(),
+        builder: (_) => BranchFormDialog(branchProvider: provider),
       ),
       icon: const Icon(Icons.add, size: 18),
       label: const Text('Add Branch'),

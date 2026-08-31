@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:erp_software/theme/app_colors.dart';
 
 import 'package:erp_software/core/models/branch_model.dart';
@@ -8,8 +7,9 @@ import '../providers/branch_provider.dart';
 class BranchFormDialog extends StatefulWidget {
   /// Pass null to create a new branch, pass a branch to edit it.
   final BranchModel? existingBranch;
+  final BranchProvider branchProvider;
 
-  const BranchFormDialog({super.key, this.existingBranch});
+  const BranchFormDialog({super.key, this.existingBranch, required this.branchProvider});
 
   @override
   State<BranchFormDialog> createState() => _BranchFormDialogState();
@@ -69,7 +69,7 @@ class _BranchFormDialogState extends State<BranchFormDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<BranchProvider>();
+    final provider = widget.branchProvider;
     final width = MediaQuery.of(context).size.width;
     final dialogWidth = width < 600 ? width * 0.92 : 560.0;
 
