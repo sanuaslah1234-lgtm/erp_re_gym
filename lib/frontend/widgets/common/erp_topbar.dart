@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
+import 'package:erp_software/frontend/widgets/common/server_config_dialog.dart';
 import 'package:provider/provider.dart';
 
 class ErpTopbar extends StatefulWidget {
@@ -104,7 +105,8 @@ class _ErpTopbarState extends State<ErpTopbar> {
             ),
             child: IconButton(
               icon: const Icon(Icons.settings_outlined, size: 18, color: Color(0xFF64748B)),
-              onPressed: () {},
+              tooltip: 'Server Connection Settings',
+              onPressed: () => ServerConfigDialog.show(context),
               padding: EdgeInsets.zero,
             ),
           ),

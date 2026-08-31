@@ -21,17 +21,28 @@ class OrderItemModel {
     required this.totalAmount,
   });
 
+  static double _parseDouble(dynamic v) {
+    if (v is num) return v.toDouble();
+    return double.tryParse(v?.toString() ?? '0') ?? 0.0;
+  }
+
+  static int? _parseInt(dynamic v) {
+    if (v == null) return null;
+    if (v is num) return v.toInt();
+    return int.tryParse(v.toString());
+  }
+
   factory OrderItemModel.fromJson(Map<String, dynamic> json) {
     return OrderItemModel(
-      id: json['id'] as int?,
-      orderId: json['orderId'] ?? json['order_id'],
-      productId: json['productId'] ?? json['product_id'],
-      productName: json['productName'] ?? json['product_name'] ?? '',
-      quantity: (json['quantity'] ?? 0.0).toDouble(),
-      unitPrice: (json['unitPrice'] ?? json['unit_price'] ?? 0.0).toDouble(),
-      discountAmount: (json['discountAmount'] ?? json['discount_amount'] ?? 0.0).toDouble(),
-      taxAmount: (json['taxAmount'] ?? json['tax_amount'] ?? 0.0).toDouble(),
-      totalAmount: (json['totalAmount'] ?? json['total_amount'] ?? 0.0).toDouble(),
+      id: _parseInt(json['id']),
+      orderId: _parseInt(json['orderId'] ?? json['order_id']),
+      productId: _parseInt(json['productId'] ?? json['product_id']) ?? 0,
+      productName: (json['productName'] ?? json['product_name'] ?? '').toString(),
+      quantity: _parseDouble(json['quantity']),
+      unitPrice: _parseDouble(json['unitPrice'] ?? json['unit_price']),
+      discountAmount: _parseDouble(json['discountAmount'] ?? json['discount_amount']),
+      taxAmount: _parseDouble(json['taxAmount'] ?? json['tax_amount']),
+      totalAmount: _parseDouble(json['totalAmount'] ?? json['total_amount']),
     );
   }
 

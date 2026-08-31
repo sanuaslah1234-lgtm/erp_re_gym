@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:erp_software/core/constants/app_constants.dart';
 import 'package:erp_software/core/models/brand_model.dart';
 import 'package:erp_software/core/models/cashier/product_model.dart';
 import 'package:erp_software/core/models/category_model.dart';
@@ -9,7 +10,7 @@ import 'package:erp_software/core/models/supplier_model.dart';
 import 'package:erp_software/core/models/unit_model.dart';
 
 class ProductManagementApiService {
-  final String baseUrl = 'http://localhost:5000/api';
+  String get baseUrl => '${AppConstants.apiBaseUrl}/api';
 
   Map<String, String> _headers(String? token) => {
         'Content-Type': 'application/json',

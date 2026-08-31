@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'package:erp_software/core/constants/app_constants.dart';
+import 'package:erp_software/frontend/widgets/common/server_config_dialog.dart';
 import 'package:erp_software/frontend/widgets/employees/employee_form_card.dart';
 import 'package:erp_software/frontend/widgets/employees/employee_preview_card.dart';
 import 'package:erp_software/theme/app_colors.dart';
@@ -128,20 +130,26 @@ Future<void> _saveEmployee() async {
     );
   } catch (e) {
     if (!mounted) return;
+    final errStr = e.toString().replaceFirst('Exception: ', '');
+    final isConnectionError = errStr.contains('Connection refused') || errStr.contains('SocketException');
 
-    ScaffoldMessenger.of(context)
-        .showSnackBar(
+    ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          e.toString().replaceFirst(
-                'Exception: ',
-                '',
-              ),
+          isConnectionError
+              ? 'Cannot connect to server at ${AppConstants.apiBaseUrl}. Please check your server IP settings.'
+              : errStr,
         ),
-        behavior:
-            SnackBarBehavior.floating,
-        backgroundColor:
-            AppColors.danger,
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: AppColors.danger,
+        duration: const Duration(seconds: 6),
+        action: isConnectionError
+            ? SnackBarAction(
+                label: 'Configure',
+                textColor: Colors.white,
+                onPressed: () => ServerConfigDialog.show(context),
+              )
+            : null,
       ),
     );
   } finally {

@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import 'package:erp_software/core/constants/app_constants.dart';
+import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
 import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 import 'package:erp_software/frontend/widgets/erp_toast.dart';
@@ -19,12 +21,12 @@ class _Invoice {
 
   factory _Invoice.fromJson(Map<String, dynamic> json) {
     return _Invoice(
-      id: json['id'] ?? 0,
-      orderNumber: (json['order_number'] ?? '').toString(),
-      grandTotal: _parseDouble(json['grand_total']),
-      paymentStatus: (json['payment_status'] ?? 'paid').toString(),
-      orderStatus: (json['order_status'] ?? 'paid').toString(),
-      createdAt: DateTime.tryParse(json['created_at']?.toString() ?? '') ?? DateTime.now(),
+      id: json['id'] is num ? (json['id'] as num).toInt() : (int.tryParse(json['id']?.toString() ?? '0') ?? 0),
+      orderNumber: (json['orderNumber'] ?? json['order_number'] ?? '').toString(),
+      grandTotal: _parseDouble(json['grandTotal'] ?? json['grand_total']),
+      paymentStatus: (json['paymentStatus'] ?? json['payment_status'] ?? 'paid').toString(),
+      orderStatus: (json['orderStatus'] ?? json['order_status'] ?? 'paid').toString(),
+      createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? json['created_at']?.toString() ?? '') ?? DateTime.now(),
     );
   }
 
@@ -56,7 +58,16 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
   Future<void> _loadInvoices() async {
     setState(() { _isLoading = true; _error = null; });
     try {
-      final res = await http.get(Uri.parse('${AppConstants.apiBaseUrl}/api/cashier/orders'));
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final headers = {
+        'Content-Type': 'application/json',
+        if (authProvider.token != null && authProvider.token!.isNotEmpty)
+          'Authorization': 'Bearer ${authProvider.token}',
+      };
+      final res = await http.get(
+        Uri.parse('${AppConstants.apiBaseUrl}/api/cashier/orders'),
+        headers: headers,
+      );
       if (res.statusCode == 200) {
         final decoded = jsonDecode(res.body);
         final List data = decoded is List ? decoded : (decoded is Map ? (decoded['data'] ?? []) : []);

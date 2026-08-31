@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:erp_software/core/models/cashier/pos_order.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
-import 'package:erp_software/frontend/providers/cashier/order_provider.dart';
 import 'package:erp_software/frontend/providers/cashier/pos_provider.dart';
 import 'package:erp_software/frontend/screens/cashier/pos/widgets/receipt_dialog.dart';
 import 'package:erp_software/frontend/widgets/erp_toast.dart';
@@ -82,20 +82,15 @@ class _CartPanelState extends State<CartPanel> {
                           Icons.keyboard_arrow_down,
                           color: Color(0xFF64748B),
                         ),
-                        items: const [
-                          DropdownMenuItem(
-                            value: 'Walk-in Customer',
-                            child: Text('Walk-in Customer'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'John Doe (Regular)',
-                            child: Text('John Doe (Regular)'),
-                          ),
-                          DropdownMenuItem(
-                            value: 'Ahmed Al-Mansoor',
-                            child: Text('Ahmed Al-Mansoor'),
-                          ),
-                        ],
+                        items: {
+                          'Walk-in Customer',
+                          'John Doe (Regular)',
+                          'Ahmed Al-Mansoor',
+                          posProvider.customerName,
+                        }.map((name) => DropdownMenuItem<String>(
+                          value: name,
+                          child: Text(name),
+                        )).toList(),
                         onChanged: (val) {
                           if (val != null) posProvider.setCustomer(val, null);
                         },
@@ -745,12 +740,41 @@ class _CartPanelState extends State<CartPanel> {
                 // Print Receipt (Soft Light Purple)
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: posProvider.cart.isEmpty
+                    onPressed: (posProvider.cart.isEmpty && posProvider.lastCompletedOrder == null)
                         ? null
                         : () {
-                            ErpToast.showInfo(
-                              context,
-                              'Printing Draft Receipt...',
+                            final orderToPrint = posProvider.lastCompletedOrder ??
+                                PosOrder(
+                                  id: 0,
+                                  orderNumber: 'DRAFT-${DateTime.now().millisecondsSinceEpoch % 10000}',
+                                  cashierId: 1,
+                                  customerName: posProvider.customerName,
+                                  subtotal: posProvider.subtotal,
+                                  discountAmount: posProvider.cartDiscountAmount,
+                                  taxAmount: posProvider.taxAmount,
+                                  grandTotal: posProvider.grandTotal,
+                                  paymentMethod: _selectedPaymentMethod,
+                                  amountReceived: amountReceived,
+                                  changeAmount: changeAmount,
+                                  items: posProvider.cart
+                                      .map((i) => PosOrderItem(
+                                            id: 0,
+                                            orderId: 0,
+                                            productId: 0,
+                                            productName: i.product.name,
+                                            quantity: i.quantity,
+                                            unitPrice: i.product.sellingPrice,
+                                            discountAmount: i.discountAmount,
+                                            taxAmount: i.taxAmount,
+                                            totalAmount: i.total,
+                                          ))
+                                      .toList(),
+                                  createdAt: DateTime.now(),
+                                );
+
+                            showDialog(
+                              context: context,
+                              builder: (_) => ReceiptDialog(order: orderToPrint),
                             );
                           },
                     style: ElevatedButton.styleFrom(
@@ -784,20 +808,29 @@ class _CartPanelState extends State<CartPanel> {
                     onPressed: posProvider.cart.isEmpty || posProvider.isLoading
                         ? null
                         : () async {
+                            final effectiveAmount = _selectedPaymentMethod == 'Cash'
+                                ? amountReceived
+                                : posProvider.grandTotal;
+
                             final order = await posProvider.checkout(
                               authProvider.token,
                               paymentMethod: _selectedPaymentMethod,
-                              amountReceived: amountReceived,
+                              amountReceived: effectiveAmount,
                             );
 
                             if (order != null && context.mounted) {
-                              Provider.of<OrderProvider>(
+                              ErpToast.showSuccess(
                                 context,
-                                listen: false,
-                              ).fetchOrders(authProvider.token);
+                                'Sale Completed! Order #${order.orderNumber}',
+                              );
                               showDialog(
                                 context: context,
                                 builder: (_) => ReceiptDialog(order: order),
+                              );
+                            } else if (posProvider.errorMessage != null && context.mounted) {
+                              ErpToast.showError(
+                                context,
+                                posProvider.errorMessage!,
                               );
                             }
                           },
@@ -812,10 +845,19 @@ class _CartPanelState extends State<CartPanel> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    icon: const Icon(Icons.check, size: 16),
-                    label: const Text(
-                      'Complete Sale',
-                      style: TextStyle(
+                    icon: posProvider.isLoading
+                        ? const SizedBox(
+                            width: 14,
+                            height: 14,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.check, size: 16),
+                    label: Text(
+                      posProvider.isLoading ? 'Processing...' : 'Complete Sale',
+                      style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
                       ),

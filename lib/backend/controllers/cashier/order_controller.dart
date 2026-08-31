@@ -24,21 +24,27 @@ class OrderController {
       final itemsData = (body['items'] as List? ?? []).cast<Map<String, dynamic>>();
       final paymentsData = (body['payments'] as List? ?? []).cast<Map<String, dynamic>>();
 
+      double toDbl(dynamic v) {
+        if (v == null) return 0.0;
+        if (v is num) return v.toDouble();
+        return double.tryParse(v.toString()) ?? 0.0;
+      }
+
       final order = await orderService.createOrder(
-        cashierId: cashierId,
+        cashierId: int.tryParse(cashierId.toString()) ?? 1,
         customerId: body['customerId'] != null ? int.tryParse(body['customerId'].toString()) : null,
-        subtotal: (body['subtotal'] ?? 0.0).toDouble(),
-        discountAmount: (body['discountAmount'] ?? 0.0).toDouble(),
-        taxAmount: (body['taxAmount'] ?? 0.0).toDouble(),
-        grandTotal: (body['grandTotal'] ?? 0.0).toDouble(),
-        amountReceived: (body['amountReceived'] ?? 0.0).toDouble(),
-        changeAmount: (body['changeAmount'] ?? 0.0).toDouble(),
+        subtotal: toDbl(body['subtotal']),
+        discountAmount: toDbl(body['discountAmount']),
+        taxAmount: toDbl(body['taxAmount']),
+        grandTotal: toDbl(body['grandTotal']),
+        amountReceived: toDbl(body['amountReceived']),
+        changeAmount: toDbl(body['changeAmount']),
         paymentMethod: body['paymentMethod']?.toString() ?? 'Cash',
         itemsData: itemsData,
         paymentsData: paymentsData.isNotEmpty ? paymentsData : [
           {
             'payment_method': body['paymentMethod']?.toString() ?? 'Cash',
-            'amount': (body['grandTotal'] ?? 0.0).toDouble(),
+            'amount': toDbl(body['grandTotal']),
             'reference_number': body['referenceNumber']?.toString(),
           }
         ],

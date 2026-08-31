@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:shelf_router/shelf_router.dart';
 import 'package:shelf/shelf.dart';
 import 'package:postgres/postgres.dart';
@@ -32,6 +31,13 @@ import 'product_management_routes.dart';
 import '../controllers/gym_controller.dart';
 import 'gym_routes.dart';
 
+import '../controllers/cashier/barcode_controller.dart';
+import '../controllers/cashier/cashier_settings_controller.dart';
+import '../controllers/cashier/order_controller.dart';
+import '../controllers/cashier/pos_controller.dart';
+import '../controllers/cashier/refund_controller.dart';
+import 'cashier_routes.dart';
+
 class AppRouter {
   final AuthController authController;
   final CustomerController customerController;
@@ -42,6 +48,12 @@ class AppRouter {
   final ProductManagementController? productManagementController;
   final GymController? gymController;
   
+  final PosController? posController;
+  final OrderController? orderController;
+  final RefundController? refundController;
+  final BarcodeController? barcodeController;
+  final CashierSettingsController? cashierSettingsController;
+
   final AuditLogController auditLogController;
   final BranchController branchController;
   final LandingPageController landingPageController;
@@ -59,6 +71,11 @@ class AppRouter {
     required this.warehouseController,
     this.productManagementController,
     this.gymController,
+    this.posController,
+    this.orderController,
+    this.refundController,
+    this.barcodeController,
+    this.cashierSettingsController,
     required this.auditLogController,
     required this.branchController,
     required this.landingPageController,
@@ -95,6 +112,24 @@ class AppRouter {
     // Gym Routes mounted at /api/gym
     if (gymController != null) {
       router.mount('/gym', gymRoutes(gymController!).call);
+    }
+
+    // Cashier Routes mounted at /api/cashier
+    if (posController != null &&
+        orderController != null &&
+        refundController != null &&
+        barcodeController != null &&
+        cashierSettingsController != null) {
+      router.mount(
+        '/cashier',
+        setupCashierRoutes(
+          posController: posController!,
+          orderController: orderController!,
+          refundController: refundController!,
+          barcodeController: barcodeController!,
+          settingsController: cashierSettingsController!,
+        ).call,
+      );
     }
 
     // Root-prefixed feature routes

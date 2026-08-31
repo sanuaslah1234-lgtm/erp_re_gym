@@ -1,8 +1,9 @@
 import 'dart:convert';
+import 'package:erp_software/core/constants/app_constants.dart';
 import 'package:http/http.dart' as http;
 
 class BarcodeApiService {
-  final String baseUrl = 'http://localhost:5000/api/cashier/barcodes';
+  String get baseUrl => '${AppConstants.apiBaseUrl}/api/cashier/barcodes';
 
   Map<String, String> _headers(String? token) => {
         'Content-Type': 'application/json',

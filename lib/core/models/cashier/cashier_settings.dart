@@ -37,9 +37,15 @@ class CashierSettings {
     this.autoClearCart = true,
   });
 
+  static double _parseDouble(dynamic val, [double defaultVal = 0.0]) {
+    if (val == null) return defaultVal;
+    if (val is num) return val.toDouble();
+    return double.tryParse(val.toString()) ?? defaultVal;
+  }
+
   factory CashierSettings.fromJson(Map<String, dynamic> json) {
     return CashierSettings(
-      id: json['id'] as int?,
+      id: json['id'] != null ? int.tryParse(json['id'].toString()) : null,
       storeName: json['storeName'] ?? json['store_name'] ?? 'ERP Mart Store',
       storeAddress: json['storeAddress'] ?? json['store_address'] ?? '',
       phone: json['phone']?.toString() ?? '',
@@ -50,11 +56,11 @@ class CashierSettings {
       showCashierName: json['showCashierName'] ?? json['show_cashier_name'] ?? true,
       showCustomerName: json['showCustomerName'] ?? json['show_customer_name'] ?? true,
       autoPrintReceipt: json['autoPrintReceipt'] ?? json['auto_print_receipt'] ?? false,
-      defaultTaxPercentage: (json['defaultTaxPercentage'] ?? json['default_tax_percentage'] ?? 5.0).toDouble(),
+      defaultTaxPercentage: _parseDouble(json['defaultTaxPercentage'] ?? json['default_tax_percentage'], 5.0),
       allowNegativeStock: json['allowNegativeStock'] ?? json['allow_negative_stock'] ?? false,
       requireCustomer: json['requireCustomer'] ?? json['require_customer'] ?? false,
       allowDiscount: json['allowDiscount'] ?? json['allow_discount'] ?? true,
-      maximumDiscountPercentage: (json['maximumDiscountPercentage'] ?? json['maximum_discount_percentage'] ?? 50.0).toDouble(),
+      maximumDiscountPercentage: _parseDouble(json['maximumDiscountPercentage'] ?? json['maximum_discount_percentage'], 50.0),
       autoClearCart: json['autoClearCart'] ?? json['auto_clear_cart'] ?? true,
     );
   }

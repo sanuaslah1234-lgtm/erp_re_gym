@@ -1,3 +1,4 @@
+import 'package:bcrypt/bcrypt.dart';
 import 'package:postgres/postgres.dart';
 import 'package:erp_software/backend/database/postgres_service.dart';
 import 'package:erp_software/core/constants/app_permissions.dart';
@@ -13,6 +14,8 @@ class RbacSeeder {
     // 1. Seed Roles
     final roleDescriptions = {
       AppRoles.superAdmin: 'Full access to all ERP and Gym Management features',
+      AppRoles.gymSuperAdmin: 'Full super admin access to all Gym Management features',
+      AppRoles.retailSuperAdmin: 'Full super admin access to all ERP and Retail features',
       AppRoles.erpManager: 'Full access to all ERP operations and analytics',
       AppRoles.erpCashier: 'Access to POS terminal, invoicing, and payment processing',
       AppRoles.inventoryManager: 'Access to products, categories, suppliers, inventory, and warehouses',
@@ -26,7 +29,7 @@ class RbacSeeder {
         Sql.named('''
           INSERT INTO roles (id, name, description)
           VALUES (gen_random_uuid()::text, @name, @description)
-          ON CONFLICT (name) DO NOTHING
+          ON CONFLICT (name) DO UPDATE SET description = EXCLUDED.description
         '''),
         parameters: {
           'name': entry.key,
@@ -88,14 +91,139 @@ class RbacSeeder {
       }
     }
 
-    // 4. Update existing admin user
-    await conn.execute(
-      Sql.named('''
-        UPDATE users 
-        SET role_id = (SELECT id FROM roles WHERE UPPER(name) = 'SUPER_ADMIN' LIMIT 1),
-            role = 'SUPER_ADMIN'
-        WHERE role_id IS NULL AND (UPPER(role) = 'ADMIN' OR UPPER(role) = 'SUPER_ADMIN')
-      '''),
-    );
+    // 4. Seed / Upsert Dedicated Super Admin Users
+    final defaultPasswordHash = BCrypt.hashpw('admin123', BCrypt.gensalt());
+
+    final superAdminUsers = [
+      {
+        'email': 'superadmingym@gmail.com',
+        'role': AppRoles.gymSuperAdmin,
+        'fullName': 'Gym Super Admin',
+        'empId': 'EMP_GYM001',
+        'department': 'Gym Management',
+        'designation': 'Gym Super Administrator',
+      },
+      {
+        'email': 'superadminretail@gmail.com',
+        'role': AppRoles.retailSuperAdmin,
+        'fullName': 'Retail Super Admin',
+        'empId': 'EMP_RET001',
+        'department': 'Retail Management',
+        'designation': 'Retail Super Administrator',
+      },
+      {
+        'email': 'admin@erp.com',
+        'role': AppRoles.superAdmin,
+        'fullName': 'System Admin',
+        'empId': 'EMP001',
+        'department': 'Executive',
+        'designation': 'Administrator',
+      },
+    ];
+
+    for (final u in superAdminUsers) {
+      final email = u['email']!;
+      final role = u['role']!;
+      final fullName = u['fullName']!;
+      final empId = u['empId']!;
+      final department = u['department']!;
+      final designation = u['designation']!;
+
+      final roleRes = await conn.execute(
+        Sql.named('SELECT id FROM roles WHERE UPPER(name) = UPPER(@name) LIMIT 1'),
+        parameters: {'name': role},
+      );
+      final roleId = roleRes.isNotEmpty ? roleRes.first.toColumnMap()['id'].toString() : null;
+
+      final userCheck = await conn.execute(
+        Sql.named('SELECT id FROM users WHERE LOWER(email) = LOWER(@email) LIMIT 1'),
+        parameters: {'email': email},
+      );
+
+      dynamic userId;
+      if (userCheck.isEmpty) {
+        final insertRes = await conn.execute(
+          Sql.named('''
+            INSERT INTO users (id, email, password_hash, plain_password, role, role_id, is_active, is_verified, employee_id)
+            VALUES (gen_random_uuid()::text, @email, @hash, 'admin123', @role, @role_id, true, true, @emp_id)
+            RETURNING id
+          '''),
+          parameters: {
+            'email': email,
+            'hash': defaultPasswordHash,
+            'role': role,
+            'role_id': roleId,
+            'emp_id': empId,
+          },
+        );
+        userId = insertRes.first[0];
+      } else {
+        userId = userCheck.first[0];
+        await conn.execute(
+          Sql.named('''
+            UPDATE users 
+            SET role = @role,
+                role_id = @role_id,
+                password_hash = COALESCE(password_hash, @hash),
+                plain_password = COALESCE(plain_password, 'admin123'),
+                is_active = true,
+                is_verified = true,
+                employee_id = @emp_id
+            WHERE LOWER(email) = LOWER(@email)
+          '''),
+          parameters: {
+            'role': role,
+            'role_id': roleId,
+            'hash': defaultPasswordHash,
+            'emp_id': empId,
+            'email': email,
+          },
+        );
+      }
+
+      // Ensure employee record exists
+      final empCheck = await conn.execute(
+        Sql.named('SELECT id FROM employees WHERE LOWER(email) = LOWER(@email) LIMIT 1'),
+        parameters: {'email': email},
+      );
+
+      final userIdInt = int.tryParse(userId.toString());
+
+      if (empCheck.isEmpty) {
+        await conn.execute(
+          Sql.named('''
+            INSERT INTO employees (user_id, employee_id, full_name, email, phone, department, designation, is_verified, role)
+            VALUES (@user_id, @emp_id, @full_name, @email, '+1000000000', @department, @designation, true, @role)
+          '''),
+          parameters: {
+            'user_id': userIdInt,
+            'emp_id': empId,
+            'full_name': fullName,
+            'email': email,
+            'department': department,
+            'designation': designation,
+            'role': role,
+          },
+        );
+      } else {
+        await conn.execute(
+          Sql.named('''
+            UPDATE employees
+            SET full_name = @full_name,
+                role = @role,
+                department = @department,
+                designation = @designation
+            WHERE LOWER(email) = LOWER(@email)
+          '''),
+          parameters: {
+            'full_name': fullName,
+            'role': role,
+            'department': department,
+            'designation': designation,
+            'email': email,
+          },
+        );
+      }
+    }
   }
 }

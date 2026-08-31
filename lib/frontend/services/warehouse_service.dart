@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:erp_software/core/models/warehouse_model.dart';
 
 class WarehouseService {
-  static const String baseUrl = AppConstants.apiBaseUrl;
+  static String get baseUrl => AppConstants.apiBaseUrl;
 
   Future<List<WarehouseModel>> getWarehouses() async {
     final response = await http.get(

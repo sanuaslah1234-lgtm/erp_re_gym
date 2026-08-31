@@ -53,6 +53,29 @@ import 'package:erp_software/backend/admin/settings/repositories/settings_reposi
 import 'package:erp_software/backend/services/gym_service.dart';
 import 'package:erp_software/backend/controllers/gym_controller.dart';
 
+// Cashier Repositories
+import 'package:erp_software/backend/repositories/cashier/barcode_repository.dart';
+import 'package:erp_software/backend/repositories/cashier/cashier_settings_repository.dart';
+import 'package:erp_software/backend/repositories/cashier/order_repository.dart';
+import 'package:erp_software/backend/repositories/cashier/product_repository.dart' as cashier_repo;
+import 'package:erp_software/backend/repositories/cashier/refund_repository.dart';
+
+// Cashier Services
+import 'package:erp_software/backend/services/cashier/barcode_service.dart';
+import 'package:erp_software/backend/services/cashier/cashier_settings_service.dart';
+import 'package:erp_software/backend/services/cashier/order_service.dart';
+import 'package:erp_software/backend/services/cashier/pos_service.dart';
+import 'package:erp_software/backend/services/cashier/refund_service.dart';
+
+// Cashier Controllers
+import 'package:erp_software/backend/controllers/cashier/barcode_controller.dart';
+import 'package:erp_software/backend/controllers/cashier/cashier_settings_controller.dart';
+import 'package:erp_software/backend/controllers/cashier/order_controller.dart';
+import 'package:erp_software/backend/controllers/cashier/pos_controller.dart';
+import 'package:erp_software/backend/controllers/cashier/refund_controller.dart';
+
+import 'package:erp_software/backend/database/rbac_seeder.dart';
+
 Future<void> main() async {
   print('Starting ERP Backend...');
 
@@ -66,6 +89,10 @@ Future<void> main() async {
     final migrationRunner = MigrationRunner(postgresService);
     await migrationRunner.runMigrations();
     
+    // Seed RBAC Roles, Permissions, and Default SuperAdmins
+    print('Seeding RBAC & dedicated SuperAdmins...');
+    final rbacSeeder = RbacSeeder(postgresService);
+    await rbacSeeder.seedAll();
   } catch (e) {
     print('Startup failed: $e');
     print('Ensure PostgreSQL is running and .env is configured correctly.');
@@ -127,6 +154,28 @@ Future<void> main() async {
   final gymService = GymService(postgresService);
   final gymController = GymController(gymService);
 
+  // Initialize Cashier Repositories, Services & Controllers
+  final cashierSettingsRepository = CashierSettingsRepository(postgresService);
+  final cashierProductRepository = cashier_repo.ProductRepository(postgresService);
+  final cashierOrderRepository = OrderRepository(postgresService);
+  final cashierRefundRepository = RefundRepository(postgresService);
+  final cashierBarcodeRepository = BarcodeRepository(postgresService);
+
+  final cashierSettingsService = CashierSettingsService(cashierSettingsRepository);
+  final posService = PosService(cashierProductRepository);
+  final cashierOrderService = OrderService(
+    orderRepository: cashierOrderRepository,
+    settingsRepository: cashierSettingsRepository,
+  );
+  final cashierRefundService = RefundService(cashierRefundRepository);
+  final cashierBarcodeService = BarcodeService(cashierBarcodeRepository);
+
+  final cashierSettingsController = CashierSettingsController(cashierSettingsService);
+  final posController = PosController(posService);
+  final orderController = OrderController(cashierOrderService);
+  final refundController = RefundController(cashierRefundService);
+  final barcodeController = BarcodeController(cashierBarcodeService);
+
   // Setup App Router
   final appRouter = AppRouter(
     authController: authController,
@@ -137,6 +186,11 @@ Future<void> main() async {
     warehouseController: warehouseController,
     productManagementController: productManagementController,
     gymController: gymController,
+    posController: posController,
+    orderController: orderController,
+    refundController: refundController,
+    barcodeController: barcodeController,
+    cashierSettingsController: cashierSettingsController,
     auditLogController: auditLogController,
     branchController: branchController,
     landingPageController: landingPageController,

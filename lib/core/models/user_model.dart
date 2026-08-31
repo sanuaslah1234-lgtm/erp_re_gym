@@ -72,25 +72,54 @@ class UserModel {
     };
   }
 
-  /// Whether user has SUPER_ADMIN role (bypasses all checks)
+  /// Whether user is dedicated Gym Super Admin
+  bool get isGymSuperAdmin =>
+      email.toLowerCase() == 'superadmingym@gmail.com' ||
+      role.toUpperCase() == AppRoles.gymSuperAdmin;
+
+  /// Whether user is dedicated Retail Super Admin
+  bool get isRetailSuperAdmin =>
+      email.toLowerCase() == 'superadminretail@gmail.com' ||
+      role.toUpperCase() == AppRoles.retailSuperAdmin;
+
+  /// Whether user has general SUPER_ADMIN role (bypasses all checks across both domains)
   bool get isSuperAdmin =>
-      role.toUpperCase() == AppRoles.superAdmin ||
-      role.toLowerCase() == 'admin';
+      !isGymSuperAdmin &&
+      !isRetailSuperAdmin &&
+      (role.toUpperCase() == AppRoles.superAdmin || role.toLowerCase() == 'admin');
 
   /// Permission evaluation
   bool can(String permission) {
+    if (isGymSuperAdmin) {
+      return permission.startsWith('gym.');
+    }
+    if (isRetailSuperAdmin) {
+      return permission.startsWith('erp.');
+    }
     if (isSuperAdmin) return true;
     return permissions.contains(permission) || permissions.contains('*');
   }
 
   /// Check if user has at least one of the specified permissions
   bool hasAnyPermission(List<String> perms) {
+    if (isGymSuperAdmin) {
+      return perms.any((p) => p.startsWith('gym.'));
+    }
+    if (isRetailSuperAdmin) {
+      return perms.any((p) => p.startsWith('erp.'));
+    }
     if (isSuperAdmin) return true;
     return perms.any((p) => can(p));
   }
 
   /// Check if user has access to a specific module namespace ('erp' or 'gym')
   bool canAccessModule(String module) {
+    if (isGymSuperAdmin) {
+      return module == 'gym';
+    }
+    if (isRetailSuperAdmin) {
+      return module == 'erp';
+    }
     if (isSuperAdmin) return true;
     final prefix = '$module.';
     return permissions.any((p) => p.startsWith(prefix));

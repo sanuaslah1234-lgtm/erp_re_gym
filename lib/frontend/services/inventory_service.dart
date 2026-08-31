@@ -7,7 +7,7 @@ import 'package:erp_software/core/models/inventory_model.dart';
 import 'package:flutter/material.dart';
 class InventoryService {
 
-  static const String baseUrl = AppConstants.apiBaseUrl;
+  static String get baseUrl => AppConstants.apiBaseUrl;
 
   Future<List<InventoryModel>> getInventory({
     String? search,

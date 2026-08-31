@@ -77,7 +77,12 @@ class PosProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _products = await _posApiService.getProducts(token, search: _searchQuery, categoryId: _selectedCategoryId);
+      _products = await _posApiService.getProducts(
+        token,
+        search: _searchQuery,
+        categoryId: _selectedCategoryId,
+        brandId: _selectedBrandId,
+      );
       _categories = await _posApiService.getCategories(token);
       _brands = await _posApiService.getBrands(token);
     } catch (e) {

@@ -19,9 +19,20 @@ import 'frontend/providers/employee_provider.dart';
 import 'frontend/providers/product_management_provider.dart';
 import 'frontend/screens/auth/login_screen.dart';
 import 'frontend/screens/employees/employee_screen.dart';
+import 'frontend/screens/gym/gym_dashboard_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'core/constants/app_constants.dart';
 import 'theme/app_theme.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final savedUrl = prefs.getString('custom_api_base_url');
+    if (savedUrl != null && savedUrl.trim().isNotEmpty) {
+      AppConstants.setBaseUrl(savedUrl);
+    }
+  } catch (_) {}
   runApp(const ErpApp());
 }
 
@@ -67,6 +78,9 @@ class AuthWrapperScreen extends StatelessWidget {
     final authProvider = Provider.of<AuthProvider>(context);
 
     if (authProvider.isAuthenticated) {
+      if (authProvider.canAccessGym() && !authProvider.canAccessErp()) {
+        return const GymDashboardScreen();
+      }
       return const EmployeesScreen();
     } else {
       return const LoginScreen();

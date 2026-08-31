@@ -17,15 +17,26 @@ class RefundItemModel {
     required this.refundAmount,
   });
 
+  static double _parseDouble(dynamic v) {
+    if (v is num) return v.toDouble();
+    return double.tryParse(v?.toString() ?? '0') ?? 0.0;
+  }
+
+  static int? _parseInt(dynamic v) {
+    if (v == null) return null;
+    if (v is num) return v.toInt();
+    return int.tryParse(v.toString());
+  }
+
   factory RefundItemModel.fromJson(Map<String, dynamic> json) {
     return RefundItemModel(
-      id: json['id'] as int?,
-      refundId: json['refundId'] ?? json['refund_id'],
-      orderItemId: json['orderItemId'] ?? json['order_item_id'],
-      productId: json['productId'] ?? json['product_id'],
-      productName: json['productName'] ?? json['product_name'],
-      quantity: (json['quantity'] ?? 0.0).toDouble(),
-      refundAmount: (json['refundAmount'] ?? json['refund_amount'] ?? 0.0).toDouble(),
+      id: _parseInt(json['id']),
+      refundId: _parseInt(json['refundId'] ?? json['refund_id']),
+      orderItemId: _parseInt(json['orderItemId'] ?? json['order_item_id']) ?? 0,
+      productId: _parseInt(json['productId'] ?? json['product_id']) ?? 0,
+      productName: (json['productName'] ?? json['product_name'])?.toString(),
+      quantity: _parseDouble(json['quantity']),
+      refundAmount: _parseDouble(json['refundAmount'] ?? json['refund_amount']),
     );
   }
 
@@ -69,21 +80,34 @@ class RefundModel {
     this.createdAt,
   });
 
+  static double _parseDouble(dynamic v) {
+    if (v is num) return v.toDouble();
+    return double.tryParse(v?.toString() ?? '0') ?? 0.0;
+  }
+
+  static int? _parseInt(dynamic v) {
+    if (v == null) return null;
+    if (v is num) return v.toInt();
+    return int.tryParse(v.toString());
+  }
+
   factory RefundModel.fromJson(Map<String, dynamic> json) {
     return RefundModel(
-      id: json['id'] as int?,
-      refundNumber: json['refundNumber'] ?? json['refund_number'] ?? '',
-      orderId: json['orderId'] ?? json['order_id'],
-      orderNumber: json['orderNumber'] ?? json['order_number'],
-      refundAmount: (json['refundAmount'] ?? json['refund_amount'] ?? 0.0).toDouble(),
-      refundMethod: json['refundMethod'] ?? json['refund_method'] ?? 'Cash',
+      id: _parseInt(json['id']),
+      refundNumber: (json['refundNumber'] ?? json['refund_number'] ?? '').toString(),
+      orderId: _parseInt(json['orderId'] ?? json['order_id']) ?? 0,
+      orderNumber: (json['orderNumber'] ?? json['order_number'])?.toString(),
+      refundAmount: _parseDouble(json['refundAmount'] ?? json['refund_amount']),
+      refundMethod: (json['refundMethod'] ?? json['refund_method'] ?? 'Cash').toString(),
       reason: json['reason']?.toString(),
-      processedBy: json['processedBy'] ?? json['processed_by'] ?? 1,
-      processorName: json['processorName'] ?? json['processor_name'],
+      processedBy: _parseInt(json['processedBy'] ?? json['processed_by']) ?? 1,
+      processorName: (json['processorName'] ?? json['processor_name'])?.toString(),
       items: json['items'] != null
-          ? (json['items'] as List).map((i) => RefundItemModel.fromJson(i)).toList()
+          ? (json['items'] as List).map((i) => RefundItemModel.fromJson(i is Map<String, dynamic> ? i : Map<String, dynamic>.from(i as Map))).toList()
           : [],
-      createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'].toString()) : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'].toString())
+          : (json['created_at'] != null ? DateTime.tryParse(json['created_at'].toString()) : null),
     );
   }
 

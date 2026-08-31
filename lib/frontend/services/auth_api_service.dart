@@ -3,10 +3,11 @@ import 'package:flutter/foundation.dart';
 import 'package:erp_software/core/models/auth_response_model.dart';
 import 'package:erp_software/core/models/employee_model.dart';
 import 'package:erp_software/core/models/user_model.dart';
+import 'package:erp_software/core/constants/app_constants.dart';
 import 'package:http/http.dart' as http;
 
 class AuthApiService {
-  final String baseUrl = 'http://localhost:5000/api/auth';
+  String get baseUrl => '${AppConstants.apiBaseUrl}/api/auth';
 
   Future<AuthResponseModel> login(String identifier, String password) async {
     try {

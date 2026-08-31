@@ -1,20 +1,22 @@
 import 'dart:convert';
+import 'package:erp_software/core/constants/app_constants.dart';
 import 'package:erp_software/core/models/cashier/product.dart';
 import 'package:http/http.dart' as http;
 
 class PosApiService {
-  final String baseUrl = 'http://localhost:5000/api/cashier';
+  String get baseUrl => '${AppConstants.apiBaseUrl}/api/cashier';
 
   Map<String, String> _headers(String? token) => {
         'Content-Type': 'application/json',
         if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
       };
 
-  Future<List<Product>> getProducts(String? token, {String? search, int? categoryId}) async {
+  Future<List<Product>> getProducts(String? token, {String? search, dynamic categoryId, dynamic brandId}) async {
     try {
       final uri = Uri.parse('$baseUrl/products').replace(queryParameters: {
-        if (search != null && search.isNotEmpty) 'search': search,
-        if (categoryId != null && categoryId > 0) 'categoryId': categoryId.toString(),
+        if (search != null && search.trim().isNotEmpty) 'search': search.trim(),
+        if (categoryId != null && categoryId.toString().isNotEmpty) 'categoryId': categoryId.toString(),
+        if (brandId != null && brandId.toString().isNotEmpty) 'brandId': brandId.toString(),
       });
 
       final response = await http.get(uri, headers: _headers(token)).timeout(const Duration(seconds: 4));
@@ -22,7 +24,7 @@ class PosApiService {
 
       if (response.statusCode == 200 && body['success'] == true) {
         final List list = body['data'];
-        return list.map((e) => Product.fromJson(e)).toList();
+        return list.map((e) => Product.fromJson(e as Map<String, dynamic>)).toList();
       } else {
         throw Exception(body['message'] ?? 'Failed to fetch POS products');
       }

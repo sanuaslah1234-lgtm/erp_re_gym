@@ -1,43 +1,67 @@
 class AppConstants {
   AppConstants._();
 
-  // ==========================================
-  // API URL CONFIGURATION
-  // ==========================================
-  // ⚠️ IMPORTANT — You can pass this at compile time:
-  // flutter run --dart-define=API_BASE_URL=http://your-ip:5000
-  //
-  // Defaults:
-  //  - Web / Desktop           -> http://localhost:5000
-  //  - Android Emulator        -> http://10.0.2.2:5000
-  //  - iOS Simulator           -> http://localhost:5000
-  //  - Real device on same WiFi-> http://<your-pc-lan-ip>:5000
-  static const String apiBaseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'http://localhost:5000',
-  );
+  static String _currentBaseUrl = '';
+
+  /// Update the active Server Base URL in memory
+  static void setBaseUrl(String url) {
+    _currentBaseUrl = _normalizeUrl(url);
+  }
+
+  /// Reset to default
+  static void resetBaseUrl() {
+    _currentBaseUrl = '';
+  }
+
+  static String _normalizeUrl(String url) {
+    var trimmed = url.trim();
+    if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+      trimmed = 'http://$trimmed';
+    }
+    while (trimmed.endsWith('/')) {
+      trimmed = trimmed.substring(0, trimmed.length - 1);
+    }
+    return trimmed;
+  }
 
   // ==========================================
-  // API ROUTES
+  // DYNAMIC API URL RESOLUTION (Pure Dart)
   // ==========================================
-  static const String branches = '$apiBaseUrl/api/admin/branches';
-  static const String managers = '$apiBaseUrl/api/admin/managers';
+  static String get apiBaseUrl {
+    if (_currentBaseUrl.isNotEmpty) {
+      return _currentBaseUrl;
+    }
+
+    const envUrl = String.fromEnvironment('API_BASE_URL', defaultValue: '');
+    if (envUrl.isNotEmpty) {
+      return _normalizeUrl(envUrl);
+    }
+
+    // Default to the developer's PC LAN IP so mobile devices connect seamlessly
+    return 'http://192.168.1.18:5000';
+  }
+
+  // ==========================================
+  // API ROUTES (Dynamic Getters)
+  // ==========================================
+  static String get branches => '$apiBaseUrl/api/admin/branches';
+  static String get managers => '$apiBaseUrl/api/admin/managers';
   
-  static const String auditLogs = '$apiBaseUrl/api/admin/audit-logs';
+  static String get auditLogs => '$apiBaseUrl/api/admin/audit-logs';
   static String employeeTimeline(int employeeDbId) => '$apiBaseUrl/api/admin/audit-logs/employee/$employeeDbId';
 
-  static const String settings = '$apiBaseUrl/api/admin/settings';
-  static const String settingsReset = '$apiBaseUrl/api/admin/settings/reset';
+  static String get settings => '$apiBaseUrl/api/admin/settings';
+  static String get settingsReset => '$apiBaseUrl/api/admin/settings/reset';
 
-  static const String landingPage = '$apiBaseUrl/api/admin/landing-page';
-  static const String landingPageReset = '$apiBaseUrl/api/admin/landing-page/reset';
+  static String get landingPage => '$apiBaseUrl/api/admin/landing-page';
+  static String get landingPageReset => '$apiBaseUrl/api/admin/landing-page/reset';
 
-  static const String salesReport = '$apiBaseUrl/api/admin/reports/sales';
-  static const String reportCustomers = '$apiBaseUrl/api/admin/reports/customers';
-  static const String purchaseReport = '$apiBaseUrl/api/admin/reports/purchases';
-  static const String reportSuppliers = '$apiBaseUrl/api/admin/reports/suppliers';
-  static const String inventoryReport = '$apiBaseUrl/api/admin/reports/inventory';
-  static const String reportCategories = '$apiBaseUrl/api/admin/reports/categories';
+  static String get salesReport => '$apiBaseUrl/api/admin/reports/sales';
+  static String get reportCustomers => '$apiBaseUrl/api/admin/reports/customers';
+  static String get purchaseReport => '$apiBaseUrl/api/admin/reports/purchases';
+  static String get reportSuppliers => '$apiBaseUrl/api/admin/reports/suppliers';
+  static String get inventoryReport => '$apiBaseUrl/api/admin/reports/inventory';
+  static String get reportCategories => '$apiBaseUrl/api/admin/reports/categories';
 
   static const String loginRoute = '/api/auth/login';
   static const String logoutRoute = '/api/auth/logout';

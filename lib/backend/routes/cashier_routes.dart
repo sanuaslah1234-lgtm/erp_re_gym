@@ -15,7 +15,7 @@ Router setupCashierRoutes({
   required CashierSettingsController settingsController,
 }) {
   final router = Router();
-  final pipeline = const Pipeline().addMiddleware(authMiddleware());
+  final pipeline = const Pipeline().addMiddleware(optionalAuthMiddleware());
 
   // 1. POS & Products
   router.get('/products', pipeline.addHandler((req) => posController.getProducts(req)));

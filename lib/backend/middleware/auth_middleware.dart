@@ -90,3 +90,25 @@ Middleware requireAnyPermission(List<String> permissions) {
 Middleware requireRole(String role) {
   return authMiddleware(allowedRoles: [role]);
 }
+
+/// Middleware that parses JWT token if present in headers, but allows unauthenticated requests
+Middleware optionalAuthMiddleware() {
+  return (Handler innerHandler) {
+    return (Request request) async {
+      final authHeader = request.headers[AppConstants.authHeader];
+      if (authHeader != null && authHeader.startsWith(AppConstants.bearerPrefix)) {
+        final token = authHeader.substring(AppConstants.bearerPrefix.length).trim();
+        final payload = JwtService.verifyToken(token);
+        if (payload != null) {
+          final updatedRequest = request.change(context: {
+            'user': payload,
+            'userId': payload.userId,
+          });
+          return await innerHandler(updatedRequest);
+        }
+      }
+      return await innerHandler(request);
+    };
+  };
+}
+

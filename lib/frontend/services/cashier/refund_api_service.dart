@@ -1,9 +1,10 @@
 import 'dart:convert';
+import 'package:erp_software/core/constants/app_constants.dart';
 import 'package:erp_software/core/models/cashier/refund.dart';
 import 'package:http/http.dart' as http;
 
 class RefundApiService {
-  final String baseUrl = 'http://localhost:5000/api/cashier/refunds';
+  String get baseUrl => '${AppConstants.apiBaseUrl}/api/cashier/refunds';
 
   Map<String, String> _headers(String? token) => {
         'Content-Type': 'application/json',
@@ -40,7 +41,7 @@ class RefundApiService {
   }
 
   Future<Refund> getRefundById(String? token, int id) async {
-    final response = await http.get(Uri.parse('$baseUrl/api/$id'), headers: _headers(token)).timeout(const Duration(seconds: 4));
+    final response = await http.get(Uri.parse('$baseUrl/$id'), headers: _headers(token)).timeout(const Duration(seconds: 4));
     final body = jsonDecode(response.body);
 
     if (response.statusCode == 200 && body['success'] == true) {
