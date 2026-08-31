@@ -115,6 +115,11 @@ class ProductManagementProvider with ChangeNotifier {
     await loadAllData(token);
   }
 
+  Future<void> updateCategory(String? token, dynamic id, CategoryModel category) async {
+    await apiService.updateCategory(token, id, category);
+    await loadAllData(token);
+  }
+
   Future<void> deleteCategory(String? token, dynamic id) async {
     await apiService.deleteCategory(token, id);
     await loadAllData(token);
@@ -185,6 +190,16 @@ class ProductManagementProvider with ChangeNotifier {
     await loadAllData(token);
   }
 
+  Future<void> updateSupplier(String? token, dynamic id, SupplierModel supplier) async {
+    await apiService.updateSupplier(token, id, supplier);
+    await loadAllData(token);
+  }
+
+  Future<void> deleteSupplier(String? token, dynamic id) async {
+    await apiService.deleteSupplier(token, id);
+    await loadAllData(token);
+  }
+
   // ============================================================
   // PURCHASE OPERATIONS — Backend first, reload on success
   // ============================================================
@@ -194,13 +209,23 @@ class ProductManagementProvider with ChangeNotifier {
     await loadAllData(token);
   }
 
+  Future<void> updatePurchase(String? token, dynamic id, PurchaseModel purchase) async {
+    await apiService.updatePurchase(token, id, purchase);
+    await loadAllData(token);
+  }
+
+  Future<void> deletePurchase(String? token, dynamic id) async {
+    await apiService.deletePurchase(token, id);
+    await loadAllData(token);
+  }
+
   // ============================================================
   // STOCK ADJUSTMENT — Backend first, reload on success
   // ============================================================
 
   Future<void> recordStockAdjustment(
     String? token, {
-    required int productId,
+    required dynamic productId,
     required String movementType,
     required double quantity,
     required String reason,

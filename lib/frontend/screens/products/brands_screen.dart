@@ -17,7 +17,7 @@ class BrandsScreen extends StatefulWidget {
 }
 
 class _BrandsScreenState extends State<BrandsScreen> {
-  int? _editingBrandId;
+  dynamic _editingBrandId;
 
   final TextEditingController _brandNameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();

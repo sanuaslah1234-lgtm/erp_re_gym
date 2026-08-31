@@ -115,14 +115,30 @@ class _RenewMembershipDialogState extends State<RenewMembershipDialog> {
   Widget build(BuildContext context) {
     final ms = widget.membership;
 
+    final planItems = _plans.map((p) => DropdownMenuItem<int>(
+      value: p.id,
+      child: Text('${p.name} (${p.durationDays} Days - \$${p.totalAmount.toStringAsFixed(0)})'),
+    )).toList();
+
+    if (_selectedPlanId != null && !planItems.any((item) => item.value == _selectedPlanId)) {
+      planItems.insert(0, DropdownMenuItem<int>(
+        value: _selectedPlanId!,
+        child: Text(ms.planName ?? 'Plan #$_selectedPlanId'),
+      ));
+    }
+
+    final safePlanValue = (_selectedPlanId != null && planItems.any((item) => item.value == _selectedPlanId))
+        ? _selectedPlanId
+        : null;
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       backgroundColor: Colors.white,
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-      child: SizedBox(
-        width: 560,
+      child: Container(
+        width: 650,
+        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
             // Header
             Container(
@@ -135,7 +151,10 @@ class _RenewMembershipDialogState extends State<RenewMembershipDialog> {
                 children: [
                   Container(
                     padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(color: AppColors.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                     child: const Icon(Icons.autorenew_rounded, color: AppColors.primary, size: 24),
                   ),
                   const SizedBox(width: 14),
@@ -157,120 +176,119 @@ class _RenewMembershipDialogState extends State<RenewMembershipDialog> {
             ),
 
             // Form
-            _isInitLoading
-                ? const Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator(color: AppColors.primary))
-                : SingleChildScrollView(
-                    padding: const EdgeInsets.all(24),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Previous Expiry Banner
-                          Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFFBEB),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: const Color(0xFFFDE68A)),
+            Expanded(
+              child: _isInitLoading
+                  ? const Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator(color: AppColors.primary))
+                  : SingleChildScrollView(
+                      padding: const EdgeInsets.all(24),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Previous Expiry Banner
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFFBEB),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: const Color(0xFFFDE68A)),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.history_toggle_off_rounded, color: Color(0xFFD97706), size: 20),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      'Previous Plan: ${ms.planName ?? 'Standard'} (Ended on ${ms.endDate.toIso8601String().split('T').first})',
+                                      style: const TextStyle(fontSize: 12, color: Color(0xFF92400E), fontWeight: FontWeight.w600),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                            child: Row(
+                            const SizedBox(height: 16),
+
+                            // Plan Selection
+                            DropdownButtonFormField<int>(
+                              initialValue: safePlanValue,
+                              decoration: _inputDecoration('Select Renewal Plan *', icon: Icons.fitness_center_outlined),
+                              items: planItems,
+                              onChanged: _onPlanChanged,
+                              validator: (v) => v == null ? 'Please choose a plan' : null,
+                            ),
+                            const SizedBox(height: 14),
+
+                            // Dates Row
+                            Row(
                               children: [
-                                const Icon(Icons.history_toggle_off_rounded, color: Color(0xFFD97706), size: 20),
-                                const SizedBox(width: 10),
                                 Expanded(
-                                  child: Text(
-                                    'Previous Plan: ${ms.planName ?? 'Standard'} (Ended on ${ms.endDate.toIso8601String().split('T').first})',
-                                    style: const TextStyle(fontSize: 12, color: Color(0xFF92400E), fontWeight: FontWeight.w600),
+                                  child: InkWell(
+                                    onTap: () async {
+                                      final picked = await showDatePicker(
+                                        context: context,
+                                        initialDate: _startDate,
+                                        firstDate: DateTime.now().subtract(const Duration(days: 30)),
+                                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                                      );
+                                      if (picked != null) {
+                                        setState(() {
+                                          _startDate = picked;
+                                          if (_selectedPlanId != null && _plans.isNotEmpty) {
+                                            final p = _plans.firstWhere((p) => p.id == _selectedPlanId);
+                                            _endDate = _startDate.add(Duration(days: p.durationDays));
+                                          }
+                                        });
+                                      }
+                                    },
+                                    child: InputDecorator(
+                                      decoration: _inputDecoration('New Start Date', icon: Icons.event_available_outlined),
+                                      child: Text(_startDate.toIso8601String().split('T').first, style: const TextStyle(fontSize: 13)),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: InputDecorator(
+                                    decoration: _inputDecoration('New End Date', icon: Icons.event_busy_outlined),
+                                    child: Text(_endDate.toIso8601String().split('T').first, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary)),
                                   ),
                                 ),
                               ],
                             ),
-                          ),
-                          const SizedBox(height: 16),
+                            const SizedBox(height: 14),
 
-                          // Plan Selection
-                          DropdownButtonFormField<int>(
-                            initialValue: _selectedPlanId,
-                            decoration: _inputDecoration('Select Renewal Plan *', icon: Icons.fitness_center_outlined),
-                            items: _plans.map((p) => DropdownMenuItem<int>(
-                              value: p.id,
-                              child: Text('${p.name} (${p.durationDays} Days - \$${p.totalAmount.toStringAsFixed(0)})'),
-                            )).toList(),
-                            onChanged: _onPlanChanged,
-                            validator: (v) => v == null ? 'Please choose a plan' : null,
-                          ),
-                          const SizedBox(height: 14),
-
-                          // Dates Row
-                          Row(
-                            children: [
-                              Expanded(
-                                child: InkWell(
-                                  onTap: () async {
-                                    final picked = await showDatePicker(
-                                      context: context,
-                                      initialDate: _startDate,
-                                      firstDate: DateTime.now().subtract(const Duration(days: 30)),
-                                      lastDate: DateTime.now().add(const Duration(days: 365)),
-                                    );
-                                    if (picked != null) {
-                                      setState(() {
-                                        _startDate = picked;
-                                        if (_selectedPlanId != null && _plans.isNotEmpty) {
-                                          final p = _plans.firstWhere((p) => p.id == _selectedPlanId);
-                                          _endDate = _startDate.add(Duration(days: p.durationDays));
-                                        }
-                                      });
-                                    }
-                                  },
-                                  child: InputDecorator(
-                                    decoration: _inputDecoration('New Start Date', icon: Icons.event_available_outlined),
-                                    child: Text(_startDate.toIso8601String().split('T').first, style: const TextStyle(fontSize: 13)),
+                            // Payment Row
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: _paidAmountController,
+                                    decoration: _inputDecoration('Amount Paid (\$)', icon: Icons.payments_outlined),
+                                    keyboardType: TextInputType.number,
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: InputDecorator(
-                                  decoration: _inputDecoration('New End Date', icon: Icons.event_busy_outlined),
-                                  child: Text(_endDate.toIso8601String().split('T').first, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: DropdownButtonFormField<String>(
+                                    initialValue: _paymentMethod,
+                                    decoration: _inputDecoration('Payment Method', icon: Icons.account_balance_wallet_outlined),
+                                    items: const [
+                                      DropdownMenuItem(value: 'CASH', child: Text('Cash')),
+                                      DropdownMenuItem(value: 'CARD', child: Text('Credit / Debit Card')),
+                                      DropdownMenuItem(value: 'UPI', child: Text('UPI / QR')),
+                                      DropdownMenuItem(value: 'BANK_TRANSFER', child: Text('Bank Transfer')),
+                                    ],
+                                    onChanged: (v) => setState(() => _paymentMethod = v ?? 'CASH'),
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 14),
-
-                          // Payment Row
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _paidAmountController,
-                                  decoration: _inputDecoration('Amount Paid (\$)', icon: Icons.payments_outlined),
-                                  keyboardType: TextInputType.number,
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: DropdownButtonFormField<String>(
-                                  initialValue: _paymentMethod,
-                                  decoration: _inputDecoration('Payment Method', icon: Icons.account_balance_wallet_outlined),
-                                  items: const [
-                                    DropdownMenuItem(value: 'CASH', child: Text('Cash')),
-                                    DropdownMenuItem(value: 'CARD', child: Text('Credit / Debit Card')),
-                                    DropdownMenuItem(value: 'UPI', child: Text('UPI / QR')),
-                                    DropdownMenuItem(value: 'BANK_TRANSFER', child: Text('Bank Transfer')),
-                                  ],
-                                  onChanged: (v) => setState(() => _paymentMethod = v ?? 'CASH'),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
+            ),
 
             // Footer
             Container(

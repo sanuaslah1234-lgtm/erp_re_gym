@@ -70,7 +70,7 @@ class _AddMembershipDialogState extends State<AddMembershipDialog> {
       setState(() {
         _members = members;
         _plans = plans;
-        if (_plans.isNotEmpty) {
+        if (_plans.isNotEmpty && _selectedPlanId == null) {
           _onPlanChanged(_plans.first.id);
         }
         _isInitLoading = false;
@@ -83,7 +83,7 @@ class _AddMembershipDialogState extends State<AddMembershipDialog> {
   void _onPlanChanged(int? planId) {
     setState(() {
       _selectedPlanId = planId;
-      if (planId != null) {
+      if (planId != null && _plans.isNotEmpty) {
         final plan = _plans.firstWhere((p) => p.id == planId, orElse: () => _plans.first);
         _endDate = _startDate.add(Duration(days: plan.durationDays));
         _amountController.text = plan.price.toStringAsFixed(2);
@@ -150,14 +150,50 @@ class _AddMembershipDialogState extends State<AddMembershipDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final memberItems = _members.map((m) {
+      return DropdownMenuItem<int>(
+        value: m.id,
+        child: Text('${m.name} (${m.memberCode} - ${m.phone})'),
+      );
+    }).toList();
+
+    if (_selectedMemberId != null && !memberItems.any((item) => item.value == _selectedMemberId)) {
+      memberItems.insert(0, DropdownMenuItem<int>(
+        value: _selectedMemberId!,
+        child: Text('Member #$_selectedMemberId'),
+      ));
+    }
+
+    final planItems = _plans.map((p) {
+      return DropdownMenuItem<int>(
+        value: p.id,
+        child: Text('${p.name} (${p.durationDays} Days - \$${p.totalAmount.toStringAsFixed(0)})'),
+      );
+    }).toList();
+
+    if (_selectedPlanId != null && !planItems.any((item) => item.value == _selectedPlanId)) {
+      planItems.insert(0, DropdownMenuItem<int>(
+        value: _selectedPlanId!,
+        child: Text('Plan #$_selectedPlanId'),
+      ));
+    }
+
+    final safeMemberValue = (_selectedMemberId != null && memberItems.any((item) => item.value == _selectedMemberId))
+        ? _selectedMemberId
+        : null;
+
+    final safePlanValue = (_selectedPlanId != null && planItems.any((item) => item.value == _selectedPlanId))
+        ? _selectedPlanId
+        : null;
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       backgroundColor: Colors.white,
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-      child: SizedBox(
-        width: 650,
+      child: Container(
+        width: 680,
+        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
             // Header
             Container(
@@ -195,165 +231,157 @@ class _AddMembershipDialogState extends State<AddMembershipDialog> {
             ),
 
             // Form
-            _isInitLoading
-                ? const Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator(color: AppColors.primary))
-                : SingleChildScrollView(
-                    padding: const EdgeInsets.all(24),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Member Selection
-                          DropdownButtonFormField<int>(
-                            initialValue: _selectedMemberId,
-                            decoration: _inputDecoration('Select Gym Member *', icon: Icons.person_outline),
-                            items: _members.map((m) {
-                              return DropdownMenuItem<int>(
-                                value: m.id,
-                                child: Text('${m.name} (${m.memberCode} - ${m.phone})'),
-                              );
-                            }).toList(),
-                            onChanged: (v) => setState(() => _selectedMemberId = v),
-                            validator: (v) => v == null ? 'Please choose a member' : null,
-                          ),
-                          const SizedBox(height: 14),
+            Expanded(
+              child: _isInitLoading
+                  ? const Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator(color: AppColors.primary))
+                  : SingleChildScrollView(
+                      padding: const EdgeInsets.all(24),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Member Selection
+                            DropdownButtonFormField<int>(
+                              initialValue: safeMemberValue,
+                              decoration: _inputDecoration('Select Gym Member *', icon: Icons.person_outline),
+                              items: memberItems,
+                              onChanged: (v) => setState(() => _selectedMemberId = v),
+                              validator: (v) => v == null ? 'Please choose a member' : null,
+                            ),
+                            const SizedBox(height: 14),
 
-                          // Plan Selection
-                          DropdownButtonFormField<int>(
-                            initialValue: _selectedPlanId,
-                            decoration: _inputDecoration('Select Membership Plan *', icon: Icons.fitness_center_outlined),
-                            items: _plans.map((p) {
-                              return DropdownMenuItem<int>(
-                                value: p.id,
-                                child: Text('${p.name} (${p.durationDays} Days - \$${p.totalAmount.toStringAsFixed(0)})'),
-                              );
-                            }).toList(),
-                            onChanged: _onPlanChanged,
-                            validator: (v) => v == null ? 'Please choose a plan' : null,
-                          ),
-                          const SizedBox(height: 14),
+                            // Plan Selection
+                            DropdownButtonFormField<int>(
+                              initialValue: safePlanValue,
+                              decoration: _inputDecoration('Select Membership Plan *', icon: Icons.fitness_center_outlined),
+                              items: planItems,
+                              onChanged: _onPlanChanged,
+                              validator: (v) => v == null ? 'Please choose a plan' : null,
+                            ),
+                            const SizedBox(height: 14),
 
-                          // Dates Row
-                          Row(
-                            children: [
-                              Expanded(
-                                child: InkWell(
-                                  onTap: () async {
-                                    final picked = await showDatePicker(
-                                      context: context,
-                                      initialDate: _startDate,
-                                      firstDate: DateTime.now().subtract(const Duration(days: 30)),
-                                      lastDate: DateTime.now().add(const Duration(days: 365)),
-                                    );
-                                    if (picked != null) {
-                                      setState(() {
-                                        _startDate = picked;
-                                        if (_selectedPlanId != null) {
-                                          final plan = _plans.firstWhere((p) => p.id == _selectedPlanId);
-                                          _endDate = _startDate.add(Duration(days: plan.durationDays));
-                                        }
-                                      });
-                                    }
-                                  },
-                                  child: InputDecorator(
-                                    decoration: _inputDecoration('Start Date', icon: Icons.event_available_outlined),
-                                    child: Text(_startDate.toIso8601String().split('T').first, style: const TextStyle(fontSize: 13)),
+                            // Dates Row
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: InkWell(
+                                    onTap: () async {
+                                      final picked = await showDatePicker(
+                                        context: context,
+                                        initialDate: _startDate,
+                                        firstDate: DateTime.now().subtract(const Duration(days: 30)),
+                                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                                      );
+                                      if (picked != null) {
+                                        setState(() {
+                                          _startDate = picked;
+                                          if (_selectedPlanId != null && _plans.isNotEmpty) {
+                                            final plan = _plans.firstWhere((p) => p.id == _selectedPlanId, orElse: () => _plans.first);
+                                            _endDate = _startDate.add(Duration(days: plan.durationDays));
+                                          }
+                                        });
+                                      }
+                                    },
+                                    child: InputDecorator(
+                                      decoration: _inputDecoration('Start Date', icon: Icons.event_available_outlined),
+                                      child: Text(_startDate.toIso8601String().split('T').first, style: const TextStyle(fontSize: 13)),
+                                    ),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: InputDecorator(
-                                  decoration: _inputDecoration('Calculated End Date', icon: Icons.event_busy_outlined),
-                                  child: Text(_endDate.toIso8601String().split('T').first, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: InputDecorator(
+                                    decoration: _inputDecoration('Calculated End Date', icon: Icons.event_busy_outlined),
+                                    child: Text(_endDate.toIso8601String().split('T').first, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 14),
-
-                          // Price Breakdown Row
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _amountController,
-                                  decoration: _inputDecoration('Base Price (\$)', icon: Icons.attach_money),
-                                  keyboardType: TextInputType.number,
-                                  onChanged: (_) => setState(() {}),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _discountController,
-                                  decoration: _inputDecoration('Discount (\$)', icon: Icons.discount_outlined),
-                                  keyboardType: TextInputType.number,
-                                  onChanged: (_) => setState(() {}),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _taxController,
-                                  decoration: _inputDecoration('Tax (\$)', icon: Icons.receipt_outlined),
-                                  keyboardType: TextInputType.number,
-                                  onChanged: (_) => setState(() {}),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 14),
-
-                          // Payment Row
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _paidAmountController,
-                                  decoration: _inputDecoration('Amount Paid Now (\$)', icon: Icons.payments_outlined),
-                                  keyboardType: TextInputType.number,
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: DropdownButtonFormField<String>(
-                                  initialValue: _paymentMethod,
-                                  decoration: _inputDecoration('Payment Method', icon: Icons.account_balance_wallet_outlined),
-                                  items: const [
-                                    DropdownMenuItem(value: 'CASH', child: Text('Cash')),
-                                    DropdownMenuItem(value: 'CARD', child: Text('Credit / Debit Card')),
-                                    DropdownMenuItem(value: 'UPI', child: Text('UPI / QR')),
-                                    DropdownMenuItem(value: 'BANK_TRANSFER', child: Text('Bank Transfer')),
-                                  ],
-                                  onChanged: (v) => setState(() => _paymentMethod = v ?? 'CASH'),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-
-                          // Summary Banner
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF0FDF4),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: const Color(0xFFBBF7D0)),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text('Total Membership Fee', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF166534))),
-                                Text('\$${_finalAmount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF15803D))),
                               ],
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 14),
+
+                            // Price Breakdown Row
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: _amountController,
+                                    decoration: _inputDecoration('Base Price (\$)', icon: Icons.attach_money),
+                                    keyboardType: TextInputType.number,
+                                    onChanged: (_) => setState(() {}),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: _discountController,
+                                    decoration: _inputDecoration('Discount (\$)', icon: Icons.discount_outlined),
+                                    keyboardType: TextInputType.number,
+                                    onChanged: (_) => setState(() {}),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: _taxController,
+                                    decoration: _inputDecoration('Tax (\$)', icon: Icons.receipt_outlined),
+                                    keyboardType: TextInputType.number,
+                                    onChanged: (_) => setState(() {}),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 14),
+
+                            // Payment Row
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: _paidAmountController,
+                                    decoration: _inputDecoration('Amount Paid Now (\$)', icon: Icons.payments_outlined),
+                                    keyboardType: TextInputType.number,
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: DropdownButtonFormField<String>(
+                                    initialValue: _paymentMethod,
+                                    decoration: _inputDecoration('Payment Method', icon: Icons.account_balance_wallet_outlined),
+                                    items: const [
+                                      DropdownMenuItem(value: 'CASH', child: Text('Cash')),
+                                      DropdownMenuItem(value: 'CARD', child: Text('Credit / Debit Card')),
+                                      DropdownMenuItem(value: 'UPI', child: Text('UPI / QR')),
+                                      DropdownMenuItem(value: 'BANK_TRANSFER', child: Text('Bank Transfer')),
+                                    ],
+                                    onChanged: (v) => setState(() => _paymentMethod = v ?? 'CASH'),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Summary Banner
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF0FDF4),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: const Color(0xFFBBF7D0)),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text('Total Membership Fee', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF166534))),
+                                  Text('\$${_finalAmount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF15803D))),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
+            ),
 
             // Footer
             Container(

@@ -856,7 +856,7 @@ class GymService {
     query += ' ORDER BY t.created_at DESC';
     final result = await _conn.execute(Sql.named(query), parameters: params);
     return result.map((r) {
-      final map = r.toColumnMap();
+      final map = Map<String, dynamic>.from(r.toColumnMap());
       map['name'] = map['display_name'];
       map['phone'] = map['display_phone'];
       map['email'] = map['display_email'];
@@ -888,7 +888,7 @@ class GymService {
       parameters: {'id': id},
     );
     if (list.isEmpty) return null;
-    final map = list.first.toColumnMap();
+    final map = Map<String, dynamic>.from(list.first.toColumnMap());
     map['name'] = map['display_name'];
     map['phone'] = map['display_phone'];
     map['email'] = map['display_email'];
@@ -1308,10 +1308,11 @@ class GymService {
         wp.*,
         m.name AS member_name,
         m.member_code,
-        t.name AS trainer_name
+        COALESCE(t.name, e.full_name) AS trainer_name
       FROM gym_workout_plans wp
       JOIN gym_members m ON wp.member_id = m.id
       LEFT JOIN gym_trainers t ON wp.trainer_id = t.id
+      LEFT JOIN employees e ON t.employee_id = e.id
       WHERE 1=1
     ''';
     final Map<String, dynamic> params = {};
@@ -1327,7 +1328,7 @@ class GymService {
     final plans = <WorkoutPlanModel>[];
 
     for (final row in result) {
-      final map = row.toColumnMap();
+      final map = Map<String, dynamic>.from(row.toColumnMap());
       final planId = int.parse(map['id'].toString());
       final exercises = await getWorkoutExercises(planId);
       map['exercises'] = exercises.map((e) => e.toJson()).toList();
@@ -1344,16 +1345,17 @@ class GymService {
           wp.*,
           m.name AS member_name,
           m.member_code,
-          t.name AS trainer_name
+          COALESCE(t.name, e.full_name) AS trainer_name
         FROM gym_workout_plans wp
         JOIN gym_members m ON wp.member_id = m.id
         LEFT JOIN gym_trainers t ON wp.trainer_id = t.id
+        LEFT JOIN employees e ON t.employee_id = e.id
         WHERE wp.id = @id
       '''),
       parameters: {'id': id},
     );
     if (list.isEmpty) return null;
-    final map = list.first.toColumnMap();
+    final map = Map<String, dynamic>.from(list.first.toColumnMap());
     final exercises = await getWorkoutExercises(id);
     map['exercises'] = exercises.map((e) => e.toJson()).toList();
     return WorkoutPlanModel.fromMap(map);
@@ -1409,6 +1411,7 @@ class GymService {
         Sql.named('''
           UPDATE gym_workout_plans
           SET
+            member_id = @member_id,
             name = @name,
             goal = @goal,
             trainer_id = @trainer_id,
@@ -1422,6 +1425,7 @@ class GymService {
         '''),
         parameters: {
           'id': id,
+          'member_id': plan.memberId,
           'name': plan.name,
           'goal': plan.goal,
           'trainer_id': plan.trainerId,
@@ -1468,16 +1472,17 @@ class GymService {
             wp.*,
             m.name AS member_name,
             m.member_code,
-            t.name AS trainer_name
+            COALESCE(t.name, e.full_name) AS trainer_name
           FROM gym_workout_plans wp
           JOIN gym_members m ON wp.member_id = m.id
           LEFT JOIN gym_trainers t ON wp.trainer_id = t.id
+          LEFT JOIN employees e ON t.employee_id = e.id
           WHERE wp.id = @id
         '''),
         parameters: {'id': id},
       );
       if (planRow.isNotEmpty) {
-        final map = planRow.first.toColumnMap();
+        final map = Map<String, dynamic>.from(planRow.first.toColumnMap());
         final exercisesRes = await session.execute(
           Sql.named('SELECT * FROM gym_workout_exercises WHERE workout_plan_id = @plan_id ORDER BY id ASC'),
           parameters: {'plan_id': id},
@@ -1568,10 +1573,11 @@ class GymService {
     String query = '''
       SELECT 
         s.*,
-        t.name AS trainer_name,
+        COALESCE(t.name, e.full_name) AS trainer_name,
         t.specialization
       FROM gym_schedules s
       LEFT JOIN gym_trainers t ON s.trainer_id = t.id
+      LEFT JOIN employees e ON t.employee_id = e.id
       WHERE 1=1
     ''';
     final Map<String, dynamic> params = {};
@@ -1656,155 +1662,178 @@ class GymService {
   }
 
   // ===========================================================================
+  // ===========================================================================
   // 10. DETAILED REPORTS
   // ===========================================================================
   Future<List<Map<String, dynamic>>> getMembersReport() async {
     try {
-    final result = await _conn.execute('''
-      SELECT 
-        m.member_code,
-        m.name,
-        m.phone,
-        m.email,
-        m.gender,
-        m.join_date,
-        m.status AS member_status,
-        p.name AS membership_plan,
-        ms.start_date,
-        ms.end_date,
-        (ms.end_date - CURRENT_DATE) AS days_remaining,
-        COALESCE(pay.total_paid, 0)::numeric AS total_paid
-      FROM gym_members m
-      LEFT JOIN LATERAL (
-        SELECT plan_id, start_date, end_date FROM gym_memberships WHERE member_id = m.id ORDER BY end_date DESC LIMIT 1
-      ) ms ON true
-      LEFT JOIN gym_membership_plans p ON ms.plan_id = p.id
-      LEFT JOIN (
-        SELECT member_id, SUM(amount) AS total_paid FROM gym_payments WHERE status = 'PAID' GROUP BY member_id
-      ) pay ON pay.member_id = m.id
-      ORDER BY m.created_at DESC
-    ''');
-    return result.map((r) => r.toColumnMap()).toList();
-    } catch (e) { print('Members report SQL error: $e'); return []; }
+      final result = await _conn.execute('''
+        SELECT 
+          m.member_code,
+          m.name,
+          m.name AS member_name,
+          m.phone,
+          m.email,
+          m.gender,
+          m.join_date,
+          m.status,
+          m.status AS member_status,
+          COALESCE(p.name, '-') AS plan_name,
+          COALESCE(p.name, '-') AS membership_plan,
+          ms.start_date,
+          ms.end_date,
+          (ms.end_date - CURRENT_DATE) AS days_remaining,
+          COALESCE(pay.total_paid, 0)::numeric AS total_paid
+        FROM gym_members m
+        LEFT JOIN LATERAL (
+          SELECT plan_id, start_date, end_date FROM gym_memberships WHERE member_id = m.id ORDER BY end_date DESC LIMIT 1
+        ) ms ON true
+        LEFT JOIN gym_membership_plans p ON ms.plan_id = p.id
+        LEFT JOIN (
+          SELECT member_id, SUM(amount) AS total_paid FROM gym_payments WHERE status = 'PAID' GROUP BY member_id
+        ) pay ON pay.member_id = m.id
+        ORDER BY m.created_at DESC
+      ''');
+      return result.map((r) => r.toColumnMap()).toList();
+    } catch (e) {
+      print('Members report SQL error: $e');
+      return [];
+    }
   }
 
   Future<List<Map<String, dynamic>>> getAttendanceReport({DateTime? fromDate, DateTime? toDate}) async {
     try {
-    String query = '''
-      SELECT 
-        a.id,
-        m.member_code,
-        m.name AS member_name,
-        m.phone,
-        a.attendance_date,
-        a.check_in,
-        a.check_out,
-        a.status
-      FROM gym_attendance a
-      JOIN gym_members m ON a.member_id = m.id
-      WHERE 1=1
-    ''';
-    final Map<String, dynamic> params = {};
+      String query = '''
+        SELECT 
+          a.id,
+          m.member_code,
+          m.name AS member_name,
+          m.phone,
+          a.attendance_date,
+          a.check_in,
+          a.check_out,
+          a.status
+        FROM gym_attendance a
+        JOIN gym_members m ON a.member_id = m.id
+        WHERE 1=1
+      ''';
+      final Map<String, dynamic> params = {};
 
-    if (fromDate != null) {
-      query += ' AND a.attendance_date >= @from_date';
-      params['from_date'] = fromDate.toIso8601String().split('T').first;
-    }
-    if (toDate != null) {
-      query += ' AND a.attendance_date <= @to_date';
-      params['to_date'] = toDate.toIso8601String().split('T').first;
-    }
+      if (fromDate != null) {
+        query += ' AND a.attendance_date >= @from_date';
+        params['from_date'] = fromDate.toIso8601String().split('T').first;
+      }
+      if (toDate != null) {
+        query += ' AND a.attendance_date <= @to_date';
+        params['to_date'] = toDate.toIso8601String().split('T').first;
+      }
 
-    query += ' ORDER BY a.check_in DESC';
-    final result = await _conn.execute(Sql.named(query), parameters: params);
-    return result.map((r) => r.toColumnMap()).toList();
-    } catch (e) { print('Attendance report SQL error: $e'); return []; }
+      query += ' ORDER BY a.check_in DESC';
+      final result = await _conn.execute(Sql.named(query), parameters: params);
+      return result.map((r) => r.toColumnMap()).toList();
+    } catch (e) {
+      print('Attendance report SQL error: $e');
+      return [];
+    }
   }
 
   Future<List<Map<String, dynamic>>> getRevenueReport({DateTime? fromDate, DateTime? toDate}) async {
     try {
-    String query = '''
-      SELECT 
-        pay.id,
-        pay.payment_date,
-        pay.reference_number,
-        m.member_code,
-        m.name AS member_name,
-        p.name AS plan_name,
-        so.order_number AS invoice_number,
-        pay.amount,
-        pay.payment_method,
-        pay.status
-      FROM gym_payments pay
-      JOIN gym_members m ON pay.member_id = m.id
-      LEFT JOIN gym_memberships ms ON pay.membership_id = ms.id
-      LEFT JOIN gym_membership_plans p ON ms.plan_id = p.id
-      LEFT JOIN sales_orders so ON pay.invoice_id = so.id
-      WHERE 1=1
-    ''';
-    final Map<String, dynamic> params = {};
+      String query = '''
+        SELECT 
+          pay.id,
+          pay.payment_date,
+          pay.reference_number,
+          m.member_code,
+          m.name AS member_name,
+          p.name AS plan_name,
+          so.order_number AS invoice_number,
+          pay.amount,
+          pay.payment_method,
+          pay.status
+        FROM gym_payments pay
+        JOIN gym_members m ON pay.member_id = m.id
+        LEFT JOIN gym_memberships ms ON pay.membership_id = ms.id
+        LEFT JOIN gym_membership_plans p ON ms.plan_id = p.id
+        LEFT JOIN sales_orders so ON pay.invoice_id = so.id
+        WHERE 1=1
+      ''';
+      final Map<String, dynamic> params = {};
 
-    if (fromDate != null) {
-      query += ' AND pay.payment_date >= @from_date';
-      params['from_date'] = fromDate.toIso8601String();
-    }
-    if (toDate != null) {
-      query += ' AND pay.payment_date <= @to_date';
-      params['to_date'] = toDate.toIso8601String();
-    }
+      if (fromDate != null) {
+        query += ' AND pay.payment_date >= @from_date';
+        params['from_date'] = fromDate.toIso8601String();
+      }
+      if (toDate != null) {
+        query += ' AND pay.payment_date <= @to_date';
+        params['to_date'] = toDate.toIso8601String();
+      }
 
-    query += ' ORDER BY pay.payment_date DESC';
-    final result = await _conn.execute(Sql.named(query), parameters: params);
-    return result.map((r) => r.toColumnMap()).toList();
-    } catch (e) { print('Revenue report SQL error: $e'); return []; }
+      query += ' ORDER BY pay.payment_date DESC';
+      final result = await _conn.execute(Sql.named(query), parameters: params);
+      return result.map((r) => r.toColumnMap()).toList();
+    } catch (e) {
+      print('Revenue report SQL error: $e');
+      return [];
+    }
   }
 
   Future<List<Map<String, dynamic>>> getExpiryReport() async {
     try {
-    final result = await _conn.execute('''
-      SELECT 
-        m.member_code,
-        m.name AS member_name,
-        m.phone,
-        p.name AS plan_name,
-        ms.start_date,
-        ms.end_date,
-        (ms.end_date - CURRENT_DATE) AS days_remaining,
-        CASE 
-          WHEN ms.end_date < CURRENT_DATE THEN 'EXPIRED'
-          WHEN ms.end_date <= CURRENT_DATE + INTERVAL '7 days' THEN 'EXPIRING_SOON'
-          ELSE 'ACTIVE'
-        END AS expiry_category
-      FROM gym_memberships ms
-      JOIN gym_members m ON ms.member_id = m.id
-      JOIN gym_membership_plans p ON ms.plan_id = p.id
-      WHERE ms.status = 'ACTIVE' OR ms.end_date < CURRENT_DATE
-      ORDER BY ms.end_date ASC
-    ''');
-    return result.map((r) => r.toColumnMap()).toList();
-    } catch (e) { print('Expiry report SQL error: $e'); return []; }
+      final result = await _conn.execute('''
+        SELECT 
+          m.member_code,
+          m.name AS member_name,
+          m.phone,
+          p.name AS plan_name,
+          ms.start_date,
+          ms.end_date,
+          (ms.end_date - CURRENT_DATE) AS days_remaining,
+          ms.status,
+          CASE 
+            WHEN ms.end_date < CURRENT_DATE THEN 'EXPIRED'
+            WHEN ms.end_date <= CURRENT_DATE + INTERVAL '7 days' THEN 'EXPIRING_SOON'
+            ELSE 'ACTIVE'
+          END AS expiry_category
+        FROM gym_memberships ms
+        JOIN gym_members m ON ms.member_id = m.id
+        JOIN gym_membership_plans p ON ms.plan_id = p.id
+        WHERE ms.status = 'ACTIVE' OR ms.end_date < CURRENT_DATE
+        ORDER BY ms.end_date ASC
+      ''');
+      return result.map((r) => r.toColumnMap()).toList();
+    } catch (e) {
+      print('Expiry report SQL error: $e');
+      return [];
+    }
   }
 
   Future<List<Map<String, dynamic>>> getTrainersReport() async {
     try {
-    final result = await _conn.execute('''
-      SELECT 
-        t.id,
-        t.name AS trainer_name,
-        t.specialization,
-        t.experience,
-        t.salary,
-        t.status,
-        COUNT(DISTINCT ta.member_id)::int AS total_assigned_members,
-        COUNT(DISTINCT CASE WHEN ta.status = 'ACTIVE' THEN ta.member_id END)::int AS active_assignments,
-        COUNT(DISTINCT s.id)::int AS total_schedules
-      FROM gym_trainers t
-      LEFT JOIN gym_trainer_assignments ta ON t.id = ta.trainer_id
-      LEFT JOIN gym_schedules s ON t.id = s.trainer_id
-      GROUP BY t.id, t.name, t.specialization, t.experience, t.salary, t.status
-      ORDER BY t.name ASC
-    ''');
-    return result.map((r) => r.toColumnMap()).toList();
-    } catch (e) { print('Trainers report SQL error: $e'); return []; }
+      final result = await _conn.execute('''
+        SELECT 
+          t.id,
+          COALESCE(t.name, e.full_name, 'Trainer') AS trainer_name,
+          COALESCE(t.specialization, 'Strength & Conditioning') AS specialization,
+          COALESCE(t.experience, '-') AS experience,
+          t.salary,
+          t.status,
+          COUNT(DISTINCT ta.member_id)::int AS assigned_members,
+          COUNT(DISTINCT CASE WHEN ta.status = 'ACTIVE' THEN ta.member_id END)::int AS active_members,
+          COUNT(DISTINCT ta.member_id)::int AS total_assigned_members,
+          COUNT(DISTINCT CASE WHEN ta.status = 'ACTIVE' THEN ta.member_id END)::int AS active_assignments,
+          COUNT(DISTINCT s.id)::int AS total_schedules
+        FROM gym_trainers t
+        LEFT JOIN employees e ON t.employee_id = e.id
+        LEFT JOIN gym_trainer_assignments ta ON t.id = ta.trainer_id
+        LEFT JOIN gym_schedules s ON t.id = s.trainer_id
+        GROUP BY t.id, t.name, e.full_name, t.specialization, t.experience, t.salary, t.status
+        ORDER BY trainer_name ASC
+      ''');
+      return result.map((r) => r.toColumnMap()).toList();
+    } catch (e) {
+      print('Trainers report SQL error: $e');
+      return [];
+    }
   }
 }

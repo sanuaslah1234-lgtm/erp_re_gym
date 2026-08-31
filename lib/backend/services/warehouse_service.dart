@@ -3,7 +3,6 @@ import 'package:postgres/postgres.dart';
 
 class WarehouseService {
   final PostgresService postgresService;
-
   WarehouseService(this.postgresService);
 
   // ==========================================================
@@ -16,6 +15,10 @@ class WarehouseService {
     String? address,
     String? phone,
   }) async {
+    final generatedCode = code != null && code.trim().isNotEmpty
+        ? code.trim()
+        : name.toUpperCase().replaceAll(RegExp(r'\s+'), '_').substring(0, name.length.clamp(0, 10));
+
     final result = await postgresService.connection.execute(
       Sql.named('''
         INSERT INTO warehouses (name, code, address, phone)
@@ -23,24 +26,14 @@ class WarehouseService {
         RETURNING id, name, code, address, phone, is_active, created_at, updated_at
       '''),
       parameters: {
-        'name': name,
-        'code': code ?? name.toUpperCase().replaceAll(RegExp(r'\s+'), '_').substring(0, name.length.clamp(0, 10)),
-        'address': address,
-        'phone': phone,
+        'name': name.trim(),
+        'code': generatedCode,
+        'address': address?.trim(),
+        'phone': phone?.trim(),
       },
     );
 
-    final row = result.first;
-    return {
-      'id': row[0].toString(),
-      'name': row[1],
-      'code': row[2]?.toString(),
-      'address': row[3]?.toString(),
-      'phone': row[4]?.toString(),
-      'is_active': row[5],
-      'createdAt': row[6]?.toString(),
-      'updatedAt': row[7]?.toString(),
-    };
+    return _rowToMap(result.first);
   }
 
   // ==========================================================
@@ -56,18 +49,7 @@ class WarehouseService {
       '''),
     );
 
-    return result.map((row) {
-      return {
-        'id': row[0].toString(),
-        'name': row[1],
-        'code': row[2]?.toString(),
-        'address': row[3]?.toString(),
-        'phone': row[4]?.toString(),
-        'is_active': row[5],
-        'createdAt': row[6]?.toString(),
-        'updatedAt': row[7]?.toString(),
-      };
-    }).toList();
+    return result.map((row) => _rowToMap(row)).toList();
   }
 
   // ==========================================================
@@ -79,17 +61,13 @@ class WarehouseService {
       Sql.named('''
         SELECT id, name, code, address, phone, is_active, created_at, updated_at
         FROM warehouses
-        WHERE id = @id OR id::text = @idStr
+        WHERE id = @id
+        LIMIT 1
       '''),
-      parameters: {'id': id, 'idStr': id},
+      parameters: {'id': int.tryParse(id) ?? 0},
     );
     if (result.isEmpty) return null;
-    final row = result.first;
-    return {
-      'id': row[0].toString(), 'name': row[1], 'code': row[2]?.toString(),
-      'address': row[3]?.toString(), 'phone': row[4]?.toString(),
-      'is_active': row[5], 'createdAt': row[6]?.toString(), 'updatedAt': row[7]?.toString(),
-    };
+    return _rowToMap(result.first);
   }
 
   // ==========================================================
@@ -107,48 +85,60 @@ class WarehouseService {
     final result = await postgresService.connection.execute(
       Sql.named('''
         UPDATE warehouses
-        SET name = @name, code = COALESCE(@code, code),
-            address = @address, phone = @phone,
+        SET name = @name,
+            code = COALESCE(@code, code),
+            address = @address,
+            phone = @phone,
             is_active = COALESCE(@isActive, is_active),
             updated_at = CURRENT_TIMESTAMP
-        WHERE id = @id OR id::text = @idStr
+        WHERE id = @id
         RETURNING id, name, code, address, phone, is_active, created_at, updated_at
       '''),
       parameters: {
-        'id': id, 'idStr': id, 'name': name,
-        'code': code, 'address': address, 'phone': phone,
+        'id': int.tryParse(id) ?? 0,
+        'name': name.trim(),
+        'code': code?.trim(),
+        'address': address?.trim(),
+        'phone': phone?.trim(),
         'isActive': isActive,
       },
     );
 
     if (result.isEmpty) return null;
-    final row = result.first;
-    return {
-      'id': row[0].toString(), 'name': row[1], 'code': row[2]?.toString(),
-      'address': row[3]?.toString(), 'phone': row[4]?.toString(),
-      'is_active': row[5], 'createdAt': row[6]?.toString(), 'updatedAt': row[7]?.toString(),
-    };
+    return _rowToMap(result.first);
   }
 
   // ==========================================================
   // DELETE WAREHOUSE
   // ==========================================================
 
-  Future<bool> deleteWarehouse(
-    String id,
-  ) async {
+  Future<bool> deleteWarehouse(String id) async {
     final result = await postgresService.connection.execute(
-      Sql.named('''
-        DELETE FROM warehouses
-        WHERE id = @id OR id::text = @idStr
-        RETURNING id
-      '''),
-      parameters: {
-        'id': id,
-        'idStr': id,
-      },
+      Sql.named('DELETE FROM warehouses WHERE id = @id'),
+      parameters: {'id': int.tryParse(id) ?? 0},
     );
 
-    return result.isNotEmpty;
+    return result.affectedRows > 0;
+  }
+
+  // ==========================================================
+  // HELPER
+  // ==========================================================
+
+  Map<String, dynamic> _rowToMap(dynamic row) {
+    final map = row.toColumnMap();
+    final isActive = map['is_active'] == true;
+    return {
+      'id': map['id'].toString(),
+      'name': map['name']?.toString() ?? '',
+      'code': map['code']?.toString(),
+      'address': map['address']?.toString(),
+      'phone': map['phone']?.toString(),
+      'is_active': isActive,
+      'isActive': isActive,
+      'status': isActive ? 'ACTIVE' : 'INACTIVE',
+      'created_at': map['created_at']?.toString(),
+      'updated_at': map['updated_at']?.toString(),
+    };
   }
 }

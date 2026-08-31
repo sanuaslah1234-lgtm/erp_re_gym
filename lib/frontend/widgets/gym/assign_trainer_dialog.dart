@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:erp_software/core/models/gym/gym_member_model.dart';
 import 'package:erp_software/core/models/gym/gym_trainer_model.dart';
+import 'package:erp_software/core/models/gym/gym_member_model.dart';
 import 'package:erp_software/frontend/services/gym/gym_service.dart';
 import 'package:erp_software/theme/app_colors.dart';
 import 'package:erp_software/frontend/widgets/erp_toast.dart';
 
 class AssignTrainerDialog extends StatefulWidget {
   final int? preselectedTrainerId;
+  final String? preselectedTrainerName;
+  final int? preselectedMemberId;
   final VoidCallback onAssigned;
 
   const AssignTrainerDialog({
     super.key,
     this.preselectedTrainerId,
+    this.preselectedTrainerName,
+    this.preselectedMemberId,
     required this.onAssigned,
   });
 
@@ -36,18 +40,21 @@ class _AssignTrainerDialogState extends State<AssignTrainerDialog> {
   void initState() {
     super.initState();
     _selectedTrainerId = widget.preselectedTrainerId;
+    _selectedMemberId = widget.preselectedMemberId;
     _loadData();
   }
 
   Future<void> _loadData() async {
     try {
-      final trainers = await gymService.getTrainers(status: 'ACTIVE');
-      final members = await gymService.getMembers(status: 'ACTIVE');
+      final results = await Future.wait([
+        gymService.getTrainers(),
+        gymService.getMembers(),
+      ]);
 
       if (!mounted) return;
       setState(() {
-        _trainers = trainers;
-        _members = members;
+        _trainers = results[0] as List<GymTrainerModel>;
+        _members = results[1] as List<GymMemberModel>;
         _isInitLoading = false;
       });
     } catch (_) {
@@ -89,6 +96,38 @@ class _AssignTrainerDialogState extends State<AssignTrainerDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final trainerItems = _trainers.map((t) => DropdownMenuItem<int>(
+      value: t.id,
+      child: Text('${t.name} (${t.specialization})'),
+    )).toList();
+
+    if (_selectedTrainerId != null && !trainerItems.any((item) => item.value == _selectedTrainerId)) {
+      trainerItems.insert(0, DropdownMenuItem<int>(
+        value: _selectedTrainerId!,
+        child: Text(widget.preselectedTrainerName ?? 'Trainer #$_selectedTrainerId'),
+      ));
+    }
+
+    final memberItems = _members.map((m) => DropdownMenuItem<int>(
+      value: m.id,
+      child: Text('${m.name} (${m.memberCode} - ${m.phone})'),
+    )).toList();
+
+    if (_selectedMemberId != null && !memberItems.any((item) => item.value == _selectedMemberId)) {
+      memberItems.insert(0, DropdownMenuItem<int>(
+        value: _selectedMemberId!,
+        child: Text('Member #$_selectedMemberId'),
+      ));
+    }
+
+    final safeTrainerValue = (_selectedTrainerId != null && trainerItems.any((item) => item.value == _selectedTrainerId))
+        ? _selectedTrainerId
+        : null;
+
+    final safeMemberValue = (_selectedMemberId != null && memberItems.any((item) => item.value == _selectedMemberId))
+        ? _selectedMemberId
+        : null;
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       backgroundColor: Colors.white,
@@ -140,24 +179,18 @@ class _AssignTrainerDialogState extends State<AssignTrainerDialog> {
                       children: [
                         // Trainer selector
                         DropdownButtonFormField<int>(
-                          initialValue: _selectedTrainerId,
+                          initialValue: safeTrainerValue,
                           decoration: _inputDecoration('Select Gym Trainer *', icon: Icons.sports_gymnastics_rounded),
-                          items: _trainers.map((t) => DropdownMenuItem<int>(
-                            value: t.id,
-                            child: Text('${t.name} (${t.specialization})'),
-                          )).toList(),
+                          items: trainerItems,
                           onChanged: (v) => setState(() => _selectedTrainerId = v),
                         ),
                         const SizedBox(height: 14),
 
                         // Member selector
                         DropdownButtonFormField<int>(
-                          initialValue: _selectedMemberId,
+                          initialValue: safeMemberValue,
                           decoration: _inputDecoration('Select Gym Member *', icon: Icons.person_outline),
-                          items: _members.map((m) => DropdownMenuItem<int>(
-                            value: m.id,
-                            child: Text('${m.name} (${m.memberCode} - ${m.phone})'),
-                          )).toList(),
+                          items: memberItems,
                           onChanged: (v) => setState(() => _selectedMemberId = v),
                         ),
                         const SizedBox(height: 14),

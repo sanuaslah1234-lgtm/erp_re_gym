@@ -72,16 +72,20 @@ class _AddEditWorkoutDialogState extends State<AddEditWorkoutDialog> {
 
   Future<void> _loadData() async {
     try {
-      final members = await gymService.getMembers(status: 'ACTIVE');
-      final trainers = await gymService.getTrainers(status: 'ACTIVE');
+      final results = await Future.wait([
+        gymService.getMembers(),
+        gymService.getTrainers(),
+      ]);
       if (!mounted) return;
       setState(() {
-        _members = members;
-        _trainers = trainers;
+        _members = results[0] as List<GymMemberModel>;
+        _trainers = results[1] as List<GymTrainerModel>;
         _isInitLoading = false;
       });
-    } catch (_) {
-      if (mounted) setState(() => _isInitLoading = false);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isInitLoading = false);
+      }
     }
   }
 
@@ -223,6 +227,43 @@ class _AddEditWorkoutDialogState extends State<AddEditWorkoutDialog> {
   Widget build(BuildContext context) {
     final isEdit = widget.workoutPlan != null;
 
+    // Build member dropdown items with safe fallback
+    final memberItems = _members.map((m) => DropdownMenuItem<int>(
+      value: m.id,
+      child: Text('${m.name} (${m.memberCode})'),
+    )).toList();
+
+    if (_selectedMemberId != null && !memberItems.any((item) => item.value == _selectedMemberId)) {
+      memberItems.insert(0, DropdownMenuItem<int>(
+        value: _selectedMemberId,
+        child: Text(widget.workoutPlan?.memberName ?? 'Member #$_selectedMemberId'),
+      ));
+    }
+
+    // Build trainer dropdown items with safe fallback
+    final trainerItems = <DropdownMenuItem<int?>>[
+      const DropdownMenuItem<int?>(value: null, child: Text('Self-Guided (No Trainer)')),
+      ..._trainers.map((t) => DropdownMenuItem<int?>(
+        value: t.id,
+        child: Text('${t.name} (${t.specialization})'),
+      )),
+    ];
+
+    if (_selectedTrainerId != null && !trainerItems.any((item) => item.value == _selectedTrainerId)) {
+      trainerItems.add(DropdownMenuItem<int?>(
+        value: _selectedTrainerId,
+        child: Text(widget.workoutPlan?.trainerName ?? 'Trainer #$_selectedTrainerId'),
+      ));
+    }
+
+    final safeMemberValue = (_selectedMemberId != null && memberItems.any((item) => item.value == _selectedMemberId))
+        ? _selectedMemberId
+        : null;
+
+    final safeTrainerValue = (_selectedTrainerId == null || trainerItems.any((item) => item.value == _selectedTrainerId))
+        ? _selectedTrainerId
+        : null;
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       backgroundColor: Colors.white,
@@ -279,28 +320,19 @@ class _AddEditWorkoutDialogState extends State<AddEditWorkoutDialog> {
                               children: [
                                 Expanded(
                                   child: DropdownButtonFormField<int>(
-                                    initialValue: _selectedMemberId,
+                                    initialValue: safeMemberValue,
                                     decoration: _inputDecoration('Select Member *', icon: Icons.person_outline),
-                                    items: _members.map((m) => DropdownMenuItem<int>(
-                                      value: m.id,
-                                      child: Text('${m.name} (${m.memberCode})'),
-                                    )).toList(),
+                                    items: memberItems,
                                     onChanged: (v) => setState(() => _selectedMemberId = v),
                                     validator: (v) => v == null ? 'Select member' : null,
                                   ),
                                 ),
                                 const SizedBox(width: 14),
                                 Expanded(
-                                  child: DropdownButtonFormField<int>(
-                                    initialValue: _selectedTrainerId,
+                                  child: DropdownButtonFormField<int?>(
+                                    initialValue: safeTrainerValue,
                                     decoration: _inputDecoration('Assigned Trainer', icon: Icons.sports_gymnastics_rounded),
-                                    items: [
-                                      const DropdownMenuItem<int>(value: null, child: Text('Self-Guided (No Trainer)')),
-                                      ..._trainers.map((t) => DropdownMenuItem<int>(
-                                        value: t.id,
-                                        child: Text('${t.name} (${t.specialization})'),
-                                      )),
-                                    ],
+                                    items: trainerItems,
                                     onChanged: (v) => setState(() => _selectedTrainerId = v),
                                   ),
                                 ),
@@ -327,6 +359,58 @@ class _AddEditWorkoutDialogState extends State<AddEditWorkoutDialog> {
                                   ),
                                 ),
                               ],
+                            ),
+                            const SizedBox(height: 14),
+
+                            // Dates Row
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: InkWell(
+                                    onTap: () async {
+                                      final picked = await showDatePicker(
+                                        context: context,
+                                        initialDate: _startDate,
+                                        firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                                        lastDate: DateTime.now().add(const Duration(days: 730)),
+                                      );
+                                      if (picked != null) setState(() => _startDate = picked);
+                                    },
+                                    child: InputDecorator(
+                                      decoration: _inputDecoration('Start Date', icon: Icons.calendar_today_outlined),
+                                      child: Text(_startDate.toIso8601String().split('T').first, style: const TextStyle(fontSize: 13)),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 14),
+                                Expanded(
+                                  child: InkWell(
+                                    onTap: () async {
+                                      final picked = await showDatePicker(
+                                        context: context,
+                                        initialDate: _endDate ?? _startDate.add(const Duration(days: 30)),
+                                        firstDate: _startDate,
+                                        lastDate: DateTime.now().add(const Duration(days: 730)),
+                                      );
+                                      if (picked != null) setState(() => _endDate = picked);
+                                    },
+                                    child: InputDecorator(
+                                      decoration: _inputDecoration('End Date (Optional)', icon: Icons.event_available_outlined),
+                                      child: Text(
+                                        _endDate != null ? _endDate!.toIso8601String().split('T').first : 'No End Date',
+                                        style: TextStyle(fontSize: 13, color: _endDate != null ? const Color(0xFF0F172A) : const Color(0xFF94A3B8)),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 14),
+
+                            TextFormField(
+                              controller: _notesController,
+                              maxLines: 2,
+                              decoration: _inputDecoration('Special Instructions / Notes (Optional)', icon: Icons.notes_outlined),
                             ),
                             const SizedBox(height: 20),
 
@@ -374,7 +458,7 @@ class _AddEditWorkoutDialogState extends State<AddEditWorkoutDialog> {
                                         Expanded(
                                           child: Text(ex.exerciseName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
                                         ),
-                                        Text('${ex.sets} sets × ${ex.reps}  ${ex.weight != null ? "(${ex.weight})" : ""}', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                                        Text('${ex.sets} sets × ${ex.reps}  ${ex.weight != null && ex.weight!.isNotEmpty ? "(${ex.weight})" : ""}', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
                                         const SizedBox(width: 10),
                                         IconButton(
                                           icon: const Icon(Icons.delete_outline, size: 18, color: Color(0xFFEF4444)),

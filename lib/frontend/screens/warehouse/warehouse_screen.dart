@@ -83,9 +83,13 @@ class _WarehouseScreenState extends State<WarehouseScreen> {
                     try {
                       final token = Provider.of<AuthProvider>(context, listen: false).token;
                       await _api.createWarehouse(token, WarehouseModel(id: '', name: nameCtrl.text.trim(), code: codeCtrl.text.trim().isEmpty ? null : codeCtrl.text.trim(), address: addressCtrl.text.trim().isEmpty ? null : addressCtrl.text.trim(), phone: phoneCtrl.text.trim().isEmpty ? null : phoneCtrl.text.trim()));
-                      if (mounted) { Navigator.pop(ctx); ErpToast.showSuccess(context, 'Warehouse created'); _load(); }
+                      if (!mounted) return;
+                      if (ctx.mounted) Navigator.pop(ctx);
+                      ErpToast.showSuccess(context, 'Warehouse created');
+                      _load();
                     } catch (e) {
-                      if (mounted) ErpToast.showError(ctx, e.toString().replaceAll('Exception: ', ''));
+                      if (!mounted) return;
+                      ErpToast.showError(context, e.toString().replaceAll('Exception: ', ''));
                     }
                   },
                   icon: const Icon(Icons.add, size: 16), label: const Text('Create'),
@@ -137,9 +141,13 @@ class _WarehouseScreenState extends State<WarehouseScreen> {
                     try {
                       final token = Provider.of<AuthProvider>(context, listen: false).token;
                       await _api.updateWarehouse(token, wh.id, WarehouseModel(id: wh.id, name: nameCtrl.text.trim(), code: codeCtrl.text.trim().isEmpty ? null : codeCtrl.text.trim(), address: addressCtrl.text.trim().isEmpty ? null : addressCtrl.text.trim(), phone: phoneCtrl.text.trim().isEmpty ? null : phoneCtrl.text.trim()));
-                      if (mounted) { Navigator.pop(ctx); ErpToast.showSuccess(context, 'Warehouse updated'); _load(); }
+                      if (!mounted) return;
+                      if (ctx.mounted) Navigator.pop(ctx);
+                      ErpToast.showSuccess(context, 'Warehouse updated');
+                      _load();
                     } catch (e) {
-                      if (mounted) ErpToast.showError(ctx, e.toString().replaceAll('Exception: ', ''));
+                      if (!mounted) return;
+                      ErpToast.showError(context, e.toString().replaceAll('Exception: ', ''));
                     }
                   },
                   icon: const Icon(Icons.save, size: 16), label: const Text('Save'),
@@ -166,9 +174,13 @@ class _WarehouseScreenState extends State<WarehouseScreen> {
               try {
                 final token = Provider.of<AuthProvider>(context, listen: false).token;
                 await _api.deleteWarehouse(token, wh.id);
-                if (mounted) { Navigator.pop(ctx); ErpToast.showSuccess(context, 'Warehouse deleted'); _load(); }
+                if (!mounted) return;
+                if (ctx.mounted) Navigator.pop(ctx);
+                ErpToast.showSuccess(context, 'Warehouse deleted');
+                _load();
               } catch (e) {
-                if (mounted) ErpToast.showError(ctx, e.toString().replaceAll('Exception: ', ''));
+                if (!mounted) return;
+                ErpToast.showError(context, e.toString().replaceAll('Exception: ', ''));
               }
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),

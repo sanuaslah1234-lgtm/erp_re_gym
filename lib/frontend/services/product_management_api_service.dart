@@ -53,7 +53,7 @@ class ProductManagementApiService {
     throw Exception(jsonDecode(res.body)['error'] ?? 'Failed to create product');
   }
 
-  Future<ProductModel> updateProduct(String? token, int id, ProductModel product) async {
+  Future<ProductModel> updateProduct(String? token, dynamic id, ProductModel product) async {
     final res = await http.put(
       Uri.parse('$baseUrl/products/$id'),
       headers: _headers(token),
@@ -66,7 +66,7 @@ class ProductManagementApiService {
     throw Exception(jsonDecode(res.body)['error'] ?? 'Failed to update product');
   }
 
-  Future<void> deleteProduct(String? token, int id) async {
+  Future<void> deleteProduct(String? token, dynamic id) async {
     final res = await http.delete(
       Uri.parse('$baseUrl/products/$id'),
       headers: _headers(token),
@@ -104,11 +104,25 @@ class ProductManagementApiService {
     throw Exception(jsonDecode(res.body)['error'] ?? 'Failed to create category');
   }
 
-  Future<void> deleteCategory(String? token, int id) async {
+  Future<CategoryModel> updateCategory(String? token, dynamic id, CategoryModel category) async {
+    final res = await http.put(
+      Uri.parse('$baseUrl/categories/$id'),
+      headers: _headers(token),
+      body: jsonEncode(category.toJson()),
+    );
+
+    if (res.statusCode == 200) {
+      return CategoryModel.fromJson(jsonDecode(res.body));
+    }
+    throw Exception(jsonDecode(res.body)['error'] ?? 'Failed to update category');
+  }
+
+  Future<void> deleteCategory(String? token, dynamic id) async {
     final res = await http.delete(
       Uri.parse('$baseUrl/categories/$id'),
       headers: _headers(token),
     );
+
     if (res.statusCode != 200) {
       throw Exception(jsonDecode(res.body)['error'] ?? 'Failed to delete category');
     }
@@ -141,7 +155,7 @@ class ProductManagementApiService {
     throw Exception(jsonDecode(res.body)['error'] ?? 'Failed to create brand');
   }
 
-  Future<BrandModel> updateBrand(String? token, int id, BrandModel brand) async {
+  Future<BrandModel> updateBrand(String? token, dynamic id, BrandModel brand) async {
     final res = await http.put(
       Uri.parse('$baseUrl/brands/$id'),
       headers: _headers(token),
@@ -154,11 +168,12 @@ class ProductManagementApiService {
     throw Exception(jsonDecode(res.body)['error'] ?? 'Failed to update brand');
   }
 
-  Future<void> deleteBrand(String? token, int id) async {
+  Future<void> deleteBrand(String? token, dynamic id) async {
     final res = await http.delete(
       Uri.parse('$baseUrl/brands/$id'),
       headers: _headers(token),
     );
+
     if (res.statusCode != 200) {
       throw Exception(jsonDecode(res.body)['error'] ?? 'Failed to delete brand');
     }
@@ -191,7 +206,7 @@ class ProductManagementApiService {
     throw Exception(jsonDecode(res.body)['error'] ?? 'Failed to create unit');
   }
 
-  Future<UnitModel> updateUnit(String? token, int id, UnitModel unit) async {
+  Future<UnitModel> updateUnit(String? token, dynamic id, UnitModel unit) async {
     final res = await http.put(
       Uri.parse('$baseUrl/units/$id'),
       headers: _headers(token),
@@ -204,11 +219,12 @@ class ProductManagementApiService {
     throw Exception(jsonDecode(res.body)['error'] ?? 'Failed to update unit');
   }
 
-  Future<void> deleteUnit(String? token, int id) async {
+  Future<void> deleteUnit(String? token, dynamic id) async {
     final res = await http.delete(
       Uri.parse('$baseUrl/units/$id'),
       headers: _headers(token),
     );
+
     if (res.statusCode != 200) {
       throw Exception(jsonDecode(res.body)['error'] ?? 'Failed to delete unit');
     }
@@ -242,6 +258,30 @@ class ProductManagementApiService {
     throw Exception(jsonDecode(res.body)['error'] ?? 'Failed to create supplier');
   }
 
+  Future<SupplierModel> updateSupplier(String? token, dynamic id, SupplierModel supplier) async {
+    final res = await http.put(
+      Uri.parse('$baseUrl/suppliers/$id'),
+      headers: _headers(token),
+      body: jsonEncode(supplier.toJson()),
+    );
+
+    if (res.statusCode == 200) {
+      return SupplierModel.fromJson(jsonDecode(res.body));
+    }
+    throw Exception(jsonDecode(res.body)['error'] ?? 'Failed to update supplier');
+  }
+
+  Future<void> deleteSupplier(String? token, dynamic id) async {
+    final res = await http.delete(
+      Uri.parse('$baseUrl/suppliers/$id'),
+      headers: _headers(token),
+    );
+
+    if (res.statusCode != 200) {
+      throw Exception(jsonDecode(res.body)['error'] ?? 'Failed to delete supplier');
+    }
+  }
+
   // Purchases (Stock IN) API
   Future<PurchaseModel> createPurchase(String? token, PurchaseModel purchase) async {
     final res = await http.post(
@@ -269,10 +309,34 @@ class ProductManagementApiService {
     throw Exception(jsonDecode(res.body)['error'] ?? 'Failed to load purchases');
   }
 
+  Future<PurchaseModel> updatePurchase(String? token, dynamic id, PurchaseModel purchase) async {
+    final res = await http.put(
+      Uri.parse('$baseUrl/purchases/$id'),
+      headers: _headers(token),
+      body: jsonEncode(purchase.toJson()),
+    );
+
+    if (res.statusCode == 200) {
+      return PurchaseModel.fromJson(jsonDecode(res.body));
+    }
+    throw Exception(jsonDecode(res.body)['error'] ?? 'Failed to update purchase');
+  }
+
+  Future<void> deletePurchase(String? token, dynamic id) async {
+    final res = await http.delete(
+      Uri.parse('$baseUrl/purchases/$id'),
+      headers: _headers(token),
+    );
+
+    if (res.statusCode != 200) {
+      throw Exception(jsonDecode(res.body)['error'] ?? 'Failed to delete purchase');
+    }
+  }
+
   // Stock Adjustments / Damage API
   Future<StockMovementModel> recordStockAdjustment(
     String? token, {
-    required int productId,
+    required dynamic productId,
     required String movementType,
     required double quantity,
     required String reason,

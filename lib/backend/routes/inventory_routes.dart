@@ -36,5 +36,15 @@ Router inventoryRoutes(
     controller.updateQuantity,
   );
 
+  router.put(
+    '/inventory/<id>/quantity',
+    controller.updateQuantity,
+  );
+
+  router.post(
+    '/inventory/<id>/quantity',
+    controller.updateQuantity,
+  );
+
   return router;
 }

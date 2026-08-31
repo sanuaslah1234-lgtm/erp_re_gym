@@ -16,21 +16,31 @@ class WarehouseModel {
   });
 
   factory WarehouseModel.fromJson(Map<String, dynamic> json) {
+    bool parseActive(dynamic val) {
+      if (val == null) return true;
+      if (val is bool) return val;
+      final str = val.toString().toUpperCase();
+      return str == 'ACTIVE' || str == 'TRUE' || str == '1';
+    }
+
     return WarehouseModel(
-      id: json['id'].toString(),
+      id: json['id']?.toString() ?? '',
       name: json['name']?.toString() ?? '',
       code: json['code']?.toString(),
       address: json['address']?.toString(),
       phone: json['phone']?.toString(),
-      isActive: json['is_active'] ?? true,
+      isActive: parseActive(json['is_active'] ?? json['isActive'] ?? json['status']),
     );
   }
 
   Map<String, dynamic> toJson() => {
+    'id': id,
     'name': name,
     'code': code,
     'address': address,
     'phone': phone,
     'is_active': isActive,
+    'isActive': isActive,
+    'status': isActive ? 'ACTIVE' : 'INACTIVE',
   };
 }

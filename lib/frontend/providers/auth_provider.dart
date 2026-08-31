@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:erp_software/core/models/employee_model.dart';
 import 'package:erp_software/core/models/user_model.dart';
 import 'package:erp_software/frontend/services/auth_api_service.dart';
+import 'package:erp_software/frontend/services/gym/gym_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   final AuthApiService _apiService = AuthApiService();
@@ -18,7 +19,22 @@ class AuthProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
   bool get isAuthenticated => _token != null && _user != null;
-  bool get isAdmin => _user?.role.toLowerCase() == 'admin';
+
+  String get role => _user?.role ?? '';
+  bool get isSuperAdmin => _user?.isSuperAdmin ?? false;
+  bool get isAdmin => isSuperAdmin;
+
+  /// Check if logged in user has a specific permission (e.g. 'gym.members.manage')
+  bool can(String permission) => _user?.can(permission) ?? false;
+
+  /// Check if logged in user has at least one of the listed permissions
+  bool hasAnyPermission(List<String> perms) => _user?.hasAnyPermission(perms) ?? false;
+
+  /// Check if user has access to ERP Management module
+  bool canAccessErp() => _user?.canAccessErp ?? false;
+
+  /// Check if user has access to Gym Management module
+  bool canAccessGym() => _user?.canAccessGym ?? false;
 
   Future<bool> login(String email, String password) async {
     _isLoading = true;
@@ -30,6 +46,7 @@ class AuthProvider extends ChangeNotifier {
       _token = authResp.token;
       _user = authResp.user;
       _employee = authResp.employee;
+      GymApiService.setAuthToken(_token);
       _isLoading = false;
       notifyListeners();
       return true;
@@ -46,6 +63,7 @@ class AuthProvider extends ChangeNotifier {
     _user = null;
     _employee = null;
     _errorMessage = null;
+    GymApiService.setAuthToken(null);
     notifyListeners();
   }
 
@@ -109,5 +127,16 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     }
+  }
+
+  Future<void> refreshProfile() async {
+    if (_token == null) return;
+    try {
+      GymApiService.setAuthToken(_token);
+      final authResp = await _apiService.getMe(_token!);
+      _user = authResp.user;
+      _employee = authResp.employee;
+      notifyListeners();
+    } catch (_) {}
   }
 }

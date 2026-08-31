@@ -143,6 +143,7 @@ Future<void> main() async {
     managerController: managerController,
     reportsController: reportsController,
     settingsController: settingsController,
+    postgresService: postgresService,
   );
 
   // Setup Server
@@ -156,23 +157,27 @@ Future<void> main() async {
   print('✅ ERP Backend running securely on http://localhost:${shelfServer.port}');
 
   // Keep server alive indefinitely
-  Timer.periodic(const Duration(hours: 24), (_) {});
-  final completer = Completer<void>();
+  Timer.periodic(const Duration(seconds: 10), (_) {});
+  
+  Future<void> shutdown() async {
+    print('Server shutting down...');
+    await shelfServer.close(force: true);
+    exit(0);
+  }
+
+  // Handle Ctrl+C (SIGINT) on all platforms
   try {
-    if (!Platform.isWindows) {
-      ProcessSignal.sigint.watch().listen((_) {
-        print('Shutting down server...');
-        shelfServer.close(force: true);
-        if (!completer.isCompleted) completer.complete();
-      });
-      ProcessSignal.sigterm.watch().listen((_) {
-        print('Shutting down server...');
-        shelfServer.close(force: true);
-        if (!completer.isCompleted) completer.complete();
-      });
-    }
+    ProcessSignal.sigint.watch().listen((_) => shutdown());
   } catch (_) {}
-  await completer.future;
+  // Handle SIGTERM on non-Windows
+  if (!Platform.isWindows) {
+    try {
+      ProcessSignal.sigterm.watch().listen((_) => shutdown());
+    } catch (_) {}
+  }
+
+
+  await Completer<void>().future;
 }
 
 Future<void> _freePortIfHeld(int port) async {

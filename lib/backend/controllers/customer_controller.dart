@@ -17,16 +17,16 @@ class CustomerController {
       final data = jsonDecode(body);
 
       final customer = CustomerModel(
-        branchId: data['branchId']?.toString(),
+        branchId: (data['branch_id'] ?? data['branchId'])?.toString(),
         name: data['name']?.toString() ?? '',
         phone: data['phone']?.toString() ?? '',
         email: data['email']?.toString(),
         address: data['address']?.toString(),
-        loyaltyId: data['loyaltyId']?.toString(),
+        loyaltyId: (data['loyalty_id'] ?? data['loyaltyId'])?.toString(),
         creditLimit:
-            double.tryParse(data['creditLimit']?.toString() ?? '0') ?? 0,
+            double.tryParse((data['credit_limit'] ?? data['creditLimit'])?.toString() ?? '0') ?? 0,
         currentBalance:
-            double.tryParse(data['currentBalance']?.toString() ?? '0') ?? 0,
+            double.tryParse((data['current_balance'] ?? data['currentBalance'])?.toString() ?? '0') ?? 0,
       );
 
       final created = await service.createCustomer(customer);
@@ -135,16 +135,16 @@ class CustomerController {
       final data = jsonDecode(body);
 
       final customer = CustomerModel(
-        branchId: data['branchId']?.toString(),
+        branchId: (data['branch_id'] ?? data['branchId'])?.toString(),
         name: data['name']?.toString() ?? '',
         phone: data['phone']?.toString() ?? '',
         email: data['email']?.toString(),
         address: data['address']?.toString(),
-        loyaltyId: data['loyaltyId']?.toString(),
+        loyaltyId: (data['loyalty_id'] ?? data['loyaltyId'])?.toString(),
         creditLimit:
-            double.tryParse(data['creditLimit']?.toString() ?? '0') ?? 0,
+            double.tryParse((data['credit_limit'] ?? data['creditLimit'])?.toString() ?? '0') ?? 0,
         currentBalance:
-            double.tryParse(data['currentBalance']?.toString() ?? '0') ?? 0,
+            double.tryParse((data['current_balance'] ?? data['currentBalance'])?.toString() ?? '0') ?? 0,
       );
 
       final updated = await service.updateCustomer(

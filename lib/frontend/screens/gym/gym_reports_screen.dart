@@ -4,6 +4,7 @@ import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
 import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 import 'package:erp_software/frontend/widgets/erp_toast.dart';
 import 'package:erp_software/theme/app_colors.dart';
+import 'package:erp_software/core/utils/export_print_helper.dart';
 
 class GymReportsScreen extends StatefulWidget {
   const GymReportsScreen({super.key});
@@ -127,9 +128,100 @@ class _GymReportsScreenState extends State<GymReportsScreen> with SingleTickerPr
   }
 
   void _exportReport() {
-    final titles = ['Members_Report', 'Attendance_Report', 'Revenue_Report', 'Expiry_Report', 'Trainers_Report'];
-    final currentTitle = titles[_tabController.index];
-    ErpToast.showSuccess(context, '$currentTitle exported successfully to CSV / PDF format!', title: 'Report Exported');
+    List<Map<String, dynamic>> currentData = [];
+    List<Map<String, String>> currentColumns = [];
+    String reportTitle = 'Gym_Report';
+
+    switch (_tabController.index) {
+      case 0:
+        currentData = _memberReport;
+        currentColumns = [
+          {'key': 'member_code', 'label': 'Code'},
+          {'key': 'name', 'label': 'Member Name'},
+          {'key': 'phone', 'label': 'Phone'},
+          {'key': 'plan_name', 'label': 'Plan'},
+          {'key': 'status', 'label': 'Status'},
+          {'key': 'total_paid', 'label': 'Total Paid (USD)'},
+        ];
+        reportTitle = 'Gym_Members_Report';
+        break;
+      case 1:
+        currentData = _attendanceReport;
+        currentColumns = [
+          {'key': 'attendance_date', 'label': 'Date'},
+          {'key': 'member_name', 'label': 'Member'},
+          {'key': 'check_in', 'label': 'Check-In'},
+          {'key': 'check_out', 'label': 'Check-Out'},
+          {'key': 'status', 'label': 'Status'},
+        ];
+        reportTitle = 'Gym_Attendance_Report';
+        break;
+      case 2:
+        currentData = _revenueReport;
+        currentColumns = [
+          {'key': 'payment_date', 'label': 'Date'},
+          {'key': 'reference_number', 'label': 'Ref #'},
+          {'key': 'member_name', 'label': 'Member'},
+          {'key': 'amount', 'label': 'Amount (USD)'},
+          {'key': 'payment_method', 'label': 'Method'},
+          {'key': 'status', 'label': 'Status'},
+        ];
+        reportTitle = 'Gym_Revenue_Report';
+        break;
+      case 3:
+        currentData = _expiryReport;
+        currentColumns = [
+          {'key': 'member_name', 'label': 'Member'},
+          {'key': 'plan_name', 'label': 'Plan'},
+          {'key': 'start_date', 'label': 'Start'},
+          {'key': 'end_date', 'label': 'End'},
+          {'key': 'days_remaining', 'label': 'Days Left'},
+          {'key': 'status', 'label': 'Status'},
+        ];
+        reportTitle = 'Gym_Expiry_Report';
+        break;
+      case 4:
+        currentData = _trainerReport;
+        currentColumns = [
+          {'key': 'trainer_name', 'label': 'Trainer'},
+          {'key': 'specialization', 'label': 'Specialization'},
+          {'key': 'assigned_members', 'label': 'Assigned Clients'},
+          {'key': 'active_members', 'label': 'Active Clients'},
+          {'key': 'total_schedules', 'label': 'Schedules'},
+        ];
+        reportTitle = 'Gym_Trainers_Report';
+        break;
+    }
+
+    if (currentData.isEmpty) {
+      ErpToast.showError(context, 'No report data available to export for the selected period.');
+      return;
+    }
+
+    final headers = currentColumns.map((c) => c['label']!).toList();
+    final rows = currentData.map((row) {
+      return currentColumns.map((col) {
+        final key = col['key']!;
+        dynamic val = row[key];
+        if (val == null) {
+          if (key == 'name') val = row['member_name'];
+          if (key == 'status') val = row['member_status'];
+          if (key == 'plan_name') val = row['membership_plan'];
+          if (key == 'assigned_members') val = row['total_assigned_members'];
+          if (key == 'active_members') val = row['active_assignments'];
+        }
+        if (val == null) return '-';
+        if (val is DateTime) return val.toIso8601String().split('T').first;
+        return val.toString();
+      }).toList();
+    }).toList();
+
+    ExportPrintHelper.exportCsv(
+      context: context,
+      filename: reportTitle,
+      headers: headers,
+      rows: rows,
+    );
   }
 
   @override
@@ -348,7 +440,15 @@ class _GymReportsScreenState extends State<GymReportsScreen> with SingleTickerPr
               return DataRow(
                 cells: columns.map((col) {
                   final key = col['key']!;
-                  dynamic val = row[key] ?? '-';
+                  dynamic val = row[key];
+                  if (val == null) {
+                    if (key == 'name') val = row['member_name'];
+                    if (key == 'status') val = row['member_status'];
+                    if (key == 'plan_name') val = row['membership_plan'];
+                    if (key == 'assigned_members') val = row['total_assigned_members'];
+                    if (key == 'active_members') val = row['active_assignments'];
+                  }
+                  val ??= '-';
                   if (val is DateTime) val = val.toIso8601String().split('T').first;
                   return DataCell(Text(val.toString(), style: const TextStyle(fontSize: 13)));
                 }).toList(),

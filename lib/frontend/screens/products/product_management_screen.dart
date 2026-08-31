@@ -36,6 +36,141 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
     );
   }
 
+  void _showProductDetailsDialog(BuildContext context, ProductModel p) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEEF2FF),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.inventory_2_rounded, color: Color(0xFF4F46E5), size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(p.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                    Text(p.productCode, style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          content: SizedBox(
+            width: 480,
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Divider(),
+                  const SizedBox(height: 8),
+                  _buildDetailRow('Barcode / SKU', p.barcode ?? p.productCode),
+                  _buildDetailRow('Category', p.categoryName ?? 'Unassigned'),
+                  _buildDetailRow('Brand', p.brand ?? 'General'),
+                  _buildDetailRow('Unit', p.unit),
+                  _buildDetailRow('Selling Price', '\$${p.sellingPrice.toStringAsFixed(2)}'),
+                  _buildDetailRow('Purchase Price', '\$${p.purchasePrice.toStringAsFixed(2)}'),
+                  _buildDetailRow('Tax Percentage', '${p.taxPercentage.toStringAsFixed(1)}%'),
+                  _buildDetailRow('Stock Quantity', '${p.stockQuantity.toInt()} ${p.unit}'),
+                  _buildDetailRow('Minimum Stock Alert', '${p.minimumStock.toInt()} ${p.unit}'),
+                  _buildDetailRow('Status', p.isActive ? 'Active' : 'Inactive'),
+                  if (p.description != null && p.description!.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    const Text('Description', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
+                    const SizedBox(height: 4),
+                    Text(p.description!, style: const TextStyle(fontSize: 13, color: Color(0xFF334155))),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Close'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.pop(ctx);
+                _openAddProductScreen(p);
+              },
+              icon: const Icon(Icons.edit, size: 16),
+              label: const Text('Edit Product'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4F46E5),
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+          Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF0F172A))),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDeleteProduct(String? token, ProductModel p) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('Delete Product'),
+          content: Text('Are you sure you want to delete "${p.name}"? This action cannot be undone.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                await _deleteProduct(token, p.id);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFEF4444),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteProduct(String? token, dynamic id) async {
+    if (id == null) return;
+    try {
+      final provider = Provider.of<ProductManagementProvider>(context, listen: false);
+      await provider.deleteProduct(token, id);
+      if (!mounted) return;
+      ErpToast.showSuccess(context, 'Product deleted successfully');
+    } catch (e) {
+      if (!mounted) return;
+      ErpToast.showError(context, e.toString().replaceAll('Exception: ', ''));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<ProductManagementProvider>(context);
@@ -331,24 +466,19 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                                       Row(
                                         children: [
                                           IconButton(
+                                            tooltip: 'View Details',
                                             icon: const Icon(Icons.remove_red_eye_outlined, size: 16, color: Color(0xFF64748B)),
-                                            onPressed: () {},
+                                            onPressed: () => _showProductDetailsDialog(context, p),
                                           ),
                                           IconButton(
+                                            tooltip: 'Edit Product',
                                             icon: const Icon(Icons.edit_outlined, size: 16, color: Color(0xFF64748B)),
                                             onPressed: () => _openAddProductScreen(p),
                                           ),
                                           IconButton(
+                                            tooltip: 'Delete Product',
                                             icon: const Icon(Icons.delete_outline, size: 16, color: Color(0xFFEF4444)),
-                                            onPressed: () async {
-                                              final ctx = context;
-                                              try {
-                                                await provider.deleteProduct(authProvider.token, p.id!);
-                                                if (mounted) ErpToast.showSuccess(ctx, 'Product deleted');
-                                              } catch (e) {
-                                                if (mounted) ErpToast.showError(ctx, e.toString().replaceAll('Exception: ', ''));
-                                              }
-                                            },
+                                            onPressed: () => _confirmDeleteProduct(authProvider.token, p),
                                           ),
                                         ],
                                       ),

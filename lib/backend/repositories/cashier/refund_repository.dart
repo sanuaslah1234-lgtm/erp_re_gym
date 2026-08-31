@@ -56,32 +56,32 @@ class RefundRepository {
       final validatedItems = <Map<String, dynamic>>[];
 
       for (final item in itemsToRefund) {
-        final orderItemId = item['order_item_id'] as int;
+        final orderItemId = int.tryParse(item['order_item_id'].toString()) ?? item['order_item_id'];
         final requestedRefundQty = (item['quantity'] as num).toDouble();
 
         final itemRes = await session.execute(
           Sql.named('''
             SELECT product_id, product_name, quantity, total_amount
             FROM pos_order_items
-            WHERE id = @orderItemId AND order_id = @orderId
+            WHERE (id = @orderItemId OR id::text = @orderItemIdStr) AND (order_id = @orderId OR order_id::text = @orderIdStr)
           '''),
-          parameters: {'orderItemId': orderItemId, 'orderId': orderId},
+          parameters: {'orderItemId': orderItemId, 'orderItemIdStr': orderItemId.toString(), 'orderId': orderId, 'orderIdStr': orderId.toString()},
         );
 
         if (itemRes.isEmpty) {
           throw ApiException('Order item #$orderItemId not found in Order #$orderNumber', statusCode: 400);
         }
 
-        final productId = itemRes.first[0] as int;
-        final productName = itemRes.first[1] as String;
+        final productId = int.tryParse(itemRes.first[0].toString()) ?? itemRes.first[0];
+        final productName = itemRes.first[1].toString();
         final purchasedQty = (itemRes.first[2] as num).toDouble();
         final totalItemAmount = (itemRes.first[3] as num).toDouble();
         final unitRefundPrice = purchasedQty > 0 ? totalItemAmount / purchasedQty : 0.0;
 
         // Sum previously refunded quantity for this order item
         final prevRefundRes = await session.execute(
-          Sql.named('SELECT COALESCE(SUM(quantity), 0) FROM refund_items WHERE order_item_id = @orderItemId'),
-          parameters: {'orderItemId': orderItemId},
+          Sql.named('SELECT COALESCE(SUM(quantity), 0) FROM refund_items WHERE order_item_id = @orderItemId OR order_item_id::text = @orderItemIdStr'),
+          parameters: {'orderItemId': orderItemId, 'orderItemIdStr': orderItemId.toString()},
         );
         final alreadyRefundedQty = (prevRefundRes.first[0] as num).toDouble();
         final maxRefundableQty = purchasedQty - alreadyRefundedQty;
@@ -126,7 +126,7 @@ class RefundRepository {
         },
       );
 
-      final refundId = refundRes.first[0] as int;
+      final refundId = int.tryParse(refundRes.first[0].toString()) ?? refundRes.first[0];
       final createdAt = DateTime.parse(refundRes.first[1].toString());
 
       // 4. Insert refund items & restore product stock
@@ -149,34 +149,34 @@ class RefundRepository {
 
         // Increase product stock (restoration)
         await session.execute(
-          Sql.named('UPDATE products SET stock_quantity = stock_quantity + @qty, updated_at = CURRENT_TIMESTAMP WHERE id = @prodId'),
-          parameters: {'qty': vi['quantity'], 'prodId': vi['product_id']},
+          Sql.named('UPDATE products SET stock_quantity = stock_quantity + @qty, updated_at = CURRENT_TIMESTAMP WHERE id = @prodId OR id::text = @prodIdStr'),
+          parameters: {'qty': vi['quantity'], 'prodId': vi['product_id'], 'prodIdStr': vi['product_id'].toString()},
         );
 
         insertedRefundItems.add(RefundItemModel(
-          id: rItemRes.first[0] as int,
-          refundId: refundId,
-          orderItemId: vi['order_item_id'] as int,
-          productId: vi['product_id'] as int,
-          productName: vi['product_name'] as String,
-          quantity: vi['quantity'] as double,
-          refundAmount: vi['refund_amount'] as double,
+          id: int.tryParse(rItemRes.first[0].toString()),
+          refundId: int.tryParse(refundId.toString()),
+          orderItemId: int.tryParse(vi['order_item_id'].toString()) ?? 0,
+          productId: int.tryParse(vi['product_id'].toString()) ?? 0,
+          productName: vi['product_name'].toString(),
+          quantity: (vi['quantity'] as num).toDouble(),
+          refundAmount: (vi['refund_amount'] as num).toDouble(),
         ));
       }
 
       // 5. Check if all items in order are fully refunded or partially refunded
       final totalPurchasedQtyRes = await session.execute(
-        Sql.named('SELECT COALESCE(SUM(quantity), 0) FROM pos_order_items WHERE order_id = @orderId'),
-        parameters: {'orderId': orderId},
+        Sql.named('SELECT COALESCE(SUM(quantity), 0) FROM pos_order_items WHERE order_id = @orderId OR order_id::text = @orderIdStr'),
+        parameters: {'orderId': orderId, 'orderIdStr': orderId.toString()},
       );
       final totalRefundedQtyRes = await session.execute(
         Sql.named('''
           SELECT COALESCE(SUM(ri.quantity), 0)
           FROM refund_items ri
           JOIN refunds r ON ri.refund_id = r.id
-          WHERE r.order_id = @orderId
+          WHERE r.order_id = @orderId OR r.order_id::text = @orderIdStr
         '''),
-        parameters: {'orderId': orderId},
+        parameters: {'orderId': orderId, 'orderIdStr': orderId.toString()},
       );
 
       final totalPurchased = (totalPurchasedQtyRes.first[0] as num).toDouble();
@@ -184,14 +184,14 @@ class RefundRepository {
 
       final newStatus = totalRefunded >= totalPurchased ? 'refunded' : 'partially_refunded';
       await session.execute(
-        Sql.named("UPDATE pos_orders SET payment_status = @status, order_status = @status, updated_at = CURRENT_TIMESTAMP WHERE id = @orderId"),
-        parameters: {'status': newStatus, 'orderId': orderId},
+        Sql.named("UPDATE pos_orders SET payment_status = @status, order_status = @status, updated_at = CURRENT_TIMESTAMP WHERE id = @orderId OR id::text = @orderIdStr"),
+        parameters: {'status': newStatus, 'orderId': orderId, 'orderIdStr': orderId.toString()},
       );
 
       createdRefund = RefundModel(
-        id: refundId,
+        id: int.tryParse(refundId.toString()),
         refundNumber: refundNumber,
-        orderId: orderId,
+        orderId: int.tryParse(orderId.toString()) ?? 0,
         orderNumber: orderNumber,
         refundAmount: totalRefundAmount,
         refundMethod: refundMethod,
@@ -220,16 +220,16 @@ class RefundRepository {
 
     for (final row in result) {
       final map = row.toColumnMap();
-      final refundId = map['id'] as int;
+      final refundId = map['id'];
 
       final itemsRes = await db.connection.execute(
         Sql.named('''
           SELECT ri.*, p.name as product_name
           FROM refund_items ri
           JOIN products p ON ri.product_id = p.id
-          WHERE ri.refund_id = @refundId
+          WHERE ri.refund_id = @refundId OR ri.refund_id::text = @refundIdStr
         '''),
-        parameters: {'refundId': refundId},
+        parameters: {'refundId': refundId, 'refundIdStr': refundId.toString()},
       );
 
       map['items'] = itemsRes.map((i) => i.toColumnMap()).toList();

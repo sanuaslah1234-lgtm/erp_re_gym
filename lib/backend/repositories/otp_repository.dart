@@ -78,11 +78,11 @@ class OtpRepository {
     final row = result.first;
 
     return OtpRecord(
-      id: row[0] as int,
-      email: row[1] as String,
-      otpCode: row[2] as String,
+      id: int.tryParse(row[0].toString()) ?? 0,
+      email: row[1].toString(),
+      otpCode: row[2].toString(),
       expiresAt: DateTime.parse(row[3].toString()),
-      isUsed: row[4] as bool,
+      isUsed: row[4] == true || row[4].toString() == 'true',
       createdAt: DateTime.parse(row[5].toString()),
     );
   }
