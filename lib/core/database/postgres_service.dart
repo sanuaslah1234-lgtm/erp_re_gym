@@ -71,6 +71,15 @@ class PostgresService {
       "ALTER TABLE suppliers ALTER COLUMN id SET DEFAULT gen_random_uuid()::text;",
       "ALTER TABLE suppliers ALTER COLUMN phone DROP NOT NULL;",
       "ALTER TABLE suppliers ALTER COLUMN status SET DEFAULT 'ACTIVE';",
+      "ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS company_name VARCHAR(255);",
+      "ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS contact_person VARCHAR(255);",
+      "ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS tax_number VARCHAR(50);",
+      "ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS supplier_code VARCHAR(50);",
+      "ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS gst_vat_number VARCHAR(50);",
+      "ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;",
+      "UPDATE suppliers SET company_name = name WHERE company_name IS NULL AND name IS NOT NULL;",
+      "UPDATE suppliers SET name = company_name WHERE name IS NULL AND company_name IS NOT NULL;",
+      "UPDATE suppliers SET supplier_code = 'SUP-' || id WHERE supplier_code IS NULL;",
 
       // Purchases
       "ALTER TABLE purchases ALTER COLUMN id SET DEFAULT gen_random_uuid()::text;",
@@ -100,6 +109,7 @@ class PostgresService {
       "ALTER TABLE products ADD CONSTRAINT products_brand_id_fkey FOREIGN KEY (brand_id) REFERENCES brands(id) ON DELETE SET NULL ON UPDATE CASCADE;",
       "ALTER TABLE purchases DROP CONSTRAINT IF EXISTS purchases_supplier_id_fkey;",
       "ALTER TABLE purchases ADD CONSTRAINT purchases_supplier_id_fkey FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL ON UPDATE CASCADE;",
+      "CREATE TABLE IF NOT EXISTS purchase_items (id SERIAL PRIMARY KEY, purchase_id INT NOT NULL, product_id INT, quantity NUMERIC(12,3) NOT NULL, purchase_price NUMERIC(12,2) NOT NULL, tax_amount NUMERIC(12,2) DEFAULT 0, discount_amount NUMERIC(12,2) DEFAULT 0, total_amount NUMERIC(12,2) NOT NULL);",
       "ALTER TABLE purchase_items DROP CONSTRAINT IF EXISTS purchase_items_product_id_fkey;",
       "ALTER TABLE purchase_items ADD CONSTRAINT purchase_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL ON UPDATE CASCADE;",
       "ALTER TABLE invoice_items DROP CONSTRAINT IF EXISTS invoice_items_product_id_fkey;",
@@ -296,18 +306,31 @@ class PostgresService {
     await connection.execute('''
       CREATE TABLE IF NOT EXISTS purchases (
         id SERIAL PRIMARY KEY,
-        invoice_number VARCHAR(50) UNIQUE NOT NULL,
+        po_number VARCHAR(50) UNIQUE NOT NULL,
         supplier_id INT REFERENCES suppliers(id) ON DELETE SET NULL,
-        purchase_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        subtotal NUMERIC(12,2) DEFAULT 0,
-        tax_amount NUMERIC(12,2) DEFAULT 0,
-        discount_amount NUMERIC(12,2) DEFAULT 0,
+        supplier_name VARCHAR(150),
         total_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
-        payment_status VARCHAR(30) DEFAULT 'paid',
-        created_by INT REFERENCES users(id),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        status VARCHAR(20) NOT NULL DEFAULT 'received',
+        received_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
     ''');
+
+    // Add missing columns to purchases if table already existed from migration 009
+    final purchaseAlterCols = [
+      "ALTER TABLE purchases ADD COLUMN IF NOT EXISTS po_number VARCHAR(50);",
+      "ALTER TABLE purchases ADD COLUMN IF NOT EXISTS supplier_name VARCHAR(150);",
+      "ALTER TABLE purchases ADD COLUMN IF NOT EXISTS total_amount NUMERIC(12,2) NOT NULL DEFAULT 0;",
+      "ALTER TABLE purchases ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'received';",
+      "ALTER TABLE purchases ADD COLUMN IF NOT EXISTS received_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP;",
+      "ALTER TABLE purchases ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;",
+      "ALTER TABLE purchases ADD COLUMN IF NOT EXISTS payment_status VARCHAR(30) DEFAULT 'paid';",
+      "ALTER TABLE purchases ADD COLUMN IF NOT EXISTS notes TEXT;",
+    ];
+    for (final cmd in purchaseAlterCols) {
+      try { await connection.execute(cmd); } catch (_) {}
+    }
 
     await connection.execute('''
       CREATE TABLE IF NOT EXISTS purchase_items (

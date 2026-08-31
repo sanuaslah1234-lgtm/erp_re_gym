@@ -9,6 +9,12 @@ import 'package:erp_software/frontend/screens/products/categories_screen.dart';
 import 'package:erp_software/frontend/screens/inventory/inventory_screen.dart';
 import 'package:erp_software/frontend/screens/warehouse/warehouse_screen.dart';
 import 'package:erp_software/frontend/screens/products/product_management_screen.dart';
+import 'package:erp_software/frontend/screens/products/suppliers_screen.dart';
+import 'package:erp_software/frontend/screens/products/purchases_screen.dart';
+import 'package:erp_software/frontend/screens/invoices/invoices_screen.dart';
+import 'package:erp_software/frontend/screens/admin/store_branches_screen.dart';
+import 'package:erp_software/frontend/screens/settings/designations_roles_screen.dart';
+import 'package:erp_software/frontend/screens/settings/expenses_accounts_screen.dart';
 import 'package:erp_software/frontend/screens/products/units_screen.dart';
 import 'package:erp_software/frontend/screens/reports/reports_screen.dart';
 import 'package:erp_software/frontend/screens/gym/gym_dashboard_screen.dart';
@@ -23,6 +29,7 @@ import 'package:erp_software/frontend/screens/gym/gym_schedules_screen.dart';
 import 'package:erp_software/frontend/screens/gym/gym_reports_screen.dart';
 import 'package:erp_software/frontend/widgets/erp_toast.dart';
 import 'package:provider/provider.dart';
+import 'package:erp_software/frontend/admin/branch/providers/branch_provider.dart';
 
 class ErpSidebar extends StatefulWidget {
   final String activeItem;
@@ -62,6 +69,7 @@ class _ErpSidebarState extends State<ErpSidebar> {
   String _normalizeItemName(String name) {
     if (name == 'POS') return 'POS Terminal';
     if (name == 'Barcode Print') return 'Barcode Printing';
+    if (name == 'POS Orders') return 'Sales Orders';
     if (name == 'Employees') return 'Employees / Staff';
     if (name == 'Stock') return 'Inventory / Stock';
     if (name == 'Warehouse') return 'Warehouse Management';
@@ -188,7 +196,21 @@ class _ErpSidebarState extends State<ErpSidebar> {
           MaterialPageRoute(builder: (_) => const WarehouseScreen()),
         );
       }
-    } else if (target == 'Products' || target == 'Suppliers' || target == 'Purchases') {
+    } else if (target == 'Suppliers') {
+      if (current != 'Suppliers') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const SuppliersScreen()),
+        );
+      }
+    } else if (target == 'Purchases') {
+      if (current != 'Purchases') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const PurchasesScreen()),
+        );
+      }
+    } else if (target == 'Products') {
       if (current != 'Products') {
         Navigator.pushReplacement(
           context,
@@ -223,19 +245,47 @@ class _ErpSidebarState extends State<ErpSidebar> {
           MaterialPageRoute(builder: (_) => const CustomersScreen()),
         );
       }
-    } else if (target == 'Reports' || target == 'Expenses') {
+    } else if (target == 'Expenses') {
+      if (current != 'Expenses') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const ExpensesAccountsScreen()),
+        );
+      }
+    } else if (target == 'Reports') {
       if (current != 'Reports') {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const ReportsScreen()),
         );
       }
-    } else if (target == 'Dashboard' || target == 'POS Terminal' || target == 'Barcode Printing' || target == 'Sales Orders' || target == 'Settings' || target == 'Branches') {
+    } else if (target == 'Invoices') {
+      if (current != 'Invoices') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const InvoicesScreen()),
+        );
+      }
+    } else if (target == 'Branches') {
+      if (current != 'Branches') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => ChangeNotifierProvider(create: (_) => BranchProvider()..fetchBranches(), child: const StoreBranchesScreen())),
+        );
+      }
+    } else if (target == 'Dashboard' || target == 'POS Terminal' || target == 'Barcode Printing' || target == 'Sales Orders' || target == 'Settings') {
       final tab = target == 'Dashboard' ? 'POS Terminal' : target;
       if (current != tab) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => CashierDashboardScreen(initialTab: tab)),
+        );
+      }
+    } else if (target == 'Designations & Roles') {
+      if (current != 'Designations & Roles') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const DesignationsRolesScreen()),
         );
       }
     } else {

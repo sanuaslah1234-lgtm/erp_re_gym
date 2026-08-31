@@ -186,7 +186,7 @@ class InventoryService {
     // STATUS
     if (status != null && status.isNotEmpty && status != 'All Statuses') {
       if (status == 'Out of Stock') {
-        conditions.add('COALESCE(i.quantity, p.stock_quantity::int, 0) <= 0');
+        conditions.add('COALESCE(i.quantity, 0) <= 0');
       } else if (status == 'Low Stock') {
         conditions.add('COALESCE(i.quantity, p.stock_quantity::int, 0) > 0 AND COALESCE(i.quantity, p.stock_quantity::int, 0) <= COALESCE(i.minimum_stock, 10)');
       } else if (status == 'In Stock' || status == 'Healthy Stock') {

@@ -4,7 +4,6 @@ import 'package:uuid/uuid.dart';
 
 class WarehouseService {
   final PostgresService postgresService;
-
   WarehouseService(this.postgresService);
 
   // ==========================================================
@@ -17,7 +16,6 @@ class WarehouseService {
     String? address,
     String? phone,
   }) async {
-    final generatedId = const Uuid().v4();
     final generatedCode = code != null && code.trim().isNotEmpty
         ? code.trim()
         : name.toUpperCase().replaceAll(RegExp(r'\s+'), '_').substring(0, name.length.clamp(0, 10));
@@ -29,7 +27,6 @@ class WarehouseService {
         RETURNING id, name, code, address, phone, status, created_at, updated_at
       '''),
       parameters: {
-        'id': generatedId,
         'name': name.trim(),
         'code': generatedCode,
         'address': address?.trim(),
@@ -37,22 +34,7 @@ class WarehouseService {
       },
     );
 
-    final row = result.first;
-    final statusStr = row[5]?.toString().toUpperCase() ?? 'ACTIVE';
-    final isActive = statusStr == 'ACTIVE' || statusStr == 'TRUE';
-
-    return {
-      'id': row[0].toString(),
-      'name': row[1]?.toString() ?? '',
-      'code': row[2]?.toString(),
-      'address': row[3]?.toString(),
-      'phone': row[4]?.toString(),
-      'status': statusStr,
-      'is_active': isActive,
-      'isActive': isActive,
-      'createdAt': row[6]?.toString(),
-      'updatedAt': row[7]?.toString(),
-    };
+    return _rowToMap(result.first);
   }
 
   // ==========================================================
@@ -68,22 +50,7 @@ class WarehouseService {
       '''),
     );
 
-    return result.map((row) {
-      final statusStr = row[5]?.toString().toUpperCase() ?? 'ACTIVE';
-      final isActive = statusStr == 'ACTIVE' || statusStr == 'TRUE';
-      return {
-        'id': row[0].toString(),
-        'name': row[1]?.toString() ?? '',
-        'code': row[2]?.toString(),
-        'address': row[3]?.toString(),
-        'phone': row[4]?.toString(),
-        'status': statusStr,
-        'is_active': isActive,
-        'isActive': isActive,
-        'createdAt': row[6]?.toString(),
-        'updatedAt': row[7]?.toString(),
-      };
-    }).toList();
+    return result.map((row) => _rowToMap(row)).toList();
   }
 
   // ==========================================================
@@ -95,27 +62,13 @@ class WarehouseService {
       Sql.named('''
         SELECT id, name, code, address, phone, COALESCE(status, 'ACTIVE') AS status, created_at, updated_at
         FROM warehouses
-        WHERE id::text = @idStr
+        WHERE id = @id
         LIMIT 1
       '''),
-      parameters: {'idStr': id.trim()},
+      parameters: {'id': int.tryParse(id) ?? 0},
     );
     if (result.isEmpty) return null;
-    final row = result.first;
-    final statusStr = row[5]?.toString().toUpperCase() ?? 'ACTIVE';
-    final isActive = statusStr == 'ACTIVE' || statusStr == 'TRUE';
-    return {
-      'id': row[0].toString(),
-      'name': row[1]?.toString() ?? '',
-      'code': row[2]?.toString(),
-      'address': row[3]?.toString(),
-      'phone': row[4]?.toString(),
-      'status': statusStr,
-      'is_active': isActive,
-      'isActive': isActive,
-      'createdAt': row[6]?.toString(),
-      'updatedAt': row[7]?.toString(),
-    };
+    return _rowToMap(result.first);
   }
 
   // ==========================================================
@@ -142,57 +95,56 @@ class WarehouseService {
             code = COALESCE(@code, code),
             address = @address,
             phone = @phone,
-            status = COALESCE(@status, status),
+            is_active = COALESCE(@isActive, is_active),
             updated_at = CURRENT_TIMESTAMP
-        WHERE id::text = @idStr
-        RETURNING id, name, code, address, phone, COALESCE(status, 'ACTIVE') AS status, created_at, updated_at
+        WHERE id = @id
+        RETURNING id, name, code, address, phone, is_active, created_at, updated_at
       '''),
       parameters: {
-        'idStr': id.trim(),
+        'id': int.tryParse(id) ?? 0,
         'name': name.trim(),
         'code': code?.trim(),
         'address': address?.trim(),
         'phone': phone?.trim(),
-        'status': statusVal,
+        'isActive': isActive,
       },
     );
 
     if (result.isEmpty) return null;
-    final row = result.first;
-    final statusStr = row[5]?.toString().toUpperCase() ?? 'ACTIVE';
-    final activeBool = statusStr == 'ACTIVE' || statusStr == 'TRUE';
-    return {
-      'id': row[0].toString(),
-      'name': row[1]?.toString() ?? '',
-      'code': row[2]?.toString(),
-      'address': row[3]?.toString(),
-      'phone': row[4]?.toString(),
-      'status': statusStr,
-      'is_active': activeBool,
-      'isActive': activeBool,
-      'createdAt': row[6]?.toString(),
-      'updatedAt': row[7]?.toString(),
-    };
+    return _rowToMap(result.first);
   }
 
   // ==========================================================
   // DELETE WAREHOUSE
   // ==========================================================
 
-  Future<bool> deleteWarehouse(
-    String id,
-  ) async {
+  Future<bool> deleteWarehouse(String id) async {
     final result = await postgresService.connection.execute(
-      Sql.named('''
-        DELETE FROM warehouses
-        WHERE id::text = @idStr
-        RETURNING id
-      '''),
-      parameters: {
-        'idStr': id.trim(),
-      },
+      Sql.named('DELETE FROM warehouses WHERE id = @id'),
+      parameters: {'id': int.tryParse(id) ?? 0},
     );
 
-    return result.isNotEmpty;
+    return result.affectedRows > 0;
+  }
+
+  // ==========================================================
+  // HELPER
+  // ==========================================================
+
+  Map<String, dynamic> _rowToMap(dynamic row) {
+    final map = row.toColumnMap();
+    final isActive = map['is_active'] == true;
+    return {
+      'id': map['id'].toString(),
+      'name': map['name']?.toString() ?? '',
+      'code': map['code']?.toString(),
+      'address': map['address']?.toString(),
+      'phone': map['phone']?.toString(),
+      'is_active': isActive,
+      'isActive': isActive,
+      'status': isActive ? 'ACTIVE' : 'INACTIVE',
+      'created_at': map['created_at']?.toString(),
+      'updated_at': map['updated_at']?.toString(),
+    };
   }
 }

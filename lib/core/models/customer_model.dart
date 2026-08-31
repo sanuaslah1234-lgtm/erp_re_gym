@@ -45,12 +45,8 @@ class CustomerModel {
             map['current_balance']?.toString() ?? '0',
           ) ??
           0.0,
-      createdAt: map['created_at'] is DateTime
-          ? map['created_at'] as DateTime
-          : null,
-      updatedAt: map['updated_at'] is DateTime
-          ? map['updated_at'] as DateTime
-          : null,
+      createdAt: _parseDateTime(map['created_at']),
+      updatedAt: _parseDateTime(map['updated_at']),
       isActive: map['is_active'] == null ? true : map['is_active'] as bool,
     );
   }
@@ -59,17 +55,30 @@ class CustomerModel {
   Map<String, dynamic> toMap() {
     return {
       'id': id,
-      'branchId': branchId,
+      'branch_id': branchId,
       'name': name,
       'phone': phone,
       'email': email,
       'address': address,
-      'loyaltyId': loyaltyId,
-      'creditLimit': creditLimit,
-      'currentBalance': currentBalance,
-      'createdAt': createdAt?.toIso8601String(),
-      'updatedAt': updatedAt?.toIso8601String(),
+      'loyalty_id': loyaltyId,
+      'credit_limit': creditLimit,
+      'current_balance': currentBalance,
+      'created_at': createdAt?.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String(),
       'is_active': isActive,
     };
+  }
+
+  static DateTime? _parseDateTime(dynamic value) {
+    if (value == null) return null;
+    if (value is DateTime) return value;
+    if (value is String) {
+      try {
+        return DateTime.parse(value);
+      } catch (_) {
+        return null;
+      }
+    }
+    return null;
   }
 }

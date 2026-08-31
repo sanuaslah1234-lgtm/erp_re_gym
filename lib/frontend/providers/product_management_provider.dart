@@ -209,6 +209,16 @@ class ProductManagementProvider with ChangeNotifier {
     await loadAllData(token);
   }
 
+  Future<void> updatePurchase(String? token, dynamic id, PurchaseModel purchase) async {
+    await apiService.updatePurchase(token, id, purchase);
+    await loadAllData(token);
+  }
+
+  Future<void> deletePurchase(String? token, dynamic id) async {
+    await apiService.deletePurchase(token, id);
+    await loadAllData(token);
+  }
+
   // ============================================================
   // STOCK ADJUSTMENT — Backend first, reload on success
   // ============================================================

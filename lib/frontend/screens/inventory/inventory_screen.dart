@@ -36,10 +36,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   Future<void> _loadInventory() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
+    final isFirstLoad = _items.isEmpty && _error == null;
+    if (isFirstLoad) {
+      setState(() { _isLoading = true; _error = null; });
+    }
 
     try {
       final items = await _inventoryService.getInventory(
@@ -51,14 +51,21 @@ class _InventoryScreenState extends State<InventoryScreen> {
         setState(() {
           _items = items;
           _isLoading = false;
+          _error = null;
         });
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _error = e.toString().replaceAll('Exception: ', '');
+        if (isFirstLoad) {
+          setState(() {
+            _error = e.toString().replaceAll('Exception: ', '');
+            _isLoading = false;
+          });
+        } else {
           _isLoading = false;
-        });
+          setState(() {});
+          ErpToast.showError(context, 'Failed to refresh inventory: ${e.toString().replaceAll('Exception: ', '')}');
+        }
       }
     }
   }
@@ -138,7 +145,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                           ? item.warehouseId
                           : (_selectedWarehouseId ?? '1');
                       if (item.id == '0' || item.id.isEmpty) {
-                        // No inventory record yet — create one first
+                        // Create inventory first, then add stock
                         await _inventoryService.createInventory(
                           productId: item.productId.toString(),
                           warehouseId: wid,
@@ -175,7 +182,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
     // Fetch products, warehouses, and existing inventory
     List<Map<String, dynamic>> products = [];
     List<Map<String, dynamic>> warehouses = [];
-    Set<String> existingProductIds = {};
     try {
       final resProd = await http.get(Uri.parse('http://localhost:5000/api/products'));
       if (resProd.statusCode == 200) {
@@ -192,20 +198,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
         warehouses = data.map<Map<String, dynamic>>((e) => {'id': e['id'].toString(), 'name': (e['name'] ?? '').toString()}).toList();
       }
     } catch (_) {}
-    // Get existing inventory product IDs to exclude
-    try {
-      final resInv = await http.get(Uri.parse('http://localhost:5000/api/inventory'));
-      if (resInv.statusCode == 200) {
-        final decoded = jsonDecode(resInv.body);
-        final List data = decoded is List ? decoded : (decoded is Map ? (decoded['data'] ?? []) : []);
-        for (final item in data) {
-          existingProductIds.add(item['product_id'].toString());
-        }
-      }
-    } catch (_) {}
-    // Filter out products that already have inventory
-    products = products.where((p) => !existingProductIds.contains(p['id'])).toList();
-
     if (!mounted) return;
 
     String? selectedProductId;
@@ -473,7 +465,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
               try {
                 if (item.id == '0' || item.id.isEmpty) {
                   Navigator.pop(ctx);
-                  ErpToast.showWarning(context, 'No inventory record to delete for this product');
+                  ErpToast.showInfo(context, '${item.product} has no inventory record yet. Use Add Stock or Edit to create one.');
                   return;
                 }
                 await _inventoryService.deleteInventory(item.id);

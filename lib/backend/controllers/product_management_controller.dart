@@ -265,6 +265,15 @@ class ProductManagementController {
     }
   }
 
+  Future<Response> deleteSupplier(Request request, String idStr) async {
+    try {
+      await service.deleteSupplier(idStr);
+      return _jsonResponse({'message': 'Supplier deleted successfully'});
+    } catch (e) {
+      return _errorResponse(e.toString());
+    }
+  }
+
   // ----------------------------------------------------
   // PURCHASES (STOCK IN) HANDLERS
   // ----------------------------------------------------
@@ -286,6 +295,26 @@ class ProductManagementController {
 
       final created = await service.createPurchase(purchase, userId: userId);
       return _jsonResponse(created.toJson(), statusCode: 201);
+    } catch (e) {
+      return _errorResponse(e.toString());
+    }
+  }
+
+  Future<Response> updatePurchase(Request request, String idStr) async {
+    try {
+      final payload = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
+      final purchase = PurchaseModel.fromJson(payload);
+      final updated = await service.updatePurchase(idStr, purchase);
+      return _jsonResponse(updated.toJson());
+    } catch (e) {
+      return _errorResponse(e.toString());
+    }
+  }
+
+  Future<Response> deletePurchase(Request request, String idStr) async {
+    try {
+      await service.deletePurchase(idStr);
+      return _jsonResponse({'success': true, 'message': 'Purchase deleted'});
     } catch (e) {
       return _errorResponse(e.toString());
     }

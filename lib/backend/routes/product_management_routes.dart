@@ -34,10 +34,13 @@ Router setupProductManagementRoutes(ProductManagementController controller) {
   router.get('/suppliers', controller.getSuppliers);
   router.post('/suppliers', controller.createSupplier);
   router.put('/suppliers/<id>', controller.updateSupplier);
+  router.delete('/suppliers/<id>', controller.deleteSupplier);
 
   // Purchases API (Stock IN)
   router.get('/purchases', controller.getPurchases);
   router.post('/purchases', controller.createPurchase);
+  router.put('/purchases/<id>', controller.updatePurchase);
+  router.delete('/purchases/<id>', controller.deletePurchase);
 
   // Stock Adjustments & History
   router.post('/stock/adjustment', controller.recordStockAdjustment);

@@ -739,35 +739,37 @@ class ProductManagementRepository {
     final sql = '''
       SELECT 
         s.id,
-        s.company_name as name,
-        s.company_name as supplier_code,
+        COALESCE(s.company_name, s.name, '') as name,
+        COALESCE(s.supplier_code, 'SUP-' || s.id) as supplier_code,
+        COALESCE(s.company_name, s.name, '') as company_name,
         s.phone,
         s.email,
         s.address,
-        s.tax_number as gst_vat_number,
+        COALESCE(s.gst_vat_number, s.tax_number) as gst_vat_number,
         COALESCE(s.status, 'active') as status,
         COALESCE(s.created_at, CURRENT_TIMESTAMP) as created_at,
         COALESCE(s.updated_at, CURRENT_TIMESTAMP) as updated_at
       FROM suppliers s
-      ORDER BY s.company_name ASC
+      ORDER BY COALESCE(s.company_name, s.name) ASC
     ''';
     final result = await db.connection.execute(sql);
     return result.map((row) => SupplierModel.fromJson(row.toColumnMap())).toList();
   }
 
   Future<SupplierModel> createSupplier(SupplierModel sup) async {
-    final generatedId = const Uuid().v4();
+    // Try with supplier_code first, fallback without
     Result result;
     try {
       result = await db.connection.execute(
         Sql.named('''
-          INSERT INTO suppliers (id, company_name, contact_person, phone, email, address, tax_number, status)
-          VALUES (@id, @name, @name, @phone, @email, @address, @gst, @status)
-          RETURNING id, company_name as name, company_name as supplier_code, phone, email, address, tax_number as gst_vat_number, status, created_at, updated_at;
+          INSERT INTO suppliers (supplier_code, name, company_name, contact_person, phone, email, address, gst_vat_number, tax_number, status)
+          VALUES (@code, @name, @companyName, @name, @phone, @email, @address, @gst, @gst, @status)
+          RETURNING id, COALESCE(company_name, name) as name, COALESCE(supplier_code, 'SUP-' || id) as supplier_code, COALESCE(company_name, name) as company_name, phone, email, address, COALESCE(gst_vat_number, tax_number) as gst_vat_number, status, created_at, updated_at;
         '''),
         parameters: {
-          'id': generatedId,
+          'code': sup.supplierCode.trim().isNotEmpty ? sup.supplierCode.trim() : 'SUP-${DateTime.now().millisecondsSinceEpoch % 100000}',
           'name': sup.name.trim(),
+          'companyName': (sup.companyName ?? sup.name).trim(),
           'phone': sup.phone?.trim(),
           'email': sup.email?.trim(),
           'address': sup.address?.trim(),
@@ -778,12 +780,13 @@ class ProductManagementRepository {
     } catch (_) {
       result = await db.connection.execute(
         Sql.named('''
-          INSERT INTO suppliers (company_name, contact_person, phone, email, address, tax_number, status)
-          VALUES (@name, @name, @phone, @email, @address, @gst, @status)
-          RETURNING id, company_name as name, company_name as supplier_code, phone, email, address, tax_number as gst_vat_number, status, created_at, updated_at;
+          INSERT INTO suppliers (name, company_name, contact_person, phone, email, address, gst_vat_number, tax_number, status)
+          VALUES (@name, @companyName, @name, @phone, @email, @address, @gst, @gst, @status)
+          RETURNING id, COALESCE(company_name, name) as name, COALESCE(supplier_code, 'SUP-' || id) as supplier_code, COALESCE(company_name, name) as company_name, phone, email, address, COALESCE(gst_vat_number, tax_number) as gst_vat_number, status, created_at, updated_at;
         '''),
         parameters: {
           'name': sup.name.trim(),
+          'companyName': (sup.companyName ?? sup.name).trim(),
           'phone': sup.phone?.trim(),
           'email': sup.email?.trim(),
           'address': sup.address?.trim(),
@@ -796,12 +799,15 @@ class ProductManagementRepository {
   }
 
   Future<SupplierModel> updateSupplier(dynamic id, SupplierModel sup) async {
+    final intId = int.tryParse(id.toString()) ?? id;
     final sql = '''
       UPDATE suppliers SET
-        company_name = @name,
+        company_name = @companyName,
+        name = @name,
         phone = @phone,
         email = @email,
         address = @address,
+        gst_vat_number = @gst,
         tax_number = @gst,
         status = @status,
         updated_at = CURRENT_TIMESTAMP
@@ -811,8 +817,9 @@ class ProductManagementRepository {
     await db.connection.execute(
       Sql.named(sql),
       parameters: {
-        'id': int.tryParse(id.toString()) ?? id,
+        'id': intId,
         'idStr': id.toString(),
+        'companyName': (sup.companyName ?? sup.name).trim(),
         'name': sup.name.trim(),
         'phone': sup.phone?.trim(),
         'email': sup.email?.trim(),
@@ -825,6 +832,7 @@ class ProductManagementRepository {
       id: id,
       supplierCode: sup.supplierCode.trim(),
       name: sup.name.trim(),
+      companyName: (sup.companyName ?? sup.name).trim(),
       phone: sup.phone?.trim(),
       email: sup.email?.trim(),
       address: sup.address?.trim(),
@@ -852,21 +860,21 @@ class ProductManagementRepository {
     final sql = '''
       SELECT 
         pu.id,
-        pu.po_number as invoice_number,
+        COALESCE(pu.po_number, '') as invoice_number,
         pu.supplier_id,
-        COALESCE(s.company_name, 'General Supplier') as supplier_name,
+        COALESCE(s.company_name, s.name, pu.supplier_name, 'General Supplier') as supplier_name,
         COALESCE(pu.received_date, pu.created_at, CURRENT_TIMESTAMP) as purchase_date,
         COALESCE(pu.total_amount, 0) as total_amount,
-        COALESCE(pu.total_amount, 0) as paid_amount,
+        0 as paid_amount,
         0 as due_amount,
-        'paid' as payment_status,
+        COALESCE(pu.status, 'paid') as payment_status,
         COALESCE(pu.status, 'received') as status,
-        pu.notes,
+        COALESCE(pu.notes, '') as notes,
         COALESCE(pu.created_at, CURRENT_TIMESTAMP) as created_at,
         COALESCE(pu.updated_at, CURRENT_TIMESTAMP) as updated_at
       FROM purchases pu
       LEFT JOIN suppliers s ON pu.supplier_id = s.id
-      ORDER BY pu.purchase_date DESC
+      ORDER BY pu.created_at DESC
     ''';
     final result = await db.connection.execute(sql);
     return result.map((row) => PurchaseModel.fromJson(row.toColumnMap())).toList();
@@ -914,6 +922,78 @@ class ProductManagementRepository {
     row['payment_status'] = purchase.paymentStatus;
     row['purchase_date'] = purchase.purchaseDate.toIso8601String();
     return PurchaseModel.fromJson(row);
+  }
+
+  Future<PurchaseModel?> getPurchaseById(dynamic id) async {
+    final intId = int.tryParse(id.toString()) ?? id;
+    final sql = '''
+      SELECT 
+        pu.id,
+        COALESCE(pu.po_number, '') as invoice_number,
+        pu.supplier_id,
+        COALESCE(s.company_name, s.name, pu.supplier_name, 'General Supplier') as supplier_name,
+        COALESCE(pu.received_date, pu.created_at, CURRENT_TIMESTAMP) as purchase_date,
+        COALESCE(pu.total_amount, 0) as total_amount,
+        0 as paid_amount,
+        0 as due_amount,
+        COALESCE(pu.status, 'paid') as payment_status,
+        COALESCE(pu.status, 'received') as status,
+        '' as notes,
+        COALESCE(pu.created_at, CURRENT_TIMESTAMP) as created_at,
+        COALESCE(pu.updated_at, CURRENT_TIMESTAMP) as updated_at
+      FROM purchases pu
+      LEFT JOIN suppliers s ON pu.supplier_id = s.id
+      WHERE pu.id = @id
+      LIMIT 1
+    ''';
+    final result = await db.connection.execute(Sql.named(sql), parameters: {'id': intId});
+    if (result.isEmpty) return null;
+    return PurchaseModel.fromJson(result.first.toColumnMap());
+  }
+
+  Future<PurchaseModel> updatePurchase(dynamic id, PurchaseModel purchase) async {
+    final intId = int.tryParse(id.toString()) ?? id;
+    final sql = '''
+      UPDATE purchases SET
+        po_number = @poNumber,
+        supplier_id = @supplierId,
+        supplier_name = @supplierName,
+        total_amount = @total,
+        status = @status,
+        received_date = @receivedDate,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = @id
+    ''';
+
+    await db.connection.execute(
+      Sql.named(sql),
+      parameters: {
+        'id': intId,
+        'poNumber': purchase.invoiceNumber.trim(),
+        'supplierId': purchase.supplierId != null ? (int.tryParse(purchase.supplierId.toString()) ?? purchase.supplierId) : null,
+        'supplierName': purchase.supplierName,
+        'total': purchase.totalAmount,
+        'status': purchase.paymentStatus,
+        'receivedDate': purchase.purchaseDate.toIso8601String(),
+      },
+    );
+    return (await getPurchaseById(id))!;
+  }
+
+  Future<void> deletePurchase(dynamic id) async {
+    final intId = int.tryParse(id.toString()) ?? id;
+    // Delete purchase items first (may not exist)
+    try {
+      await db.connection.execute(
+        Sql.named('DELETE FROM purchase_items WHERE purchase_id = @id'),
+        parameters: {'id': intId},
+      );
+    } catch (_) {}
+    // Delete the purchase
+    await db.connection.execute(
+      Sql.named('DELETE FROM purchases WHERE id = @id'),
+      parameters: {'id': intId},
+    );
   }
 
   // ----------------------------------------------------

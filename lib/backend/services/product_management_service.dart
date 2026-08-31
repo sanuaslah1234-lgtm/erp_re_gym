@@ -146,6 +146,10 @@ class ProductManagementService {
     return await repository.updateSupplier(id, supplier);
   }
 
+  Future<void> deleteSupplier(dynamic id) async {
+    await repository.deleteSupplier(id);
+  }
+
   // Purchases (Stock IN)
   Future<PurchaseModel> createPurchase(PurchaseModel purchase, {dynamic userId}) async {
     if (purchase.invoiceNumber.trim().isEmpty) {
@@ -156,6 +160,18 @@ class ProductManagementService {
 
   Future<List<PurchaseModel>> getPurchases() async {
     return await repository.getAllPurchases();
+  }
+
+  Future<PurchaseModel?> getPurchaseById(dynamic id) async {
+    return await repository.getPurchaseById(id);
+  }
+
+  Future<PurchaseModel> updatePurchase(dynamic id, PurchaseModel purchase) async {
+    return await repository.updatePurchase(id, purchase);
+  }
+
+  Future<void> deletePurchase(dynamic id) async {
+    await repository.deletePurchase(id);
   }
 
   // Stock Damage & Adjustments

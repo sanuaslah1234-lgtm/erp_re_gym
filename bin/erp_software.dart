@@ -143,6 +143,7 @@ Future<void> main() async {
     managerController: managerController,
     reportsController: reportsController,
     settingsController: settingsController,
+    postgresService: postgresService,
   );
 
   // Setup Server
@@ -157,24 +158,26 @@ Future<void> main() async {
 
   // Keep server alive indefinitely
   Timer.periodic(const Duration(seconds: 10), (_) {});
-  final completer = Completer<void>();
+  
+  Future<void> shutdown() async {
+    print('Server shutting down...');
+    await shelfServer.close(force: true);
+    exit(0);
+  }
+
+  // Handle Ctrl+C (SIGINT) on all platforms
   try {
-    ProcessSignal.sigint.watch().listen((_) {
-      print('Shutting down server...');
-      shelfServer.close(force: true);
-      if (!completer.isCompleted) completer.complete();
-    });
+    ProcessSignal.sigint.watch().listen((_) => shutdown());
   } catch (_) {}
+  // Handle SIGTERM on non-Windows
   if (!Platform.isWindows) {
     try {
-      ProcessSignal.sigterm.watch().listen((_) {
-        print('Shutting down server...');
-        shelfServer.close(force: true);
-        if (!completer.isCompleted) completer.complete();
-      });
+      ProcessSignal.sigterm.watch().listen((_) => shutdown());
     } catch (_) {}
   }
-  await completer.future;
+
+
+  await Completer<void>().future;
 }
 
 Future<void> _freePortIfHeld(int port) async {

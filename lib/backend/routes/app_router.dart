@@ -1,6 +1,9 @@
+import 'dart:convert';
 import 'package:shelf_router/shelf_router.dart';
 import 'package:shelf/shelf.dart';
+import 'package:postgres/postgres.dart';
 import '../utils/response_utils.dart';
+import '../database/postgres_service.dart';
 
 import '../controllers/auth_controller.dart';
 import '../controllers/customer_controller.dart';
@@ -45,6 +48,7 @@ class AppRouter {
   final ManagerController managerController;
   final ReportsController reportsController;
   final SettingsController settingsController;
+  final PostgresService? postgresService;
 
   AppRouter({
     required this.authController,
@@ -61,6 +65,7 @@ class AppRouter {
     required this.managerController,
     required this.reportsController,
     required this.settingsController,
+    this.postgresService,
   });
 
   Router get router {
@@ -102,6 +107,49 @@ class AppRouter {
     router.mount('/', inventoryRoutes(inventoryController).call);
     router.mount('/', warehouseRoutes(warehouseController).call);
     router.mount('/', employeeRoutes(employeeController).call);
+
+    // Roles & Designations
+    router.get('/roles', (Request request) async {
+      if (postgresService == null) return ResponseUtils.error(message: 'Database not available');
+      try {
+        final result = await postgresService!.connection.execute(Sql.named('SELECT id, name, description FROM roles ORDER BY name ASC'));
+        final roles = result.map((r) {
+          final m = r.toColumnMap();
+          return {'id': m['id'].toString(), 'name': m['name']?.toString() ?? '', 'description': m['description']?.toString() ?? ''};
+        }).toList();
+        return ResponseUtils.success(message: 'Roles retrieved', data: roles);
+      } catch (e) {
+        return ResponseUtils.error(message: 'Failed to fetch roles', error: e.toString());
+      }
+    });
+
+    // Expenses & Accounts (payments as expenses)
+    router.get('/expenses', (Request request) async {
+      if (postgresService == null) return ResponseUtils.error(message: 'Database not available');
+      try {
+        final result = await postgresService!.connection.execute(Sql.named(
+          '''SELECT p.id, p.payment_method, p.amount, p.reference_number, p.created_at,
+                  o.order_number
+           FROM payments p
+           LEFT JOIN pos_orders o ON o.id = p.order_id
+           ORDER BY p.created_at DESC'''
+        ));
+        final expenses = result.map((r) {
+          final m = r.toColumnMap();
+          return {
+            'id': m['id'].toString(),
+            'payment_method': m['payment_method']?.toString() ?? 'cash',
+            'amount': m['amount'],
+            'reference_number': m['reference_number']?.toString(),
+            'order_number': m['order_number']?.toString(),
+            'created_at': m['created_at']?.toString(),
+          };
+        }).toList();
+        return ResponseUtils.success(message: 'Expenses retrieved', data: expenses);
+      } catch (e) {
+        return ResponseUtils.error(message: 'Failed to fetch expenses', error: e.toString());
+      }
+    });
 
     // Fallback route handler (will catch unmatched /api/* requests)
     router.all('/<ignored|.*>', (Request request) {

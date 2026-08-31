@@ -309,6 +309,30 @@ class ProductManagementApiService {
     throw Exception(jsonDecode(res.body)['error'] ?? 'Failed to load purchases');
   }
 
+  Future<PurchaseModel> updatePurchase(String? token, dynamic id, PurchaseModel purchase) async {
+    final res = await http.put(
+      Uri.parse('$baseUrl/purchases/$id'),
+      headers: _headers(token),
+      body: jsonEncode(purchase.toJson()),
+    );
+
+    if (res.statusCode == 200) {
+      return PurchaseModel.fromJson(jsonDecode(res.body));
+    }
+    throw Exception(jsonDecode(res.body)['error'] ?? 'Failed to update purchase');
+  }
+
+  Future<void> deletePurchase(String? token, dynamic id) async {
+    final res = await http.delete(
+      Uri.parse('$baseUrl/purchases/$id'),
+      headers: _headers(token),
+    );
+
+    if (res.statusCode != 200) {
+      throw Exception(jsonDecode(res.body)['error'] ?? 'Failed to delete purchase');
+    }
+  }
+
   // Stock Adjustments / Damage API
   Future<StockMovementModel> recordStockAdjustment(
     String? token, {
