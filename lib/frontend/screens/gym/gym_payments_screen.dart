@@ -1,8 +1,7 @@
+import 'package:erp_software/frontend/widgets/common/hamburger_button.dart';
 import 'package:flutter/material.dart';
 import 'package:erp_software/core/models/gym/gym_payment_model.dart';
 import 'package:erp_software/frontend/services/gym/gym_service.dart';
-import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
-import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 import 'package:erp_software/frontend/widgets/gym/add_payment_dialog.dart';
 import 'package:erp_software/frontend/widgets/gym/payment_receipt_dialog.dart';
 import 'package:erp_software/theme/app_colors.dart';
@@ -10,10 +9,7 @@ import 'package:erp_software/theme/app_colors.dart';
 class GymPaymentsScreen extends StatefulWidget {
   final String initialStatus;
 
-  const GymPaymentsScreen({
-    super.key,
-    this.initialStatus = 'All',
-  });
+  const GymPaymentsScreen({super.key, this.initialStatus = 'All'});
 
   @override
   State<GymPaymentsScreen> createState() => _GymPaymentsScreenState();
@@ -88,173 +84,162 @@ class _GymPaymentsScreenState extends State<GymPaymentsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 950;
-
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      drawer: isMobile ? const Drawer(child: ErpSidebar(activeItem: 'Payments', isDrawer: true)) : null,
-      body: Row(
-        children: [
-          if (!isMobile) const ErpSidebar(activeItem: 'Payments'),
-          Expanded(
-            child: Column(
-              children: [
-                const ErpTopbar(),
-                Expanded(
-                  child: RefreshIndicator(
-                    onRefresh: loadPayments,
-                    color: AppColors.primary,
-                    backgroundColor: Colors.white,
-                    child: SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: EdgeInsets.all(isMobile ? 14.0 : 24.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Header
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Gym Payments & Billing',
-                                    style: TextStyle(
-                                      fontSize: 26,
-                                      fontWeight: FontWeight.w800,
-                                      color: Color(0xFF2563EB),
-                                      letterSpacing: -0.5,
-                                    ),
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text('Track membership fees, invoice receipts, and pending balances', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
-                                ],
-                              ),
-                              ElevatedButton.icon(
-                                onPressed: () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (_) => AddPaymentDialog(onSaved: loadPayments),
-                                  );
-                                },
-                                icon: const Icon(Icons.add, size: 18),
-                                label: const Text('+ Record Payment'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primary,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
+      appBar: AppBar(
+        leading: const HamburgerButton(),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text('Payments', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
+        actions: [
+          IconButton(
+            onPressed: () => showDialog(context: context, builder: (_) => AddPaymentDialog(onSaved: loadPayments)),
+            icon: const Icon(Icons.add_circle_outline, size: 22, color: AppColors.primary),
+            tooltip: 'Record Payment',
+          ),
+        ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: loadPayments,
+        color: AppColors.primary,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Summary Cards
+              Row(
+                children: [
+                  Expanded(child: _summaryCard('COLLECTED', _totalCollected, const Color(0xFFDCFCE7), const Color(0xFF15803D))),
+                  const SizedBox(width: 10),
+                  Expanded(child: _summaryCard('PENDING', _totalPending, const Color(0xFFFEE2E2), const Color(0xFFDC2626))),
+                ],
+              ),
+              const SizedBox(height: 14),
 
-                          // Summary Banner Cards
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Container(
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFDCFCE7),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: const Color(0xFFBBF7D0)),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text('TOTAL COLLECTED', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF166534))),
-                                      const SizedBox(height: 4),
-                                      Text('\$${_totalCollected.toStringAsFixed(2)}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF15803D))),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Container(
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFFEE2E2),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: const Color(0xFFFECACA)),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text('PENDING DUES', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF991B1B))),
-                                      const SizedBox(height: 4),
-                                      Text('\$${_totalPending.toStringAsFixed(2)}', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFFDC2626))),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
-
-                          // Search & Tab Filter
-                          Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
-                              boxShadow: const [BoxShadow(color: Color(0x050F172A), blurRadius: 10, offset: Offset(0, 2))],
-                            ),
-                            child: Column(
-                              children: [
-                                SingleChildScrollView(
-                                  scrollDirection: Axis.horizontal,
-                                  child: Row(
-                                    children: [
-                                      _buildTabPill('All', _allPayments.length),
-                                      const SizedBox(width: 8),
-                                      _buildTabPill('PAID', _allPayments.where((p) => p.status.toUpperCase() == 'PAID').length),
-                                      const SizedBox(width: 8),
-                                      _buildTabPill('PENDING', _allPayments.where((p) => p.status.toUpperCase() == 'PENDING' || p.status.toUpperCase() == 'PARTIAL').length),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                TextField(
-                                  onChanged: (v) {
-                                    setState(() => _searchQuery = v);
-                                    _applyFilters();
-                                  },
-                                  decoration: InputDecoration(
-                                    hintText: 'Search payments by member, reference #, method...',
-                                    hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
-                                    prefixIcon: const Icon(Icons.search, color: Color(0xFF2563EB), size: 20),
-                                    filled: true,
-                                    fillColor: const Color(0xFFFAFAFA),
-                                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          if (_isLoading) ...[
-                            const Center(child: Padding(padding: EdgeInsets.all(50), child: CircularProgressIndicator(color: AppColors.primary)))
-                          ] else if (_error != null) ...[
-                            _buildErrorBanner(),
-                          ] else if (_filteredPayments.isEmpty) ...[
-                            _buildEmptyState(),
-                          ] else ...[
-                            _buildPaymentsTable(isMobile),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
+              // Tab Pills
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildTabPill('All', _allPayments.length),
+                    const SizedBox(width: 8),
+                    _buildTabPill('PAID', _allPayments.where((p) => p.status.toUpperCase() == 'PAID').length),
+                    const SizedBox(width: 8),
+                    _buildTabPill('PENDING', _allPayments.where((p) => p.status.toUpperCase() == 'PENDING' || p.status.toUpperCase() == 'PARTIAL').length),
+                  ],
                 ),
-              ],
+              ),
+              const SizedBox(height: 12),
+
+              // Search
+              TextField(
+                onChanged: (v) {
+                  setState(() => _searchQuery = v);
+                  _applyFilters();
+                },
+                decoration: InputDecoration(
+                  hintText: 'Search payments...',
+                  hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                  prefixIcon: const Icon(Icons.search, color: Color(0xFF2563EB), size: 20),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              // Content
+              if (_isLoading)
+                const Padding(padding: EdgeInsets.all(40), child: Center(child: CircularProgressIndicator(color: AppColors.primary)))
+              else if (_error != null)
+                _buildErrorBanner()
+              else if (_filteredPayments.isEmpty)
+                _buildEmptyState()
+              else
+                ...(_filteredPayments.map((p) => _paymentCard(p))),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _summaryCard(String label, double amount, Color bg, Color textColor) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: textColor.withValues(alpha: 0.7))),
+          const SizedBox(height: 4),
+          Text('\$${amount.toStringAsFixed(2)}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: textColor)),
+        ],
+      ),
+    );
+  }
+
+  Widget _paymentCard(GymPaymentModel p) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(8)),
+                child: const Icon(Icons.receipt_long_rounded, color: AppColors.primary, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(p.memberName ?? 'Member', style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF0F172A)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    Text('Ref: ${p.referenceNumber ?? "PAY-${p.id}"}', style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ],
+                ),
+              ),
+              _buildStatusBadge(p.status),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              _infoChip(Icons.calendar_today_rounded, p.paymentDate.toIso8601String().split('T').first),
+              const SizedBox(width: 6),
+              _infoChip(Icons.payment_rounded, p.paymentMethod),
+              const Spacer(),
+              Text('\$${p.amount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+            ],
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                if (p.id != null) {
+                  showDialog(context: context, builder: (_) => PaymentReceiptDialog(paymentId: p.id!));
+                }
+              },
+              icon: const Icon(Icons.print_outlined, size: 16),
+              label: const Text('View Receipt', style: TextStyle(fontSize: 12)),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
             ),
           ),
         ],
@@ -262,44 +247,41 @@ class _GymPaymentsScreenState extends State<GymPaymentsScreen> {
     );
   }
 
+  Widget _infoChip(IconData icon, String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(6)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 10, color: const Color(0xFF64748B)),
+          const SizedBox(width: 3),
+          Text(text, style: const TextStyle(fontSize: 10, color: Color(0xFF475569)), maxLines: 1, overflow: TextOverflow.ellipsis),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTabPill(String title, int count) {
     final isSelected = _selectedTab == title;
-
-    return InkWell(
+    return GestureDetector(
       onTap: () {
         setState(() => _selectedTab = title);
         _applyFilters();
       },
-      borderRadius: BorderRadius.circular(10),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFF1F5F9),
-          borderRadius: BorderRadius.circular(10),
+          color: isSelected ? const Color(0xFF2563EB) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: isSelected ? Colors.white : const Color(0xFF475569),
-              ),
-            ),
+            Text(title, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: isSelected ? Colors.white : const Color(0xFF475569))),
             const SizedBox(width: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: isSelected ? Colors.white.withValues(alpha: 0.25) : const Color(0xFFE2E8F0),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Text(
-                '$count',
-                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isSelected ? Colors.white : const Color(0xFF1E293B)),
-              ),
-            ),
+            Text('$count', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isSelected ? Colors.white70 : const Color(0xFF94A3B8))),
           ],
         ),
       ),
@@ -308,14 +290,14 @@ class _GymPaymentsScreenState extends State<GymPaymentsScreen> {
 
   Widget _buildErrorBanner() {
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(12)),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(10)),
       child: Row(
         children: [
-          const Icon(Icons.error_outline, color: Color(0xFFEF4444)),
-          const SizedBox(width: 12),
-          Expanded(child: Text(_error!, style: const TextStyle(color: Color(0xFFB91C1C), fontSize: 13))),
-          TextButton(onPressed: loadPayments, child: const Text('Retry')),
+          const Icon(Icons.error_outline, color: Color(0xFFEF4444), size: 18),
+          const SizedBox(width: 8),
+          Expanded(child: Text(_error!, style: const TextStyle(color: Color(0xFFB91C1C), fontSize: 12))),
+          TextButton(onPressed: loadPayments, child: const Text('Retry', style: TextStyle(fontSize: 12))),
         ],
       ),
     );
@@ -324,99 +306,16 @@ class _GymPaymentsScreenState extends State<GymPaymentsScreen> {
   Widget _buildEmptyState() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
+      padding: const EdgeInsets.all(40),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: const Color(0xFFE2E8F0))),
       child: Column(
         children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(color: Color(0xFFEFF6FF), shape: BoxShape.circle),
-            child: const Icon(Icons.payments_rounded, size: 40, color: Color(0xFF2563EB)),
-          ),
-          const SizedBox(height: 16),
-          const Text('No payment records found', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-          const SizedBox(height: 6),
-          const Text('Record membership fees or service payments using the button above.', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+          Icon(Icons.payments_rounded, size: 40, color: AppColors.primary.withValues(alpha: 0.3)),
+          const SizedBox(height: 12),
+          const Text('No payments found', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF64748B))),
+          const SizedBox(height: 4),
+          const Text('Record a payment using the + button above.', style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8))),
         ],
-      ),
-    );
-  }
-
-  Widget _buildPaymentsTable(bool isMobile) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: const [BoxShadow(color: Color(0x050F172A), blurRadius: 10, offset: Offset(0, 2))],
-      ),
-      child: ListView.separated(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: _filteredPayments.length,
-        separatorBuilder: (_, _) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
-        itemBuilder: (context, index) {
-          final p = _filteredPayments[index];
-
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(10)),
-                  child: const Icon(Icons.receipt_long_rounded, color: AppColors.primary, size: 22),
-                ),
-                const SizedBox(width: 14),
-
-                Expanded(
-                  flex: 3,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(p.memberName ?? 'Member', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A))),
-                      const SizedBox(height: 2),
-                      Text('Ref: ${p.referenceNumber ?? "PAY-${p.id}"}  •  ${p.paymentDate.toIso8601String().split("T").first}', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-                    ],
-                  ),
-                ),
-
-                if (!isMobile) ...[
-                  Expanded(
-                    flex: 2,
-                    child: Text('Method: ${p.paymentMethod}', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
-                  ),
-                ],
-
-                Text(
-                  '\$${p.amount.toStringAsFixed(2)}',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                ),
-                const SizedBox(width: 12),
-
-                _buildStatusBadge(p.status),
-                const SizedBox(width: 10),
-
-                IconButton(
-                  icon: const Icon(Icons.print_outlined, size: 18, color: AppColors.primary),
-                  tooltip: 'View Receipt',
-                  onPressed: () {
-                    if (p.id != null) {
-                      showDialog(
-                        context: context,
-                        builder: (_) => PaymentReceiptDialog(paymentId: p.id!),
-                      );
-                    }
-                  },
-                ),
-              ],
-            ),
-          );
-        },
       ),
     );
   }
@@ -443,7 +342,7 @@ class _GymPaymentsScreenState extends State<GymPaymentsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(6)),
-      child: Text(status, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: text)),
+      child: Text(status, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: text)),
     );
   }
 }

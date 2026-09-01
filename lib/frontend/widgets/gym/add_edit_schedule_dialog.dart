@@ -113,6 +113,8 @@ class _AddEditScheduleDialogState extends State<AddEditScheduleDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final dialogWidth = (screenWidth - 40).clamp(320.0, 500.0);
     final isEdit = widget.schedule != null;
 
     final trainerItems = <DropdownMenuItem<int?>>[
@@ -139,7 +141,7 @@ class _AddEditScheduleDialogState extends State<AddEditScheduleDialog> {
       backgroundColor: Colors.white,
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: Container(
-        width: 580,
+        width: dialogWidth,
         constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
         child: Column(
           children: [
@@ -188,14 +190,14 @@ class _AddEditScheduleDialogState extends State<AddEditScheduleDialog> {
                           children: [
                             TextFormField(
                               controller: _titleController,
-                              decoration: _inputDecoration('Session Title *', icon: Icons.title_outlined),
+                              decoration: _inputDecoration('Title *', icon: Icons.title_outlined),
                               validator: (v) => (v == null || v.trim().isEmpty) ? 'Title is required' : null,
                             ),
                             const SizedBox(height: 14),
 
                             DropdownButtonFormField<int?>(
-                              initialValue: safeTrainerValue,
-                              decoration: _inputDecoration('Trainer in Charge', icon: Icons.sports_gymnastics_rounded),
+                              value: safeTrainerValue,
+                              decoration: _inputDecoration('Trainer', icon: Icons.sports_gymnastics_rounded),
                               items: trainerItems,
                               onChanged: (v) => setState(() => _selectedTrainerId = v),
                             ),
@@ -223,7 +225,7 @@ class _AddEditScheduleDialogState extends State<AddEditScheduleDialog> {
                                 const SizedBox(width: 14),
                                 Expanded(
                                   child: DropdownButtonFormField<String>(
-                                    initialValue: _status,
+                                    value: _status,
                                     decoration: _inputDecoration('Status', icon: Icons.toggle_on_outlined),
                                     items: const [
                                       DropdownMenuItem(value: 'SCHEDULED', child: Text('SCHEDULED')),
@@ -260,7 +262,7 @@ class _AddEditScheduleDialogState extends State<AddEditScheduleDialog> {
                             TextFormField(
                               controller: _descriptionController,
                               maxLines: 2,
-                              decoration: _inputDecoration('Description / Objectives', icon: Icons.description_outlined),
+                              decoration: _inputDecoration('Description', icon: Icons.description_outlined),
                             ),
                           ],
                         ),

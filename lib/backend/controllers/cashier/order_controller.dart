@@ -19,7 +19,17 @@ class OrderController {
 
       final body = jsonDecode(bodyStr) as Map<String, dynamic>;
       final user = request.context['user'] as JwtPayload?;
-      final cashierId = user?.userId ?? body['cashierId'] ?? 1;
+      final cashierId = int.tryParse((user?.userId ?? body['cashierId'] ?? 1).toString()) ?? 1;
+      print('--- CREATE ORDER ---');
+      print('cashierId: $cashierId (type: ${cashierId.runtimeType})');
+      print('subtotal: ${body['subtotal']} (type: ${body['subtotal']?.runtimeType})');
+      print('grandTotal: ${body['grandTotal']} (type: ${body['grandTotal']?.runtimeType})');
+      print('items count: ${(body['items'] as List?)?.length ?? 0}');
+      if (body['items'] != null && (body['items'] as List).isNotEmpty) {
+        final firstItem = (body['items'] as List).first;
+        print('first item: $firstItem');
+        print('first item types: quantity=${firstItem['quantity']?.runtimeType}, unit_price=${firstItem['unit_price']?.runtimeType}');
+      }
 
       final itemsData = (body['items'] as List? ?? []).cast<Map<String, dynamic>>();
       final paymentsData = (body['payments'] as List? ?? []).cast<Map<String, dynamic>>();
@@ -27,18 +37,18 @@ class OrderController {
       final order = await orderService.createOrder(
         cashierId: cashierId,
         customerId: body['customerId'] != null ? int.tryParse(body['customerId'].toString()) : null,
-        subtotal: (body['subtotal'] ?? 0.0).toDouble(),
-        discountAmount: (body['discountAmount'] ?? 0.0).toDouble(),
-        taxAmount: (body['taxAmount'] ?? 0.0).toDouble(),
-        grandTotal: (body['grandTotal'] ?? 0.0).toDouble(),
-        amountReceived: (body['amountReceived'] ?? 0.0).toDouble(),
-        changeAmount: (body['changeAmount'] ?? 0.0).toDouble(),
+        subtotal: double.tryParse(body['subtotal'].toString()) ?? 0.0,
+        discountAmount: double.tryParse(body['discountAmount'].toString()) ?? 0.0,
+        taxAmount: double.tryParse(body['taxAmount'].toString()) ?? 0.0,
+        grandTotal: double.tryParse(body['grandTotal'].toString()) ?? 0.0,
+        amountReceived: double.tryParse(body['amountReceived'].toString()) ?? 0.0,
+        changeAmount: double.tryParse(body['changeAmount'].toString()) ?? 0.0,
         paymentMethod: body['paymentMethod']?.toString() ?? 'Cash',
         itemsData: itemsData,
         paymentsData: paymentsData.isNotEmpty ? paymentsData : [
           {
             'payment_method': body['paymentMethod']?.toString() ?? 'Cash',
-            'amount': (body['grandTotal'] ?? 0.0).toDouble(),
+            'amount': double.tryParse(body['grandTotal'].toString()) ?? 0.0,
             'reference_number': body['referenceNumber']?.toString(),
           }
         ],
@@ -50,7 +60,9 @@ class OrderController {
       );
     } on ApiException catch (e) {
       return ResponseUtils.error(message: e.message, statusCode: e.statusCode);
-    } catch (e) {
+    } catch (e, st) {
+      print('ORDER CREATE ERROR: $e');
+      print('STACK TRACE: $st');
       return ResponseUtils.error(message: 'Failed to create order: $e', statusCode: 500, error: e);
     }
   }

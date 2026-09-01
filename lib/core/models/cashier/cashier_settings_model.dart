@@ -50,11 +50,11 @@ class CashierSettingsModel {
       showCashierName: json['showCashierName'] ?? json['show_cashier_name'] ?? true,
       showCustomerName: json['showCustomerName'] ?? json['show_customer_name'] ?? true,
       autoPrintReceipt: json['autoPrintReceipt'] ?? json['auto_print_receipt'] ?? false,
-      defaultTaxPercentage: (json['defaultTaxPercentage'] ?? json['default_tax_percentage'] ?? 5.0).toDouble(),
+      defaultTaxPercentage: double.tryParse((json['defaultTaxPercentage'] ?? json['default_tax_percentage'] ?? '5.0').toString()) ?? 5.0,
       allowNegativeStock: json['allowNegativeStock'] ?? json['allow_negative_stock'] ?? false,
       requireCustomer: json['requireCustomer'] ?? json['require_customer'] ?? false,
       allowDiscount: json['allowDiscount'] ?? json['allow_discount'] ?? true,
-      maximumDiscountPercentage: (json['maximumDiscountPercentage'] ?? json['maximum_discount_percentage'] ?? 50.0).toDouble(),
+      maximumDiscountPercentage: double.tryParse((json['maximumDiscountPercentage'] ?? json['maximum_discount_percentage'] ?? '50.0').toString()) ?? 50.0,
       autoClearCart: json['autoClearCart'] ?? json['auto_clear_cart'] ?? true,
     );
   }

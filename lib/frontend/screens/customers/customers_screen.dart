@@ -1,8 +1,7 @@
+import 'package:erp_software/frontend/widgets/common/hamburger_button.dart';
 import 'package:flutter/material.dart';
 import 'package:erp_software/core/models/customer_model.dart';
 import 'package:erp_software/frontend/services/customer_service.dart';
-import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
-import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 import 'package:erp_software/frontend/widgets/customers/add_customer.dart';
 import 'package:erp_software/frontend/widgets/customers/customer_list.dart';
 import 'package:erp_software/frontend/widgets/erp_toast.dart';
@@ -318,14 +317,12 @@ class _CustomersScreenState extends State<CustomersScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      drawer: isMobile ? const Drawer(child: ErpSidebar(activeItem: 'Customers', isDrawer: true)) : null,
+      appBar: AppBar(leading: const HamburgerButton(), backgroundColor: Colors.white, elevation: 0, title: const Text('Customers', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)))),
       body: Row(
         children: [
-          if (!isMobile) const ErpSidebar(activeItem: 'Customers'),
           Expanded(
             child: Column(
               children: [
-                const ErpTopbar(),
                 Expanded(
                   child: RefreshIndicator(
                     onRefresh: loadCustomers,
@@ -337,18 +334,6 @@ class _CustomersScreenState extends State<CustomersScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Page Header
-                          const Text(
-                            'Customers',
-                            style: TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF2563EB),
-                              letterSpacing: -0.5,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
                           // Top 3 Action Buttons Row (Print, Export, + Add Customer)
                           Row(
                             children: [

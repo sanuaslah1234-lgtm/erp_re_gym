@@ -129,6 +129,8 @@ class _AddEditTrainerDialogState extends State<AddEditTrainerDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final dialogWidth = (screenWidth - 40).clamp(320.0, 500.0);
     final isEdit = widget.trainer != null;
 
     return Dialog(
@@ -136,7 +138,7 @@ class _AddEditTrainerDialogState extends State<AddEditTrainerDialog> {
       backgroundColor: Colors.white,
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: SizedBox(
-        width: 600,
+        width: dialogWidth,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -184,13 +186,13 @@ class _AddEditTrainerDialogState extends State<AddEditTrainerDialog> {
                         children: [
                           if (_employees.isNotEmpty) ...[
                             DropdownButtonFormField<int>(
-                              initialValue: _selectedEmployeeId,
-                              decoration: _inputDecoration('Link to ERP Employee (Optional)', icon: Icons.badge_outlined),
+                              value: _selectedEmployeeId,
+                              decoration: _inputDecoration('Employee (Optional)', icon: Icons.badge_outlined),
                               items: [
                                 const DropdownMenuItem<int>(value: null, child: Text('None (Direct Trainer)')),
                                 ..._employees.map((e) => DropdownMenuItem<int>(
                                   value: int.tryParse(e.id ?? ''),
-                                  child: Text('${e.fullName ?? "Employee"} (${(e.role ?? "Staff").toUpperCase()} - ${e.employeeId ?? ""})'),
+                                  child: Text('${e.fullName ?? "Employee"} (${e.employeeId ?? ""})'),
                                 )),
                               ],
                               onChanged: _onEmployeeSelected,
@@ -225,7 +227,7 @@ class _AddEditTrainerDialogState extends State<AddEditTrainerDialog> {
                               Expanded(
                                 child: TextFormField(
                                   controller: _specializationController,
-                                  decoration: _inputDecoration('Specialization (Cardio, Weights, Yoga) *', icon: Icons.fitness_center_outlined),
+                                  decoration: _inputDecoration('Specialization *', icon: Icons.fitness_center_outlined),
                                   validator: (v) => (v == null || v.trim().isEmpty) ? 'Specialization required' : null,
                                 ),
                               ),
@@ -233,7 +235,7 @@ class _AddEditTrainerDialogState extends State<AddEditTrainerDialog> {
                               Expanded(
                                 child: TextFormField(
                                   controller: _experienceController,
-                                  decoration: _inputDecoration('Experience (e.g. 5 Years)', icon: Icons.timeline_outlined),
+                                  decoration: _inputDecoration('Experience', icon: Icons.timeline_outlined),
                                 ),
                               ),
                             ],
@@ -252,7 +254,7 @@ class _AddEditTrainerDialogState extends State<AddEditTrainerDialog> {
                               const SizedBox(width: 14),
                               Expanded(
                                 child: DropdownButtonFormField<String>(
-                                  initialValue: _status,
+                                  value: _status,
                                   decoration: _inputDecoration('Status', icon: Icons.toggle_on_outlined),
                                   items: const [
                                     DropdownMenuItem(value: 'ACTIVE', child: Text('ACTIVE')),

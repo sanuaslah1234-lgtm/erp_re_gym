@@ -17,10 +17,10 @@ class Payment {
 
   factory Payment.fromJson(Map<String, dynamic> json) {
     return Payment(
-      id: json['id'] as int?,
-      orderId: json['orderId'] ?? json['order_id'],
+      id: json['id'] is int ? json['id'] as int : int.tryParse(json['id']?.toString() ?? ''),
+      orderId: json['orderId'] is int ? json['orderId'] as int : (json['order_id'] is int ? json['order_id'] as int : int.tryParse((json['orderId'] ?? json['order_id'] ?? '').toString())),
       paymentMethod: json['paymentMethod'] ?? json['payment_method'] ?? 'Cash',
-      amount: (json['amount'] ?? 0.0).toDouble(),
+      amount: double.tryParse((json['amount'] ?? '0').toString()) ?? 0.0,
       referenceNumber: json['referenceNumber'] ?? json['reference_number'],
       createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'].toString()) : null,
     );

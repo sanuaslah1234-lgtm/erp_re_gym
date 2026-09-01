@@ -1,9 +1,8 @@
+import 'package:erp_software/frontend/widgets/common/hamburger_button.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:erp_software/core/config/app_config.dart';
-import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
-import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 import 'package:erp_software/theme/app_colors.dart';
 
 class _Expense {
@@ -77,14 +76,12 @@ class _ExpensesAccountsScreenState extends State<ExpensesAccountsScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      drawer: isMobile ? Drawer(child: ErpSidebar(activeItem: 'Expenses & Accounts', isDrawer: true)) : null,
+      appBar: AppBar(leading: const HamburgerButton(), backgroundColor: Colors.white, elevation: 0, title: const Text('Expenses', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)))),
       body: Row(
         children: [
-          if (!isMobile) const ErpSidebar(activeItem: 'Expenses & Accounts'),
           Expanded(
             child: Column(
               children: [
-                const ErpTopbar(),
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(24),

@@ -1,8 +1,7 @@
+import 'package:erp_software/frontend/widgets/common/hamburger_button.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:erp_software/theme/app_colors.dart';
-import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
-import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 import 'package:erp_software/frontend/admin/branch/providers/branch_provider.dart';
 import 'package:erp_software/frontend/admin/branch/widgets/branch_card_list.dart';
 import 'package:erp_software/frontend/admin/branch/widgets/branch_data_table.dart';
@@ -31,14 +30,12 @@ class _StoreBranchesScreenState extends State<StoreBranchesScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      drawer: isMobile ? Drawer(child: ErpSidebar(activeItem: 'Store Outlets & Branches', isDrawer: true)) : null,
+      appBar: AppBar(leading: const HamburgerButton(), backgroundColor: Colors.white, elevation: 0, title: const Text('Branches', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)))),
       body: Row(
         children: [
-          if (!isMobile) const ErpSidebar(activeItem: 'Store Outlets & Branches'),
           Expanded(
             child: Column(
               children: [
-                const ErpTopbar(),
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.all(20),

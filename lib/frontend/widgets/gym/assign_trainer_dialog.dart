@@ -96,6 +96,8 @@ class _AssignTrainerDialogState extends State<AssignTrainerDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final dialogWidth = (screenWidth - 40).clamp(320.0, 500.0);
     final trainerItems = _trainers.map((t) => DropdownMenuItem<int>(
       value: t.id,
       child: Text('${t.name} (${t.specialization})'),
@@ -110,7 +112,7 @@ class _AssignTrainerDialogState extends State<AssignTrainerDialog> {
 
     final memberItems = _members.map((m) => DropdownMenuItem<int>(
       value: m.id,
-      child: Text('${m.name} (${m.memberCode} - ${m.phone})'),
+      child: Text('${m.name} (${m.memberCode})'),
     )).toList();
 
     if (_selectedMemberId != null && !memberItems.any((item) => item.value == _selectedMemberId)) {
@@ -133,7 +135,7 @@ class _AssignTrainerDialogState extends State<AssignTrainerDialog> {
       backgroundColor: Colors.white,
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: SizedBox(
-        width: 540,
+        width: dialogWidth,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -179,8 +181,8 @@ class _AssignTrainerDialogState extends State<AssignTrainerDialog> {
                       children: [
                         // Trainer selector
                         DropdownButtonFormField<int>(
-                          initialValue: safeTrainerValue,
-                          decoration: _inputDecoration('Select Gym Trainer *', icon: Icons.sports_gymnastics_rounded),
+                          value: safeTrainerValue,
+                          decoration: _inputDecoration('Trainer *', icon: Icons.sports_gymnastics_rounded),
                           items: trainerItems,
                           onChanged: (v) => setState(() => _selectedTrainerId = v),
                         ),
@@ -188,8 +190,8 @@ class _AssignTrainerDialogState extends State<AssignTrainerDialog> {
 
                         // Member selector
                         DropdownButtonFormField<int>(
-                          initialValue: safeMemberValue,
-                          decoration: _inputDecoration('Select Gym Member *', icon: Icons.person_outline),
+                          value: safeMemberValue,
+                          decoration: _inputDecoration('Member *', icon: Icons.person_outline),
                           items: memberItems,
                           onChanged: (v) => setState(() => _selectedMemberId = v),
                         ),

@@ -73,12 +73,14 @@ class _MemberDetailsDialogState extends State<MemberDetailsDialog> with SingleTi
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final dialogWidth = (screenWidth - 40).clamp(320.0, 500.0);
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       backgroundColor: Colors.white,
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: SizedBox(
-        width: 800,
+        width: dialogWidth,
         height: 650,
         child: Column(
           children: [

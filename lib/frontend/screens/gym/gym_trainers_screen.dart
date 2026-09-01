@@ -1,9 +1,8 @@
+import 'package:erp_software/frontend/widgets/common/hamburger_button.dart';
 import 'package:flutter/material.dart';
 import 'package:erp_software/core/models/gym/gym_trainer_model.dart';
 import 'package:erp_software/core/models/gym/gym_member_model.dart';
 import 'package:erp_software/frontend/services/gym/gym_service.dart';
-import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
-import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 import 'package:erp_software/frontend/widgets/gym/add_edit_trainer_dialog.dart';
 import 'package:erp_software/frontend/widgets/gym/assign_trainer_dialog.dart';
 import 'package:erp_software/frontend/widgets/erp_toast.dart';
@@ -157,14 +156,12 @@ class _GymTrainersScreenState extends State<GymTrainersScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      drawer: isMobile ? const Drawer(child: ErpSidebar(activeItem: 'Trainers', isDrawer: true)) : null,
+      appBar: AppBar(leading: const HamburgerButton(), backgroundColor: Colors.white, elevation: 0),
       body: Row(
         children: [
-          if (!isMobile) const ErpSidebar(activeItem: 'Trainers'),
           Expanded(
             child: Column(
               children: [
-                const ErpTopbar(),
                 Expanded(
                   child: RefreshIndicator(
                     onRefresh: loadTrainers,

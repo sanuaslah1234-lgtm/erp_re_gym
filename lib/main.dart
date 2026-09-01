@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'frontend/admin/audit_log/providers/audit_log_provider.dart';
-import 'frontend/admin/branch/providers/branch_provider.dart';
 import 'frontend/admin/landing_page/providers/landing_page_provider.dart';
 import 'frontend/admin/manager/providers/manager_provider.dart';
 import 'frontend/admin/reports/providers/inventory_reports_provider.dart';
@@ -18,7 +17,7 @@ import 'frontend/providers/cashier/refund_provider.dart';
 import 'frontend/providers/employee_provider.dart';
 import 'frontend/providers/product_management_provider.dart';
 import 'frontend/screens/auth/login_screen.dart';
-import 'frontend/screens/employees/employee_screen.dart';
+import 'frontend/widgets/common/mobile_nav_shell.dart';
 import 'theme/app_theme.dart';
 
 void main() {
@@ -67,7 +66,7 @@ class AuthWrapperScreen extends StatelessWidget {
     final authProvider = Provider.of<AuthProvider>(context);
 
     if (authProvider.isAuthenticated) {
-      return const EmployeesScreen();
+      return const MobileNavShell();
     } else {
       return const LoginScreen();
     }

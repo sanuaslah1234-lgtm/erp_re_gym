@@ -6,7 +6,7 @@ class AppConfig {
   static DotEnv _initEnv() {
     final env = DotEnv();
     try {
-      env.load(['.env', '.env.local']);
+      env.load(['.env', '.env']);
     } catch (_) {}
     return env;
   }

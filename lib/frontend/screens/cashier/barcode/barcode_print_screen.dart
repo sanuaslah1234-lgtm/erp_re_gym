@@ -1,11 +1,10 @@
+import 'package:erp_software/frontend/widgets/common/hamburger_button.dart';
 import 'package:flutter/material.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/providers/cashier/barcode_provider.dart';
 import 'package:erp_software/frontend/screens/cashier/barcode/widgets/barcode_products_table.dart';
 import 'package:erp_software/frontend/screens/cashier/barcode/widgets/label_print_settings_card.dart';
 import 'package:erp_software/frontend/screens/cashier/barcode/widgets/live_print_sheet_grid.dart';
-import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
-import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 import 'package:provider/provider.dart';
 
 class BarcodePrintScreen extends StatefulWidget {
@@ -34,14 +33,12 @@ class _BarcodePrintScreenState extends State<BarcodePrintScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      drawer: isMobile ? const Drawer(child: ErpSidebar(isDrawer: true)) : null,
+      appBar: AppBar(leading: const HamburgerButton(), backgroundColor: Colors.white, elevation: 0, title: const Text('Barcode Printing', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)))),
       body: Row(
         children: [
-          if (!isMobile) const ErpSidebar(activeItem: 'Barcode Print'),
           Expanded(
             child: Column(
               children: [
-                const ErpTopbar(),
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.all(20.0),

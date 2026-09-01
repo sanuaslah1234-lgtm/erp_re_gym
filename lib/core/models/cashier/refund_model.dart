@@ -24,8 +24,8 @@ class RefundItemModel {
       orderItemId: json['orderItemId'] ?? json['order_item_id'],
       productId: json['productId'] ?? json['product_id'],
       productName: json['productName'] ?? json['product_name'],
-      quantity: (json['quantity'] ?? 0.0).toDouble(),
-      refundAmount: (json['refundAmount'] ?? json['refund_amount'] ?? 0.0).toDouble(),
+      quantity: double.tryParse((json['quantity'] ?? '0').toString()) ?? 0.0,
+      refundAmount: double.tryParse((json['refundAmount'] ?? json['refund_amount'] ?? '0').toString()) ?? 0.0,
     );
   }
 
@@ -75,7 +75,7 @@ class RefundModel {
       refundNumber: json['refundNumber'] ?? json['refund_number'] ?? '',
       orderId: json['orderId'] ?? json['order_id'],
       orderNumber: json['orderNumber'] ?? json['order_number'],
-      refundAmount: (json['refundAmount'] ?? json['refund_amount'] ?? 0.0).toDouble(),
+      refundAmount: double.tryParse((json['refundAmount'] ?? json['refund_amount'] ?? '0').toString()) ?? 0.0,
       refundMethod: json['refundMethod'] ?? json['refund_method'] ?? 'Cash',
       reason: json['reason']?.toString(),
       processedBy: json['processedBy'] ?? json['processed_by'] ?? 1,

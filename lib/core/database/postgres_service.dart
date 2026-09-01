@@ -40,6 +40,50 @@ class PostgresService {
       await connection.execute('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";');
     } catch (_) {}
 
+    // Ensure POS tables exist early (before any ALTER TABLE references them)
+    await connection.execute('''
+      CREATE TABLE IF NOT EXISTS pos_orders (
+        id SERIAL PRIMARY KEY,
+        order_number VARCHAR(50) UNIQUE NOT NULL,
+        customer_id INT,
+        cashier_id INT,
+        subtotal NUMERIC(12,2) NOT NULL DEFAULT 0,
+        discount_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
+        tax_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
+        grand_total NUMERIC(12,2) NOT NULL DEFAULT 0,
+        payment_status VARCHAR(30) NOT NULL DEFAULT 'paid',
+        order_status VARCHAR(30) NOT NULL DEFAULT 'paid',
+        amount_received NUMERIC(12,2) NOT NULL DEFAULT 0,
+        change_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    ''');
+    await connection.execute('''
+      CREATE TABLE IF NOT EXISTS pos_order_items (
+        id SERIAL PRIMARY KEY,
+        order_id INT NOT NULL REFERENCES pos_orders(id) ON DELETE CASCADE,
+        product_id INT NOT NULL,
+        product_name VARCHAR(255) NOT NULL,
+        quantity NUMERIC(12,3) NOT NULL DEFAULT 1,
+        unit_price NUMERIC(12,2) NOT NULL DEFAULT 0,
+        discount_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
+        tax_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
+        total_amount NUMERIC(12,2) NOT NULL DEFAULT 0
+      );
+    ''');
+    await connection.execute('''
+      CREATE TABLE IF NOT EXISTS payments (
+        id SERIAL PRIMARY KEY,
+        order_id INT NOT NULL REFERENCES pos_orders(id) ON DELETE CASCADE,
+        payment_method VARCHAR(50) NOT NULL DEFAULT 'cash',
+        amount NUMERIC(12,2) NOT NULL DEFAULT 0,
+        reference_number VARCHAR(100),
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    ''');
+    stdout.writeln('POS tables (pos_orders, pos_order_items, payments) ensured');
+
     // Explicit fixes for existing tables
     final tableDefaults = [
       // Categories
@@ -484,7 +528,7 @@ class PostgresService {
 
     // 5. Seed admin user if users table is empty
     final userCheck = await connection.execute('SELECT COUNT(*) FROM users');
-    final count = (userCheck.first[0] as num).toInt();
+    final count = int.tryParse(userCheck.first[0]?.toString() ?? '0') ?? 0;
     if (count == 0) {
       final hashedPassword = BCrypt.hashpw('admin123', BCrypt.gensalt());
       await connection.runTx((session) async {
@@ -518,7 +562,7 @@ class PostgresService {
 
     // 6. Seed cashier settings if empty
     final settingsCheck = await connection.execute('SELECT COUNT(*) FROM cashier_settings');
-    final settingsCount = (settingsCheck.first[0] as num).toInt();
+    final settingsCount = int.tryParse(settingsCheck.first[0]?.toString() ?? '0') ?? 0;
     if (settingsCount == 0) {
       await connection.execute('''
         INSERT INTO cashier_settings (store_name, store_address, phone, email, receipt_footer)

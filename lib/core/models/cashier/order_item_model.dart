@@ -23,15 +23,15 @@ class OrderItemModel {
 
   factory OrderItemModel.fromJson(Map<String, dynamic> json) {
     return OrderItemModel(
-      id: json['id'] as int?,
-      orderId: json['orderId'] ?? json['order_id'],
-      productId: json['productId'] ?? json['product_id'],
-      productName: json['productName'] ?? json['product_name'] ?? '',
-      quantity: (json['quantity'] ?? 0.0).toDouble(),
-      unitPrice: (json['unitPrice'] ?? json['unit_price'] ?? 0.0).toDouble(),
-      discountAmount: (json['discountAmount'] ?? json['discount_amount'] ?? 0.0).toDouble(),
-      taxAmount: (json['taxAmount'] ?? json['tax_amount'] ?? 0.0).toDouble(),
-      totalAmount: (json['totalAmount'] ?? json['total_amount'] ?? 0.0).toDouble(),
+      id: int.tryParse(json['id'].toString()),
+      orderId: int.tryParse((json['orderId'] ?? json['order_id'] ?? '').toString()),
+      productId: int.tryParse((json['productId'] ?? json['product_id'] ?? '0').toString()) ?? 0,
+      productName: (json['productName'] ?? json['product_name'] ?? '').toString(),
+      quantity: double.tryParse((json['quantity'] ?? '0').toString()) ?? 0.0,
+      unitPrice: double.tryParse((json['unitPrice'] ?? json['unit_price'] ?? '0').toString()) ?? 0.0,
+      discountAmount: double.tryParse((json['discountAmount'] ?? json['discount_amount'] ?? '0').toString()) ?? 0.0,
+      taxAmount: double.tryParse((json['taxAmount'] ?? json['tax_amount'] ?? '0').toString()) ?? 0.0,
+      totalAmount: double.tryParse((json['totalAmount'] ?? json['total_amount'] ?? '0').toString()) ?? 0.0,
     );
   }
 

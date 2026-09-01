@@ -105,7 +105,7 @@ class _StockMovementDialogState extends State<StockMovementDialog> {
                     children: [
                       Expanded(
                         child: DropdownButtonFormField<ProductModel>(
-                          initialValue: _selectedProduct,
+                          value: _selectedProduct,
                           decoration: const InputDecoration(labelText: 'Product', border: OutlineInputBorder(), isDense: true),
                           items: {for (var p in provider.products) p.id: p}.values.map((p) => DropdownMenuItem(value: p, child: Text('${p.name} (Stock: ${p.stockQuantity})'))).toList(),
                           onChanged: (p) => setState(() => _selectedProduct = p),
@@ -114,7 +114,7 @@ class _StockMovementDialogState extends State<StockMovementDialog> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: DropdownButtonFormField<String>(
-                          initialValue: _movementType,
+                          value: _movementType,
                           decoration: const InputDecoration(labelText: 'Movement Type', border: OutlineInputBorder(), isDense: true),
                           items: const [
                             DropdownMenuItem(value: 'DAMAGE_OUT', child: Text('DAMAGE (Stock OUT)')),
