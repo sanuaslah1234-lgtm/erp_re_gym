@@ -68,13 +68,13 @@ class CartItemModel {
       productCode: json['productCode'] ?? json['product_code'] ?? '',
       productName: json['productName'] ?? json['product_name'] ?? '',
       barcode: json['barcode']?.toString(),
-      quantity: (json['quantity'] ?? 0.0).toDouble(),
-      unitPrice: (json['unitPrice'] ?? json['unit_price'] ?? 0.0).toDouble(),
-      discount: (json['discount'] ?? 0.0).toDouble(),
-      tax: (json['tax'] ?? 0.0).toDouble(),
-      discountAmount: (json['discountAmount'] ?? json['discount_amount'] ?? 0.0).toDouble(),
-      taxAmount: (json['taxAmount'] ?? json['tax_amount'] ?? 0.0).toDouble(),
-      total: (json['total'] ?? json['total_amount'] ?? 0.0).toDouble(),
+      quantity: double.tryParse((json['quantity'] ?? '0').toString()) ?? 0.0,
+      unitPrice: double.tryParse((json['unitPrice'] ?? json['unit_price'] ?? '0').toString()) ?? 0.0,
+      discount: double.tryParse((json['discount'] ?? '0').toString()) ?? 0.0,
+      tax: double.tryParse((json['tax'] ?? '0').toString()) ?? 0.0,
+      discountAmount: double.tryParse((json['discountAmount'] ?? json['discount_amount'] ?? '0').toString()) ?? 0.0,
+      taxAmount: double.tryParse((json['taxAmount'] ?? json['tax_amount'] ?? '0').toString()) ?? 0.0,
+      total: double.tryParse((json['total'] ?? json['total_amount'] ?? '0').toString()) ?? 0.0,
     );
   }
 

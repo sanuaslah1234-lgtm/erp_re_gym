@@ -8,11 +8,7 @@ class AddEditPlanDialog extends StatefulWidget {
   final GymPlanModel? plan;
   final VoidCallback onSaved;
 
-  const AddEditPlanDialog({
-    super.key,
-    this.plan,
-    required this.onSaved,
-  });
+  const AddEditPlanDialog({super.key, this.plan, required this.onSaved});
 
   @override
   State<AddEditPlanDialog> createState() => _AddEditPlanDialogState();
@@ -65,7 +61,6 @@ class _AddEditPlanDialogState extends State<AddEditPlanDialog> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-
     setState(() => _isLoading = true);
 
     try {
@@ -84,11 +79,11 @@ class _AddEditPlanDialogState extends State<AddEditPlanDialog> {
       if (widget.plan == null) {
         await gymService.createPlan(plan);
         if (!mounted) return;
-        ErpToast.showSuccess(context, 'Plan "${plan.name}" created successfully', title: 'Plan Added');
+        ErpToast.showSuccess(context, 'Plan "${plan.name}" created', title: 'Plan Added');
       } else {
         await gymService.updatePlan(widget.plan!.id!, plan);
         if (!mounted) return;
-        ErpToast.showSuccess(context, 'Plan "${plan.name}" updated successfully', title: 'Plan Updated');
+        ErpToast.showSuccess(context, 'Plan "${plan.name}" updated', title: 'Plan Updated');
       }
 
       widget.onSaved();
@@ -104,19 +99,22 @@ class _AddEditPlanDialogState extends State<AddEditPlanDialog> {
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.plan != null;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final dialogWidth = (screenWidth - 40).clamp(320.0, 500.0);
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       backgroundColor: Colors.white,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-      child: SizedBox(
-        width: 580,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      child: Container(
+        width: dialogWidth,
+        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             // Header
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+              padding: const EdgeInsets.all(16),
               decoration: const BoxDecoration(
                 color: Color(0xFFEFF6FF),
                 borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
@@ -129,171 +127,152 @@ class _AddEditPlanDialogState extends State<AddEditPlanDialog> {
                       color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Icon(isEdit ? Icons.edit_note_rounded : Icons.add_card_rounded, color: AppColors.primary, size: 24),
+                    child: Icon(isEdit ? Icons.edit_note_rounded : Icons.add_card_rounded, color: AppColors.primary, size: 22),
                   ),
-                  const SizedBox(width: 14),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          isEdit ? 'Edit Membership Plan' : 'Create Membership Plan',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                        ),
-                        Text(
-                          isEdit ? 'Update pricing and duration' : 'Configure plan duration, pricing, and discounts',
-                          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                        ),
+                        Text(isEdit ? 'Edit Plan' : 'New Plan', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                        const SizedBox(height: 2),
+                        Text(isEdit ? 'Update pricing & duration' : 'Configure duration, pricing & discounts', style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
                       ],
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Color(0xFF94A3B8)),
+                    icon: const Icon(Icons.close, size: 20, color: Color(0xFF94A3B8)),
                     onPressed: () => Navigator.of(context).pop(),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
                   ),
                 ],
               ),
             ),
 
             // Form
-            SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: _inputDecoration('Plan Name (e.g. Monthly Pro, Yearly VIP) *', icon: Icons.badge_outlined),
-                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Plan name is required' : null,
-                    ),
-                    const SizedBox(height: 14),
-                    TextFormField(
-                      controller: _descriptionController,
-                      maxLines: 2,
-                      decoration: _inputDecoration('Description (features, equipment access, etc.)', icon: Icons.notes_outlined),
-                    ),
-                    const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _durationController,
-                            decoration: _inputDecoration('Duration (Days) *', icon: Icons.timer_outlined),
-                            keyboardType: TextInputType.number,
-                            validator: (v) => (v == null || int.tryParse(v.trim()) == null || int.parse(v.trim()) <= 0) ? 'Enter valid days' : null,
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            initialValue: _status,
-                            decoration: _inputDecoration('Status', icon: Icons.toggle_on_outlined),
-                            items: const [
-                              DropdownMenuItem(value: 'ACTIVE', child: Text('ACTIVE')),
-                              DropdownMenuItem(value: 'INACTIVE', child: Text('INACTIVE')),
-                            ],
-                            onChanged: (v) => setState(() => _status = v ?? 'ACTIVE'),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _priceController,
-                            decoration: _inputDecoration('Base Price (\$) *', icon: Icons.attach_money),
-                            keyboardType: TextInputType.number,
-                            onChanged: (_) => setState(() {}),
-                            validator: (v) => (v == null || double.tryParse(v.trim()) == null) ? 'Enter valid price' : null,
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _discountController,
-                            decoration: _inputDecoration('Discount (\$)', icon: Icons.discount_outlined),
-                            keyboardType: TextInputType.number,
-                            onChanged: (_) => setState(() {}),
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _taxController,
-                            decoration: _inputDecoration('Tax (\$)', icon: Icons.receipt_outlined),
-                            keyboardType: TextInputType.number,
-                            onChanged: (_) => setState(() {}),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 18),
-
-                    // Price Summary Banner
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEFF6FF),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFFBFDBFE)),
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Plan Name
+                      TextFormField(
+                        controller: _nameController,
+                        decoration: _inputDecoration('Plan Name *', icon: Icons.badge_outlined),
+                        validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      const SizedBox(height: 12),
+
+                      // Description
+                      TextFormField(
+                        controller: _descriptionController,
+                        maxLines: 2,
+                        decoration: _inputDecoration('Description', icon: Icons.notes_outlined),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Duration + Status
+                      Row(
                         children: [
-                          const Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('Total Billed Amount', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1E40AF))),
-                              Text('Price - Discount + Tax', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-                            ],
+                          Expanded(
+                            child: TextFormField(
+                              controller: _durationController,
+                              decoration: _inputDecoration('Duration (Days) *', icon: Icons.timer_outlined),
+                              keyboardType: TextInputType.number,
+                              validator: (v) => (v == null || int.tryParse(v.trim()) == null || int.parse(v.trim()) <= 0) ? 'Required' : null,
+                            ),
                           ),
-                          Text(
-                            '\$${_calculatedTotal.toStringAsFixed(2)}',
-                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Color(0xFF2563EB)),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              value: _status,
+                              decoration: _inputDecoration('Status', icon: Icons.toggle_on_outlined),
+                              isExpanded: true,
+                              items: const [
+                                DropdownMenuItem(value: 'ACTIVE', child: Text('Active')),
+                                DropdownMenuItem(value: 'INACTIVE', child: Text('Inactive')),
+                              ],
+                              onChanged: (v) => setState(() => _status = v ?? 'ACTIVE'),
+                            ),
                           ),
                         ],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 12),
+
+                      // Price - single column on mobile
+                      _buildTextField('Base Price *', Icons.attach_money, _priceController),
+                      const SizedBox(height: 12),
+                      _buildTextField('Discount', Icons.discount_outlined, _discountController),
+                      const SizedBox(height: 12),
+                      _buildTextField('Tax', Icons.receipt_outlined, _taxController),
+                      const SizedBox(height: 16),
+
+                      // Summary
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFF6FF),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFBFDBFE)),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Total Amount', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF1E40AF))),
+                                Text('Price - Disc + Tax', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                              ],
+                            ),
+                            Text('\$${_calculatedTotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF2563EB))),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
 
             // Footer
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              padding: const EdgeInsets.all(16),
               decoration: const BoxDecoration(
                 color: Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
                 border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  OutlinedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
                     ),
-                    child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
                   ),
                   const SizedBox(width: 12),
-                  ElevatedButton.icon(
-                    onPressed: _isLoading ? null : _save,
-                    icon: _isLoading
-                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Icon(Icons.check, size: 18),
-                    label: Text(isEdit ? 'Save Changes' : 'Create Plan'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _isLoading ? null : _save,
+                      icon: _isLoading
+                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Icon(Icons.check, size: 18),
+                      label: Text(isEdit ? 'Save' : 'Create'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
                     ),
                   ),
                 ],
@@ -305,14 +284,23 @@ class _AddEditPlanDialogState extends State<AddEditPlanDialog> {
     );
   }
 
+  Widget _buildTextField(String label, IconData icon, TextEditingController controller) {
+    return TextFormField(
+      controller: controller,
+      decoration: _inputDecoration(label, icon: icon),
+      keyboardType: TextInputType.number,
+      onChanged: (_) => setState(() {}),
+    );
+  }
+
   InputDecoration _inputDecoration(String label, {IconData? icon}) {
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
-      prefixIcon: icon != null ? Icon(icon, size: 18, color: const Color(0xFF2563EB)) : null,
+      labelStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
+      prefixIcon: icon != null ? Icon(icon, size: 16, color: const Color(0xFF2563EB)) : null,
       filled: true,
       fillColor: const Color(0xFFFAFAFA),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
       focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5)),

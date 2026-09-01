@@ -167,10 +167,12 @@ class _NewSaleDialogState extends State<NewSaleDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final dialogWidth = (screenWidth - 40).clamp(320.0, 500.0);
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Container(
-        width: 900,
+        width: dialogWidth,
         height: 600,
         padding: const EdgeInsets.all(20),
         child: Column(

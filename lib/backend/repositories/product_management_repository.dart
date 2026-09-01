@@ -1133,8 +1133,8 @@ class ProductManagementRepository {
     ''';
     final result = await db.connection.execute(sql);
     final row = result.first.toColumnMap();
-    final rev = (row['total_revenue'] as num?)?.toDouble() ?? 0.0;
-    final cost = (row['total_costs'] as num?)?.toDouble() ?? 0.0;
+    final rev = double.tryParse(row['total_revenue']?.toString() ?? '0') ?? 0.0;
+    final cost = double.tryParse(row['total_costs']?.toString() ?? '0') ?? 0.0;
     return {
       'totalRevenue': rev,
       'totalCosts': cost,

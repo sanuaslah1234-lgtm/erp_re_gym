@@ -1,3 +1,4 @@
+import 'package:erp_software/frontend/widgets/common/hamburger_button.dart';
 import 'package:flutter/material.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/providers/cashier/order_provider.dart';
@@ -6,8 +7,6 @@ import 'package:erp_software/frontend/screens/cashier/orders/widgets/order_filte
 import 'package:erp_software/frontend/screens/cashier/orders/widgets/order_list.dart';
 import 'package:erp_software/frontend/screens/cashier/orders/new_sale_dialog.dart';
 import 'package:erp_software/frontend/screens/cashier/pos/widgets/receipt_dialog.dart';
-import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
-import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 import 'package:provider/provider.dart';
 
 class PosOrdersScreen extends StatefulWidget {
@@ -35,14 +34,12 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      drawer: isMobile ? const Drawer(child: ErpSidebar(isDrawer: true)) : null,
+      appBar: AppBar(leading: const HamburgerButton(), backgroundColor: Colors.white, elevation: 0, title: const Text('Sales Orders', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)))),
       body: Row(
         children: [
-          if (!isMobile) const ErpSidebar(activeItem: 'POS Orders'),
           Expanded(
             child: Column(
               children: [
-                const ErpTopbar(),
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(24.0),

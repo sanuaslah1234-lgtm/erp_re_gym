@@ -174,7 +174,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                         children: [
                           Expanded(
                             child: DropdownButtonFormField<dynamic>(
-                              initialValue: _selectedCategoryId,
+                              value: _selectedCategoryId,
                               decoration: const InputDecoration(labelText: 'Category', border: OutlineInputBorder()),
                               items: provider.categories
                                   .map((c) => DropdownMenuItem<dynamic>(value: c.id, child: Text(c.name)))
@@ -185,7 +185,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                           const SizedBox(width: 16),
                           Expanded(
                             child: DropdownButtonFormField<dynamic>(
-                              initialValue: _selectedSupplierId,
+                              value: _selectedSupplierId,
                               decoration: const InputDecoration(labelText: 'Supplier', border: OutlineInputBorder()),
                               items: provider.suppliers
                                   .map((s) => DropdownMenuItem<dynamic>(value: s.id, child: Text(s.name)))
@@ -208,7 +208,7 @@ class _AddEditProductDialogState extends State<AddEditProductDialog> {
                           const SizedBox(width: 16),
                           Expanded(
                             child: DropdownButtonFormField<String>(
-                              initialValue: _selectedUnit,
+                              value: _selectedUnit,
                               decoration: const InputDecoration(labelText: 'Unit', border: OutlineInputBorder()),
                               items: _units.map((u) => DropdownMenuItem(value: u, child: Text(u.toUpperCase()))).toList(),
                               onChanged: (v) => setState(() => _selectedUnit = v!),

@@ -12,24 +12,20 @@ class PosApiService {
       };
 
   Future<List<Product>> getProducts(String? token, {String? search, int? categoryId, int? brandId}) async {
-    try {
-      final uri = Uri.parse('$baseUrl/products').replace(queryParameters: {
-        if (search != null && search.isNotEmpty) 'search': search,
-        if (categoryId != null && categoryId > 0) 'categoryId': categoryId.toString(),
-        if (brandId != null && brandId > 0) 'brandId': brandId.toString(),
-      });
+    final uri = Uri.parse('$baseUrl/products').replace(queryParameters: {
+      if (search != null && search.isNotEmpty) 'search': search,
+      if (categoryId != null && categoryId > 0) 'categoryId': categoryId.toString(),
+      if (brandId != null && brandId > 0) 'brandId': brandId.toString(),
+    });
 
-      final response = await http.get(uri, headers: _headers(token)).timeout(const Duration(seconds: 4));
-      final body = jsonDecode(response.body);
+    final response = await http.get(uri, headers: _headers(token)).timeout(const Duration(seconds: 8));
+    final body = jsonDecode(response.body);
 
-      if (response.statusCode == 200 && body['success'] == true) {
-        final List list = body['data'];
-        return list.map((e) => Product.fromJson(e)).toList();
-      } else {
-        throw Exception(body['message'] ?? 'Failed to fetch POS products');
-      }
-    } catch (e) {
-      return [];
+    if (response.statusCode == 200 && body['success'] == true) {
+      final List list = body['data'];
+      return list.map((e) => Product.fromJson(e)).toList();
+    } else {
+      throw Exception(body['message'] ?? 'Failed to fetch POS products');
     }
   }
 

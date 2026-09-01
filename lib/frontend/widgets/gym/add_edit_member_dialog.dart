@@ -244,12 +244,15 @@ class _AddEditMemberDialogState extends State<AddEditMemberDialog> {
     const statusList = ['ACTIVE', 'INACTIVE', 'EXPIRED', 'SUSPENDED'];
     final safeStatusValue = statusList.contains(_status) ? _status : 'ACTIVE';
 
+    final screenWidth = MediaQuery.of(context).size.width;
+    final dialogWidth = (screenWidth - 40).clamp(320.0, 600.0);
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       backgroundColor: Colors.white,
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: Container(
-        width: 700,
+        width: dialogWidth,
         constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
         child: Column(
           children: [
@@ -311,7 +314,8 @@ class _AddEditMemberDialogState extends State<AddEditMemberDialog> {
                               const SizedBox(height: 8),
                               DropdownButtonFormField<String?>(
                                 initialValue: safeCustomerValue,
-                                decoration: _inputDecoration('Select Existing Customer or leave blank to create new', icon: Icons.business_outlined),
+                                decoration: _inputDecoration('Select Customer (Optional)', icon: Icons.business_outlined),
+                                isExpanded: true,
                                 items: customerItems,
                                 onChanged: _onCustomerSelected,
                               ),
@@ -321,84 +325,59 @@ class _AddEditMemberDialogState extends State<AddEditMemberDialog> {
                             // Section: Personal Information
                             _buildSectionTitle(isEdit ? '1. Personal Information' : '2. Personal Information'),
                             const SizedBox(height: 12),
-                            Row(
-                              children: [
-                                Expanded(
-                                  flex: 2,
-                                  child: TextFormField(
-                                    controller: _nameController,
-                                    decoration: _inputDecoration('Full Name *', icon: Icons.person_outline),
-                                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Name is required' : null,
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  flex: 2,
-                                  child: TextFormField(
-                                    controller: _phoneController,
-                                    decoration: _inputDecoration('Phone Number *', icon: Icons.phone_outlined),
-                                    keyboardType: TextInputType.phone,
-                                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Phone is required' : null,
-                                  ),
-                                ),
-                              ],
+                            TextFormField(
+                              controller: _nameController,
+                              decoration: _inputDecoration('Full Name *', icon: Icons.person_outline),
+                              validator: (v) => (v == null || v.trim().isEmpty) ? 'Name is required' : null,
                             ),
                             const SizedBox(height: 14),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TextFormField(
-                                    controller: _emailController,
-                                    decoration: _inputDecoration('Email Address', icon: Icons.email_outlined),
-                                    keyboardType: TextInputType.emailAddress,
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: DropdownButtonFormField<String>(
-                                    initialValue: safeGenderValue,
-                                    decoration: _inputDecoration('Gender', icon: Icons.wc_outlined),
-                                    items: const [
-                                      DropdownMenuItem(value: 'Male', child: Text('Male')),
-                                      DropdownMenuItem(value: 'Female', child: Text('Female')),
-                                      DropdownMenuItem(value: 'Other', child: Text('Other')),
-                                    ],
-                                    onChanged: (v) => setState(() => _gender = v ?? 'Male'),
-                                  ),
-                                ),
-                              ],
+                            TextFormField(
+                              controller: _phoneController,
+                              decoration: _inputDecoration('Phone Number *', icon: Icons.phone_outlined),
+                              keyboardType: TextInputType.phone,
+                              validator: (v) => (v == null || v.trim().isEmpty) ? 'Phone is required' : null,
                             ),
                             const SizedBox(height: 14),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: InkWell(
-                                    onTap: () async {
-                                      final picked = await showDatePicker(
-                                        context: context,
-                                        initialDate: _dateOfBirth ?? DateTime(2000, 1, 1),
-                                        firstDate: DateTime(1940),
-                                        lastDate: DateTime.now(),
-                                      );
-                                      if (picked != null) setState(() => _dateOfBirth = picked);
-                                    },
-                                    child: InputDecorator(
-                                      decoration: _inputDecoration('Date of Birth', icon: Icons.cake_outlined),
-                                      child: Text(
-                                        _dateOfBirth != null ? _dateOfBirth!.toIso8601String().split('T').first : 'Select DOB',
-                                        style: TextStyle(color: _dateOfBirth != null ? const Color(0xFF0F172A) : const Color(0xFF94A3B8), fontSize: 13),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: TextFormField(
-                                    controller: _emergencyContactController,
-                                    decoration: _inputDecoration('Emergency Contact Phone', icon: Icons.contact_phone_outlined),
-                                  ),
-                                ),
+                            TextFormField(
+                              controller: _emailController,
+                              decoration: _inputDecoration('Email Address', icon: Icons.email_outlined),
+                              keyboardType: TextInputType.emailAddress,
+                            ),
+                            const SizedBox(height: 14),
+                            DropdownButtonFormField<String>(
+                              initialValue: safeGenderValue,
+                              decoration: _inputDecoration('Gender', icon: Icons.wc_outlined),
+                              isExpanded: true,
+                              items: const [
+                                DropdownMenuItem(value: 'Male', child: Text('Male')),
+                                DropdownMenuItem(value: 'Female', child: Text('Female')),
+                                DropdownMenuItem(value: 'Other', child: Text('Other')),
                               ],
+                              onChanged: (v) => setState(() => _gender = v ?? 'Male'),
+                            ),
+                            const SizedBox(height: 14),
+                            InkWell(
+                              onTap: () async {
+                                final picked = await showDatePicker(
+                                  context: context,
+                                  initialDate: _dateOfBirth ?? DateTime(2000, 1, 1),
+                                  firstDate: DateTime(1940),
+                                  lastDate: DateTime.now(),
+                                );
+                                if (picked != null) setState(() => _dateOfBirth = picked);
+                              },
+                              child: InputDecorator(
+                                decoration: _inputDecoration('Date of Birth', icon: Icons.cake_outlined),
+                                child: Text(
+                                  _dateOfBirth != null ? _dateOfBirth!.toIso8601String().split('T').first : 'Select DOB',
+                                  style: TextStyle(color: _dateOfBirth != null ? const Color(0xFF0F172A) : const Color(0xFF94A3B8), fontSize: 13),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                            TextFormField(
+                              controller: _emergencyContactController,
+                              decoration: _inputDecoration('Emergency Contact', icon: Icons.contact_phone_outlined),
                             ),
                             const SizedBox(height: 14),
                             TextFormField(
@@ -413,92 +392,72 @@ class _AddEditMemberDialogState extends State<AddEditMemberDialog> {
                             const SizedBox(height: 12),
 
                             if (!isEdit) ...[
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: DropdownButtonFormField<int?>(
-                                      initialValue: safePlanValue,
-                                      decoration: _inputDecoration('Select Membership Plan', icon: Icons.card_membership_outlined),
-                                      items: planItems,
-                                      onChanged: _onPlanSelected,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 14),
-                                  Expanded(
-                                    child: DropdownButtonFormField<int?>(
-                                      initialValue: safeTrainerValue,
-                                      decoration: _inputDecoration('Assign Trainer (Optional)', icon: Icons.fitness_center_outlined),
-                                      items: trainerItems,
-                                      onChanged: (v) => setState(() => _selectedTrainerId = v),
-                                    ),
-                                  ),
-                                ],
+                              DropdownButtonFormField<int?>(
+                                initialValue: safePlanValue,
+                                decoration: _inputDecoration('Membership Plan', icon: Icons.card_membership_outlined),
+                                isExpanded: true,
+                                items: planItems,
+                                onChanged: _onPlanSelected,
+                              ),
+                              const SizedBox(height: 14),
+                              DropdownButtonFormField<int?>(
+                                initialValue: safeTrainerValue,
+                                decoration: _inputDecoration('Assign Trainer (Optional)', icon: Icons.fitness_center_outlined),
+                                isExpanded: true,
+                                items: trainerItems,
+                                onChanged: (v) => setState(() => _selectedTrainerId = v),
                               ),
                               if (_selectedPlanId != null) ...[
                                 const SizedBox(height: 14),
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: TextFormField(
-                                        controller: _paidAmountController,
-                                        decoration: _inputDecoration('Initial Payment Amount (\$)', icon: Icons.payments_outlined),
-                                        keyboardType: TextInputType.number,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 14),
-                                    Expanded(
-                                      child: DropdownButtonFormField<String>(
-                                        initialValue: _paymentMethod,
-                                        decoration: _inputDecoration('Payment Method', icon: Icons.account_balance_wallet_outlined),
-                                        items: const [
-                                          DropdownMenuItem(value: 'CASH', child: Text('Cash')),
-                                          DropdownMenuItem(value: 'CARD', child: Text('Credit / Debit Card')),
-                                          DropdownMenuItem(value: 'UPI', child: Text('UPI / QR')),
-                                          DropdownMenuItem(value: 'BANK_TRANSFER', child: Text('Bank Transfer')),
-                                        ],
-                                        onChanged: (v) => setState(() => _paymentMethod = v ?? 'CASH'),
-                                      ),
-                                    ),
+                                TextFormField(
+                                  controller: _paidAmountController,
+                                  decoration: _inputDecoration('Payment Amount', icon: Icons.payments_outlined),
+                                  keyboardType: TextInputType.number,
+                                ),
+                                const SizedBox(height: 14),
+                                DropdownButtonFormField<String>(
+                                  initialValue: _paymentMethod,
+                                  decoration: _inputDecoration('Payment Method', icon: Icons.account_balance_wallet_outlined),
+                                  isExpanded: true,
+                                  items: const [
+                                    DropdownMenuItem(value: 'CASH', child: Text('Cash')),
+                                    DropdownMenuItem(value: 'CARD', child: Text('Card')),
+                                    DropdownMenuItem(value: 'UPI', child: Text('UPI / QR')),
+                                    DropdownMenuItem(value: 'BANK_TRANSFER', child: Text('Bank Transfer')),
                                   ],
+                                  onChanged: (v) => setState(() => _paymentMethod = v ?? 'CASH'),
                                 ),
                               ],
                             ],
 
                             const SizedBox(height: 14),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: DropdownButtonFormField<String>(
-                                    initialValue: safeStatusValue,
-                                    decoration: _inputDecoration('Member Status', icon: Icons.toggle_on_outlined),
-                                    items: const [
-                                      DropdownMenuItem(value: 'ACTIVE', child: Text('ACTIVE')),
-                                      DropdownMenuItem(value: 'INACTIVE', child: Text('INACTIVE')),
-                                      DropdownMenuItem(value: 'EXPIRED', child: Text('EXPIRED')),
-                                      DropdownMenuItem(value: 'SUSPENDED', child: Text('SUSPENDED')),
-                                    ],
-                                    onChanged: (v) => setState(() => _status = v ?? 'ACTIVE'),
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: InkWell(
-                                    onTap: () async {
-                                      final picked = await showDatePicker(
-                                        context: context,
-                                        initialDate: _joinDate,
-                                        firstDate: DateTime(2020),
-                                        lastDate: DateTime.now().add(const Duration(days: 30)),
-                                      );
-                                      if (picked != null) setState(() => _joinDate = picked);
-                                    },
-                                    child: InputDecorator(
-                                      decoration: _inputDecoration('Join Date', icon: Icons.event_outlined),
-                                      child: Text(_joinDate.toIso8601String().split('T').first, style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A))),
-                                    ),
-                                  ),
-                                ),
+                            DropdownButtonFormField<String>(
+                              initialValue: safeStatusValue,
+                              decoration: _inputDecoration('Member Status', icon: Icons.toggle_on_outlined),
+                              isExpanded: true,
+                              items: const [
+                                DropdownMenuItem(value: 'ACTIVE', child: Text('ACTIVE')),
+                                DropdownMenuItem(value: 'INACTIVE', child: Text('INACTIVE')),
+                                DropdownMenuItem(value: 'EXPIRED', child: Text('EXPIRED')),
+                                DropdownMenuItem(value: 'SUSPENDED', child: Text('SUSPENDED')),
                               ],
+                              onChanged: (v) => setState(() => _status = v ?? 'ACTIVE'),
+                            ),
+                            const SizedBox(height: 14),
+                            InkWell(
+                              onTap: () async {
+                                final picked = await showDatePicker(
+                                  context: context,
+                                  initialDate: _joinDate,
+                                  firstDate: DateTime(2020),
+                                  lastDate: DateTime.now().add(const Duration(days: 30)),
+                                );
+                                if (picked != null) setState(() => _joinDate = picked);
+                              },
+                              child: InputDecorator(
+                                decoration: _inputDecoration('Join Date', icon: Icons.event_outlined),
+                                child: Text(_joinDate.toIso8601String().split('T').first, style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A))),
+                              ),
                             ),
                           ],
                         ),

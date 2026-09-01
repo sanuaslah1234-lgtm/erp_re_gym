@@ -52,7 +52,7 @@ class ManagerRepository {
       },
     );
 
-    final newId = insertResult.first[0] as int;
+    final newId = int.tryParse(insertResult.first[0].toString()) ?? insertResult.first[0] as int;
     final created = await getManagerById(newId);
     return created!;
   }

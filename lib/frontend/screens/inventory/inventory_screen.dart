@@ -1,3 +1,4 @@
+import 'package:erp_software/frontend/widgets/common/hamburger_button.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -5,8 +6,6 @@ import 'package:erp_software/core/config/app_config.dart';
 import 'package:erp_software/core/models/inventory_model.dart';
 import 'package:erp_software/frontend/services/inventory_service.dart';
 import 'package:erp_software/frontend/screens/products/widgets/stock_movement_dialog.dart';
-import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
-import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 import 'package:erp_software/frontend/widgets/erp_toast.dart';
 import 'package:erp_software/frontend/widgets/inventory/inventory_stats.dart';
 import 'package:erp_software/frontend/widgets/inventory/inventory_filters.dart';
@@ -232,7 +231,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 const Text('Product *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
                 const SizedBox(height: 6),
                 DropdownButtonFormField<String>(
-                  initialValue: selectedProductId,
+                  value: selectedProductId,
                   isExpanded: true,
                   isDense: true,
                   decoration: const InputDecoration(border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10)),
@@ -245,7 +244,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 const Text('Warehouse *', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
                 const SizedBox(height: 6),
                 DropdownButtonFormField<String>(
-                  initialValue: selectedWarehouseId,
+                  value: selectedWarehouseId,
                   isExpanded: true,
                   isDense: true,
                   decoration: const InputDecoration(border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10)),
@@ -572,16 +571,13 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      drawer: isMobile
-          ? Drawer(child: ErpSidebar(activeItem: 'Inventory / Stock', isDrawer: true))
-          : null,
+
+      appBar: AppBar(leading: const HamburgerButton(), backgroundColor: Colors.white, elevation: 0, title: const Text('Inventory', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)))),
       body: Row(
         children: [
-          if (!isMobile) const ErpSidebar(activeItem: 'Inventory / Stock'),
           Expanded(
             child: Column(
               children: [
-                const ErpTopbar(),
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(24),

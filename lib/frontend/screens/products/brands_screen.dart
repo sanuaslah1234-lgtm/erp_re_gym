@@ -1,12 +1,11 @@
+import 'package:erp_software/frontend/widgets/common/hamburger_button.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:erp_software/core/models/brand_model.dart';
 import 'package:erp_software/core/utils/export_print_helper.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/providers/product_management_provider.dart';
-import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
 import 'package:erp_software/frontend/widgets/erp_toast.dart';
-import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 import 'package:provider/provider.dart';
 
 class BrandsScreen extends StatefulWidget {
@@ -307,14 +306,12 @@ class _BrandsScreenState extends State<BrandsScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      drawer: isMobile ? const Drawer(child: ErpSidebar(activeItem: 'Brands', isDrawer: true)) : null,
+      appBar: AppBar(leading: const HamburgerButton(), backgroundColor: Colors.white, elevation: 0, title: const Text('Brands', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)))),
       body: Row(
         children: [
-          if (!isMobile) const ErpSidebar(activeItem: 'Brands'),
           Expanded(
             child: Column(
               children: [
-                const ErpTopbar(),
                 Expanded(
                   child: SingleChildScrollView(
                     padding: EdgeInsets.all(isMobile ? 14.0 : 24.0),

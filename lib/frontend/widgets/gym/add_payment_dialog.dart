@@ -103,7 +103,7 @@ class _AddPaymentDialogState extends State<AddPaymentDialog> {
   Widget build(BuildContext context) {
     final memberItems = _members.map((m) => DropdownMenuItem<int>(
       value: m.id,
-      child: Text('${m.name} (${m.memberCode} - ${m.phone})'),
+      child: Text('${m.name} (${m.memberCode})', maxLines: 1, overflow: TextOverflow.ellipsis),
     )).toList();
 
     if (_selectedMemberId != null && !memberItems.any((item) => item.value == _selectedMemberId)) {
@@ -117,12 +117,15 @@ class _AddPaymentDialogState extends State<AddPaymentDialog> {
         ? _selectedMemberId
         : null;
 
+    final screenWidth = MediaQuery.of(context).size.width;
+    final dialogWidth = (screenWidth - 40).clamp(320.0, 500.0);
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       backgroundColor: Colors.white,
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: SizedBox(
-        width: 550,
+        width: dialogWidth,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -170,64 +173,50 @@ class _AddPaymentDialogState extends State<AddPaymentDialog> {
                         children: [
                           DropdownButtonFormField<int>(
                             initialValue: safeMemberValue,
-                            decoration: _inputDecoration('Select Gym Member *', icon: Icons.person_outline),
+                            isExpanded: true,
+                            decoration: _inputDecoration('Select Member *', icon: Icons.person_outline),
                             items: memberItems,
                             onChanged: (v) => setState(() => _selectedMemberId = v),
                             validator: (v) => v == null ? 'Please select a member' : null,
                           ),
                           const SizedBox(height: 14),
 
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _amountController,
-                                  decoration: _inputDecoration('Payment Amount (\$)*', icon: Icons.attach_money),
-                                  keyboardType: TextInputType.number,
-                                  validator: (v) => (v == null || double.tryParse(v.trim()) == null || double.parse(v.trim()) <= 0) ? 'Enter valid amount' : null,
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: DropdownButtonFormField<String>(
-                                  initialValue: _paymentMethod,
-                                  decoration: _inputDecoration('Payment Method', icon: Icons.account_balance_wallet_outlined),
-                                  items: const [
-                                    DropdownMenuItem(value: 'CASH', child: Text('Cash')),
-                                    DropdownMenuItem(value: 'CARD', child: Text('Credit / Debit Card')),
-                                    DropdownMenuItem(value: 'UPI', child: Text('UPI / QR')),
-                                    DropdownMenuItem(value: 'BANK_TRANSFER', child: Text('Bank Transfer')),
-                                    DropdownMenuItem(value: 'OTHER', child: Text('Other')),
-                                  ],
-                                  onChanged: (v) => setState(() => _paymentMethod = v ?? 'CASH'),
-                                ),
-                              ),
-                            ],
+                          TextFormField(
+                            controller: _amountController,
+                            decoration: _inputDecoration('Amount *', icon: Icons.attach_money),
+                            keyboardType: TextInputType.number,
+                            validator: (v) => (v == null || double.tryParse(v.trim()) == null || double.parse(v.trim()) <= 0) ? 'Enter valid amount' : null,
                           ),
                           const SizedBox(height: 14),
-
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _referenceController,
-                                  decoration: _inputDecoration('Transaction / Reference #', icon: Icons.tag),
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: DropdownButtonFormField<String>(
-                                  initialValue: _status,
-                                  decoration: _inputDecoration('Payment Status', icon: Icons.toggle_on_outlined),
-                                  items: const [
-                                    DropdownMenuItem(value: 'PAID', child: Text('PAID (Completed)')),
-                                    DropdownMenuItem(value: 'PENDING', child: Text('PENDING (Due)')),
-                                    DropdownMenuItem(value: 'PARTIAL', child: Text('PARTIAL')),
-                                  ],
-                                  onChanged: (v) => setState(() => _status = v ?? 'PAID'),
-                                ),
-                              ),
+                          DropdownButtonFormField<String>(
+                            initialValue: _paymentMethod,
+                            isExpanded: true,
+                            decoration: _inputDecoration('Payment Method', icon: Icons.account_balance_wallet_outlined),
+                            items: const [
+                              DropdownMenuItem(value: 'CASH', child: Text('Cash')),
+                              DropdownMenuItem(value: 'CARD', child: Text('Card')),
+                              DropdownMenuItem(value: 'UPI', child: Text('UPI / QR')),
+                              DropdownMenuItem(value: 'BANK_TRANSFER', child: Text('Bank Transfer')),
+                              DropdownMenuItem(value: 'OTHER', child: Text('Other')),
                             ],
+                            onChanged: (v) => setState(() => _paymentMethod = v ?? 'CASH'),
+                          ),
+                          const SizedBox(height: 14),
+                          TextFormField(
+                            controller: _referenceController,
+                            decoration: _inputDecoration('Transaction #', icon: Icons.tag),
+                          ),
+                          const SizedBox(height: 14),
+                          DropdownButtonFormField<String>(
+                            initialValue: _status,
+                            isExpanded: true,
+                            decoration: _inputDecoration('Payment Status', icon: Icons.toggle_on_outlined),
+                            items: const [
+                              DropdownMenuItem(value: 'PAID', child: Text('Paid')),
+                              DropdownMenuItem(value: 'PENDING', child: Text('Pending')),
+                              DropdownMenuItem(value: 'PARTIAL', child: Text('Partial')),
+                            ],
+                            onChanged: (v) => setState(() => _status = v ?? 'PAID'),
                           ),
                           const SizedBox(height: 14),
 

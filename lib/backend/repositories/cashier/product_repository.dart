@@ -1,3 +1,4 @@
+
 import 'package:erp_software/core/models/cashier/product_model.dart';
 import 'package:erp_software/backend/database/postgres_service.dart';
 import 'package:postgres/postgres.dart';
@@ -9,17 +10,17 @@ class ProductRepository {
 
   Future<List<ProductModel>> getAllProducts({String? search, int? categoryId, int? brandId}) async {
     String sql = '''
-      SELECT p.*, c.name as category_name
+      SELECT p.*, c.name as category_name, b.name as brand_name
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
       LEFT JOIN brands b ON p.brand_id = b.id
-      WHERE LOWER(COALESCE(p.status, 'active')) = 'active'
+      WHERE p.is_active = true
     ''';
 
     final params = <String, dynamic>{};
 
     if (search != null && search.trim().isNotEmpty) {
-      sql += ' AND (LOWER(p.name) LIKE LOWER(@search) OR LOWER(COALESCE(p.sku, p.product_code, \'\')) LIKE LOWER(@search) OR COALESCE(p.barcode, \'\') LIKE @search)';
+      sql += ' AND (LOWER(p.name) LIKE LOWER(@search) OR LOWER(COALESCE(p.product_code, \'\')) LIKE LOWER(@search) OR COALESCE(p.barcode, \'\') LIKE @search)';
       params['search'] = '%${search.trim()}%';
     }
 

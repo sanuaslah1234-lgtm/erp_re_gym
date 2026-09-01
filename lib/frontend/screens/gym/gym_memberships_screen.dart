@@ -1,8 +1,7 @@
+import 'package:erp_software/frontend/widgets/common/hamburger_button.dart';
 import 'package:flutter/material.dart';
 import 'package:erp_software/core/models/gym/gym_membership_model.dart';
 import 'package:erp_software/frontend/services/gym/gym_service.dart';
-import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
-import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 import 'package:erp_software/frontend/widgets/gym/add_membership_dialog.dart';
 import 'package:erp_software/frontend/widgets/gym/renew_membership_dialog.dart';
 import 'package:erp_software/frontend/widgets/gym/member_details_dialog.dart';
@@ -92,14 +91,12 @@ class _GymMembershipsScreenState extends State<GymMembershipsScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      drawer: isMobile ? const Drawer(child: ErpSidebar(activeItem: 'Memberships', isDrawer: true)) : null,
+      appBar: AppBar(leading: const HamburgerButton(), backgroundColor: Colors.white, elevation: 0),
       body: Row(
         children: [
-          if (!isMobile) const ErpSidebar(activeItem: 'Memberships'),
           Expanded(
             child: Column(
               children: [
-                const ErpTopbar(),
                 Expanded(
                   child: RefreshIndicator(
                     onRefresh: loadMemberships,

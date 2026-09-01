@@ -113,7 +113,7 @@ class _AddEditWorkoutDialogState extends State<AddEditWorkoutDialog> {
                   ),
                   const SizedBox(height: 10),
                   DropdownButtonFormField<String>(
-                    initialValue: muscle,
+                    value: muscle,
                     decoration: const InputDecoration(labelText: 'Target Muscle Group'),
                     items: const [
                       DropdownMenuItem(value: 'Chest', child: Text('Chest')),
@@ -131,7 +131,7 @@ class _AddEditWorkoutDialogState extends State<AddEditWorkoutDialog> {
                     children: [
                       Expanded(
                         child: DropdownButtonFormField<int>(
-                          initialValue: sets,
+                          value: sets,
                           decoration: const InputDecoration(labelText: 'Sets'),
                           items: [1, 2, 3, 4, 5, 6].map((s) => DropdownMenuItem(value: s, child: Text('$s sets'))).toList(),
                           onChanged: (v) => setDialogState(() => sets = v ?? 3),
@@ -149,7 +149,7 @@ class _AddEditWorkoutDialogState extends State<AddEditWorkoutDialog> {
                   const SizedBox(height: 10),
                   TextField(
                     controller: weightCtrl,
-                    decoration: const InputDecoration(labelText: 'Target Weight (e.g. 25 kg)'),
+                    decoration: const InputDecoration(labelText: 'Weight'),
                   ),
                 ],
               ),
@@ -225,6 +225,8 @@ class _AddEditWorkoutDialogState extends State<AddEditWorkoutDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final dialogWidth = (screenWidth - 40).clamp(320.0, 500.0);
     final isEdit = widget.workoutPlan != null;
 
     // Build member dropdown items with safe fallback
@@ -269,7 +271,7 @@ class _AddEditWorkoutDialogState extends State<AddEditWorkoutDialog> {
       backgroundColor: Colors.white,
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: Container(
-        width: 720,
+        width: dialogWidth,
         constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
         child: Column(
           children: [
@@ -320,7 +322,7 @@ class _AddEditWorkoutDialogState extends State<AddEditWorkoutDialog> {
                               children: [
                                 Expanded(
                                   child: DropdownButtonFormField<int>(
-                                    initialValue: safeMemberValue,
+                                    value: safeMemberValue,
                                     decoration: _inputDecoration('Select Member *', icon: Icons.person_outline),
                                     items: memberItems,
                                     onChanged: (v) => setState(() => _selectedMemberId = v),
@@ -330,7 +332,7 @@ class _AddEditWorkoutDialogState extends State<AddEditWorkoutDialog> {
                                 const SizedBox(width: 14),
                                 Expanded(
                                   child: DropdownButtonFormField<int?>(
-                                    initialValue: safeTrainerValue,
+                                    value: safeTrainerValue,
                                     decoration: _inputDecoration('Assigned Trainer', icon: Icons.sports_gymnastics_rounded),
                                     items: trainerItems,
                                     onChanged: (v) => setState(() => _selectedTrainerId = v),
@@ -346,7 +348,7 @@ class _AddEditWorkoutDialogState extends State<AddEditWorkoutDialog> {
                                   flex: 2,
                                   child: TextFormField(
                                     controller: _nameController,
-                                    decoration: _inputDecoration('Workout Plan Name *', icon: Icons.badge_outlined),
+                                    decoration: _inputDecoration('Plan Name *', icon: Icons.badge_outlined),
                                     validator: (v) => (v == null || v.trim().isEmpty) ? 'Plan name required' : null,
                                   ),
                                 ),
@@ -355,7 +357,7 @@ class _AddEditWorkoutDialogState extends State<AddEditWorkoutDialog> {
                                   flex: 2,
                                   child: TextFormField(
                                     controller: _goalController,
-                                    decoration: _inputDecoration('Target Goal (e.g. Weight Loss)', icon: Icons.flag_outlined),
+                                    decoration: _inputDecoration('Goal', icon: Icons.flag_outlined),
                                   ),
                                 ),
                               ],
@@ -410,7 +412,7 @@ class _AddEditWorkoutDialogState extends State<AddEditWorkoutDialog> {
                             TextFormField(
                               controller: _notesController,
                               maxLines: 2,
-                              decoration: _inputDecoration('Special Instructions / Notes (Optional)', icon: Icons.notes_outlined),
+                              decoration: _inputDecoration('Notes (Optional)', icon: Icons.notes_outlined),
                             ),
                             const SizedBox(height: 20),
 

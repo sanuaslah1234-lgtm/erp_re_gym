@@ -45,7 +45,7 @@ class BarcodeRepository {
       productId: productId,
       productName: prodMap['name'] as String?,
       productCode: prodMap['product_code'] as String?,
-      sellingPrice: prodMap['selling_price'] != null ? (prodMap['selling_price'] as num).toDouble() : null,
+      sellingPrice: prodMap['selling_price'] != null ? double.tryParse(prodMap['selling_price'].toString()) : null,
       barcode: barcode,
       labelQuantity: labelQuantity,
       createdBy: createdBy,
