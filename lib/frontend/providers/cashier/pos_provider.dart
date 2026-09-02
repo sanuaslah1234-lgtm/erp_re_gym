@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:erp_software/core/models/cashier/cart_item.dart';
 import 'package:erp_software/core/models/cashier/pos_order.dart';
@@ -10,6 +11,7 @@ class HeldOrder {
   final String label;
   final List<CartItem> items;
   final String? customerName;
+  final int? customerId;
   final DateTime heldAt;
 
   HeldOrder({
@@ -17,6 +19,7 @@ class HeldOrder {
     required this.label,
     required this.items,
     this.customerName,
+    this.customerId,
     required this.heldAt,
   });
 }
@@ -25,6 +28,7 @@ class PosProvider extends ChangeNotifier {
   final PosApiService _posApiService = PosApiService();
   final OrderApiService _orderApiService = OrderApiService();
 
+  // Products / Filters
   List<Product> _products = [];
   List<Map<String, dynamic>> _categories = [];
   List<Map<String, dynamic>> _brands = [];
@@ -33,6 +37,7 @@ class PosProvider extends ChangeNotifier {
   String _searchQuery = '';
   bool _isLoading = false;
   String? _errorMessage;
+  String? _warningMessage;
 
   // Cart State
   final List<CartItem> _cart = [];
@@ -40,13 +45,19 @@ class PosProvider extends ChangeNotifier {
   int? _customerId;
   double _cartDiscountPercentage = 0.0;
   final double _defaultTaxPercentage = 5.0;
+  double _shippingCharge = 0.0;
+  double _otherCharges = 0.0;
 
   // Held Orders
   final List<HeldOrder> _heldOrders = [];
 
-  // Last Completed Order (for printing receipt)
+  // Last Completed Order
   PosOrder? _lastCompletedOrder;
 
+  // Search debounce
+  Timer? _debounceTimer;
+
+  // --- Getters ---
   List<Product> get products => _products;
   List<Map<String, dynamic>> get categories => _categories;
   List<Map<String, dynamic>> get brands => _brands;
@@ -55,22 +66,26 @@ class PosProvider extends ChangeNotifier {
   String get searchQuery => _searchQuery;
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
+  String? get warningMessage => _warningMessage;
 
   List<CartItem> get cart => _cart;
   String get customerName => _customerName;
   int? get customerId => _customerId;
   double get cartDiscountPercentage => _cartDiscountPercentage;
+  double get shippingCharge => _shippingCharge;
+  double get otherCharges => _otherCharges;
   List<HeldOrder> get heldOrders => _heldOrders;
   PosOrder? get lastCompletedOrder => _lastCompletedOrder;
 
-  // Cart Calculations
+  // --- Calculations ---
   double get subtotal => _cart.fold(0.0, (sum, item) => sum + item.subtotal);
   double get cartDiscountAmount => subtotal * (_cartDiscountPercentage / 100.0);
   double get taxableSubtotal => subtotal - cartDiscountAmount;
   double get taxAmount => taxableSubtotal * (_defaultTaxPercentage / 100.0);
-  double get grandTotal => taxableSubtotal + taxAmount;
+  double get grandTotal => taxableSubtotal + taxAmount + _shippingCharge + _otherCharges;
   int get itemCount => _cart.fold(0, (sum, item) => sum + item.quantity.toInt());
 
+  // --- Products ---
   Future<void> fetchProducts(String? token) async {
     _isLoading = true;
     _errorMessage = null;
@@ -95,7 +110,10 @@ class PosProvider extends ChangeNotifier {
 
   void setSearchQuery(String query, String? token) {
     _searchQuery = query;
-    fetchProducts(token);
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 400), () {
+      fetchProducts(token);
+    });
   }
 
   void selectCategory(int? catId, String? token) {
@@ -120,22 +138,27 @@ class PosProvider extends ChangeNotifier {
     }
   }
 
+  // --- Cart Operations ---
   void addToCart(Product product) {
     final index = _cart.indexWhere((item) => item.product.id == product.id);
     if (index >= 0) {
-      if (_cart[index].quantity + 1 > product.stockQuantity) {
-        _errorMessage = 'Cannot add more. Available stock: ${product.stockQuantity}';
+      // Check stock before increasing
+      final currentQty = _cart[index].quantity;
+      if (currentQty >= product.stockQuantity && product.stockQuantity > 0) {
+        _warningMessage = 'Only ${product.stockQuantity.toInt()} available in stock for "${product.name}"';
         notifyListeners();
         return;
       }
       _cart[index].quantity += 1;
     } else {
+      _cart.add(CartItem(
+        product: product,
+        quantity: 1.0,
+        tax: product.taxPercentage,
+      ));
       if (product.stockQuantity < 1) {
-        _errorMessage = 'Product "${product.name}" is out of stock!';
-        notifyListeners();
-        return;
+        _warningMessage = '"${product.name}" is out of stock — backorder item added';
       }
-      _cart.add(CartItem(product: product, quantity: 1.0, tax: product.taxPercentage));
     }
     _errorMessage = null;
     notifyListeners();
@@ -147,11 +170,6 @@ class PosProvider extends ChangeNotifier {
       if (newQty <= 0) {
         _cart.removeAt(index);
       } else {
-        if (newQty > _cart[index].product.stockQuantity) {
-          _errorMessage = 'Quantity exceeds available stock (${_cart[index].product.stockQuantity})';
-          notifyListeners();
-          return;
-        }
         _cart[index].quantity = newQty;
       }
       _errorMessage = null;
@@ -164,46 +182,74 @@ class PosProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void clearError() => _errorMessage = null;
+  void clearWarning() => _warningMessage = null;
+
   void clearCart() {
     _cart.clear();
     _cartDiscountPercentage = 0.0;
+    _shippingCharge = 0.0;
+    _otherCharges = 0.0;
     _customerName = 'Walk-in Customer';
     _customerId = null;
+    _warningMessage = null;
     notifyListeners();
   }
 
+  // --- Customer ---
   void setCustomer(String name, int? id) {
     _customerName = name;
     _customerId = id;
     notifyListeners();
   }
 
+  // --- Charges ---
   void setCartDiscount(double discountPercent) {
     _cartDiscountPercentage = discountPercent.clamp(0.0, 100.0);
     notifyListeners();
   }
 
+  void setShipping(double amount) {
+    _shippingCharge = amount.clamp(0.0, double.infinity);
+    notifyListeners();
+  }
+
+  void setOtherCharges(double amount) {
+    _otherCharges = amount.clamp(0.0, double.infinity);
+    notifyListeners();
+  }
+
+  // --- Held Orders ---
   void holdCurrentOrder() {
     if (_cart.isEmpty) return;
     final heldId = "HOLD-${DateTime.now().millisecondsSinceEpoch % 10000}";
     _heldOrders.add(HeldOrder(
       id: heldId,
-      label: "$heldId (${_cart.length} items - \$$grandTotal)",
+      label: "$heldId (${_cart.length} items - \$${grandTotal.toStringAsFixed(2)})",
       items: List.from(_cart),
       customerName: _customerName,
+      customerId: _customerId,
       heldAt: DateTime.now(),
     ));
     clearCart();
+    notifyListeners();
   }
 
   void resumeHeldOrder(HeldOrder heldOrder) {
     _cart.clear();
     _cart.addAll(heldOrder.items);
     _customerName = heldOrder.customerName ?? 'Walk-in Customer';
+    _customerId = heldOrder.customerId;
     _heldOrders.removeWhere((o) => o.id == heldOrder.id);
     notifyListeners();
   }
 
+  void removeHeldOrder(String heldId) {
+    _heldOrders.removeWhere((o) => o.id == heldId);
+    notifyListeners();
+  }
+
+  // --- Checkout ---
   Future<PosOrder?> checkout(
     String? token, {
     required String paymentMethod,
@@ -233,6 +279,8 @@ class PosProvider extends ChangeNotifier {
         'subtotal': subtotal,
         'discountAmount': cartDiscountAmount,
         'taxAmount': taxAmount,
+        'shippingCharge': _shippingCharge,
+        'otherCharges': _otherCharges,
         'grandTotal': grandTotal,
         'amountReceived': amountReceived,
         'changeAmount': (amountReceived - grandTotal).clamp(0.0, double.infinity),
@@ -260,5 +308,11 @@ class PosProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    super.dispose();
   }
 }

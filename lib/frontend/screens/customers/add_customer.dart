@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:erp_software/core/models/customer_model.dart';
 import 'package:erp_software/frontend/services/customer_service.dart';
-import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
-import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 import 'package:erp_software/frontend/widgets/customers/add_customer.dart';
 import 'package:erp_software/frontend/widgets/erp_toast.dart';
 
@@ -88,14 +86,11 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      drawer: isMobile ? const Drawer(child: ErpSidebar(activeItem: 'Customers', isDrawer: true)) : null,
       body: Row(
         children: [
-          if (!isMobile) const ErpSidebar(activeItem: 'Customers'),
           Expanded(
             child: Column(
               children: [
-                const ErpTopbar(),
                 Expanded(
                   child: SingleChildScrollView(
                     padding: EdgeInsets.all(isMobile ? 14.0 : 24.0),

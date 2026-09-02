@@ -1,3 +1,4 @@
+
 import 'package:erp_software/core/models/cashier/product_model.dart';
 import 'package:erp_software/backend/database/postgres_service.dart';
 import 'package:postgres/postgres.dart';
@@ -7,12 +8,9 @@ class ProductRepository {
 
   ProductRepository(this.db);
 
-  Future<List<ProductModel>> getAllProducts({String? search, dynamic categoryId, dynamic brandId}) async {
+  Future<List<ProductModel>> getAllProducts({String? search, int? categoryId, int? brandId}) async {
     String sql = '''
-      SELECT 
-        p.*, 
-        c.name as category_name,
-        b.name as brand_name
+      SELECT p.*, c.name as category_name, b.name as brand_name
       FROM products p
       LEFT JOIN categories c ON p.category_id::text = c.id::text
       LEFT JOIN brands b ON p.brand_id::text = b.id::text
@@ -22,7 +20,7 @@ class ProductRepository {
     final params = <String, dynamic>{};
 
     if (search != null && search.trim().isNotEmpty) {
-      sql += ' AND (LOWER(p.name) LIKE LOWER(@search) OR LOWER(COALESCE(p.product_code, \'\')) LIKE LOWER(@search) OR LOWER(COALESCE(p.sku, \'\')) LIKE LOWER(@search) OR LOWER(COALESCE(p.barcode, \'\')) LIKE LOWER(@search))';
+      sql += ' AND (LOWER(p.name) LIKE LOWER(@search) OR LOWER(COALESCE(p.product_code, \'\')) LIKE LOWER(@search) OR COALESCE(p.barcode, \'\') LIKE @search)';
       params['search'] = '%${search.trim()}%';
     }
 
@@ -31,8 +29,8 @@ class ProductRepository {
       params['catId'] = categoryId.toString();
     }
 
-    if (brandId != null && brandId.toString().trim().isNotEmpty && brandId.toString() != '0') {
-      sql += ' AND (p.brand_id::text = @brandId OR LOWER(b.name) = LOWER(@brandId))';
+    if (brandId != null && brandId > 0) {
+      sql += ' AND p.brand_id::text = @brandId';
       params['brandId'] = brandId.toString();
     }
 

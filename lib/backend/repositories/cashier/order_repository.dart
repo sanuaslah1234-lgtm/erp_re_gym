@@ -10,10 +10,56 @@ class OrderRepository {
 
   OrderRepository(this.db);
 
-  static double _parseDouble(dynamic val, [double defaultVal = 0.0]) {
-    if (val == null) return defaultVal;
-    if (val is num) return val.toDouble();
-    return double.tryParse(val.toString()) ?? defaultVal;
+  /// Auto-create POS tables if they don't exist
+  bool _posTablesEnsured = false;
+  Future<void> _ensurePosTables() async {
+    if (_posTablesEnsured) return;
+    try {
+      await db.connection.execute('''
+        CREATE TABLE IF NOT EXISTS pos_orders (
+          id SERIAL PRIMARY KEY,
+          order_number VARCHAR(50) UNIQUE NOT NULL,
+          customer_id INT,
+          cashier_id INT,
+          subtotal NUMERIC(12,2) NOT NULL DEFAULT 0,
+          discount_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
+          tax_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
+          grand_total NUMERIC(12,2) NOT NULL DEFAULT 0,
+          payment_status VARCHAR(30) NOT NULL DEFAULT 'paid',
+          order_status VARCHAR(30) NOT NULL DEFAULT 'paid',
+          amount_received NUMERIC(12,2) NOT NULL DEFAULT 0,
+          change_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
+          created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+      ''');
+      await db.connection.execute('''
+        CREATE TABLE IF NOT EXISTS pos_order_items (
+          id SERIAL PRIMARY KEY,
+          order_id INT NOT NULL REFERENCES pos_orders(id) ON DELETE CASCADE,
+          product_id INT NOT NULL,
+          product_name VARCHAR(255) NOT NULL,
+          quantity NUMERIC(12,3) NOT NULL DEFAULT 1,
+          unit_price NUMERIC(12,2) NOT NULL DEFAULT 0,
+          discount_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
+          tax_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
+          total_amount NUMERIC(12,2) NOT NULL DEFAULT 0
+        );
+      ''');
+      await db.connection.execute('''
+        CREATE TABLE IF NOT EXISTS payments (
+          id SERIAL PRIMARY KEY,
+          order_id INT NOT NULL REFERENCES pos_orders(id) ON DELETE CASCADE,
+          payment_method VARCHAR(50) NOT NULL DEFAULT 'cash',
+          amount NUMERIC(12,2) NOT NULL DEFAULT 0,
+          reference_number VARCHAR(100),
+          created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+      ''');
+      _posTablesEnsured = true;
+    } catch (e) {
+      print('Error ensuring POS tables: $e');
+    }
   }
 
   /// Generates the next sequential order number (e.g. POS-20260814-0001)
@@ -27,8 +73,8 @@ class OrderRepository {
       parameters: {'prefix': '$prefix%'},
     );
 
-    final count = (result.first[0] as num).toInt() + 1;
-    return "$prefix${count.toString().padLeft(4, '0')}";
+    final count = int.tryParse(result.first[0]?.toString() ?? '0') ?? 0;
+    return "$prefix${(count + 1).toString().padLeft(4, '0')}";
   }
 
   /// Creates a POS order inside an atomic PostgreSQL transaction (`runTx`)
@@ -46,6 +92,7 @@ class OrderRepository {
     required List<Map<String, dynamic>> paymentsData,
     bool allowNegativeStock = false,
   }) async {
+    await _ensurePosTables();
     final orderNumber = await generateOrderNumber();
 
     late PosOrderModel createdOrder;
@@ -53,8 +100,9 @@ class OrderRepository {
     await db.connection.runTx((session) async {
       // 1. Validate product stock inside transaction
       for (final item in itemsData) {
-        final prodId = item['product_id'];
-        final requestedQty = _parseDouble(item['quantity'], 1.0);
+        final prodIdRaw = item['product_id'] ?? item['productId'];
+        final prodId = int.tryParse(prodIdRaw.toString());
+        final requestedQty = double.tryParse(item['quantity'].toString()) ?? 1.0;
 
         final prodRes = await session.execute(
           Sql.named("SELECT name, stock_quantity FROM products WHERE id::text = @idStr FOR UPDATE"),
@@ -65,7 +113,7 @@ class OrderRepository {
           throw ApiException('Product ID $prodId not found', statusCode: 400);
         }
 
-        final currentStock = _parseDouble(prodRes.first[1]);
+        final currentStock = double.tryParse(prodRes.first[1]?.toString() ?? '0') ?? 0.0;
         final prodName = prodRes.first[0].toString();
 
         if (!allowNegativeStock && currentStock < requestedQty) {
@@ -106,13 +154,14 @@ class OrderRepository {
       // 3. Insert order items & decrease product stock
       final insertedItems = <OrderItemModel>[];
       for (final item in itemsData) {
-        final prodId = item['product_id'];
-        final prodName = (item['product_name'] ?? item['name'] ?? '').toString();
-        final qty = _parseDouble(item['quantity'], 1.0);
-        final unitPrice = _parseDouble(item['unit_price'] ?? item['sellingPrice']);
-        final itemDisc = _parseDouble(item['discount_amount'] ?? item['discount']);
-        final itemTax = _parseDouble(item['tax_amount'] ?? item['tax']);
-        final itemTotal = _parseDouble(item['total_amount'] ?? item['total']);
+        final prodIdRaw = item['product_id'] ?? item['productId'];
+        final prodId = int.tryParse(prodIdRaw.toString());
+        final prodName = (item['product_name'] ?? item['productName'] ?? '').toString();
+        final qty = double.tryParse((item['quantity'] ?? 1).toString()) ?? 1.0;
+        final unitPrice = double.tryParse((item['unit_price'] ?? item['unitPrice'] ?? 0).toString()) ?? 0.0;
+        final itemDisc = double.tryParse((item['discount_amount'] ?? item['discountAmount'] ?? item['discount'] ?? 0).toString()) ?? 0.0;
+        final itemTax = double.tryParse((item['tax_amount'] ?? item['taxAmount'] ?? item['tax'] ?? 0).toString()) ?? 0.0;
+        final itemTotal = double.tryParse((item['total_amount'] ?? item['total'] ?? 0).toString()) ?? 0.0;
 
         final itemRes = await session.execute(
           Sql.named('''
@@ -158,8 +207,8 @@ class OrderRepository {
       // 4. Insert payment records
       final insertedPayments = <PaymentModel>[];
       for (final p in paymentsData) {
-        final pMethod = (p['payment_method'] ?? paymentMethod).toString();
-        final pAmt = _parseDouble(p['amount'], grandTotal);
+        final pMethod = p['payment_method'].toString();
+        final pAmt = double.tryParse(p['amount'].toString()) ?? 0.0;
         final pRef = p['reference_number']?.toString();
 
         final payNumber = 'PAY-${DateTime.now().millisecondsSinceEpoch % 10000000}';
@@ -292,22 +341,23 @@ class OrderRepository {
       FROM pos_orders o
       LEFT JOIN users u ON o.cashier_id::text = u.id::text
       LEFT JOIN employees e ON e.user_id::text = u.id::text OR e.id::text = o.cashier_id::text
-      WHERE o.id = @id OR o.id::text = @idStr OR o.order_number = @idStr
+      WHERE o.id::text = @idStr OR o.order_number = @idStr
       LIMIT 1
     ''';
 
-    final result = await db.connection.execute(Sql.named(sql), parameters: {'id': id, 'idStr': id.toString()});
+    final result = await db.connection.execute(Sql.named(sql), parameters: {'idStr': id.toString()});
     if (result.isEmpty) return null;
 
     final map = result.first.toColumnMap();
+    final actualOrderId = map['id']?.toString() ?? id.toString();
 
     final itemsRes = await db.connection.execute(
-      Sql.named('SELECT * FROM pos_order_items WHERE order_id = @id OR order_id::text = @idStr'),
-      parameters: {'id': id, 'idStr': id.toString()},
+      Sql.named('SELECT * FROM pos_order_items WHERE order_id::text = @orderIdStr'),
+      parameters: {'orderIdStr': actualOrderId},
     );
     final paymentsRes = await db.connection.execute(
-      Sql.named('SELECT * FROM payments WHERE order_id::text = @idStr OR invoice_id::text = @idStr'),
-      parameters: {'idStr': id.toString()},
+      Sql.named('SELECT * FROM payments WHERE order_id::text = @orderIdStr OR invoice_id::text = @orderIdStr'),
+      parameters: {'orderIdStr': actualOrderId},
     );
 
     map['items'] = itemsRes.map((i) => i.toColumnMap()).toList();
@@ -319,22 +369,22 @@ class OrderRepository {
   Future<void> cancelOrder(dynamic orderId) async {
     await db.connection.runTx((session) async {
       final items = await session.execute(
-        Sql.named('SELECT product_id, quantity FROM pos_order_items WHERE order_id = @id OR order_id::text = @idStr'),
-        parameters: {'id': orderId, 'idStr': orderId.toString()},
+        Sql.named('SELECT product_id, quantity FROM pos_order_items WHERE order_id::text = @idStr'),
+        parameters: {'idStr': orderId.toString()},
       );
 
       for (final row in items) {
         final prodId = row[0];
-        final qty = _parseDouble(row[1]);
+        final qty = double.tryParse(row[1]?.toString() ?? '0') ?? 0.0;
         await session.execute(
-          Sql.named('UPDATE products SET stock_quantity = stock_quantity + @qty WHERE id = @prodId OR id::text = @prodIdStr'),
-          parameters: {'qty': qty, 'prodId': prodId, 'prodIdStr': prodId.toString()},
+          Sql.named('UPDATE products SET stock_quantity = stock_quantity + @qty WHERE id::text = @prodIdStr'),
+          parameters: {'qty': qty, 'prodIdStr': prodId.toString()},
         );
       }
 
       await session.execute(
-        Sql.named("UPDATE pos_orders SET order_status = 'cancelled', payment_status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE id = @id OR id::text = @idStr"),
-        parameters: {'id': orderId, 'idStr': orderId.toString()},
+        Sql.named("UPDATE pos_orders SET order_status = 'cancelled', payment_status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE id::text = @idStr OR order_number = @idStr"),
+        parameters: {'idStr': orderId.toString()},
       );
     });
   }

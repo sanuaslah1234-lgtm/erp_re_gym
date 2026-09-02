@@ -1,8 +1,7 @@
+import 'package:erp_software/frontend/widgets/common/hamburger_button.dart';
 import 'package:flutter/material.dart';
 import 'package:erp_software/core/models/gym/gym_plan_model.dart';
 import 'package:erp_software/frontend/services/gym/gym_service.dart';
-import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
-import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 import 'package:erp_software/frontend/widgets/gym/add_edit_plan_dialog.dart';
 import 'package:erp_software/frontend/widgets/erp_toast.dart';
 import 'package:erp_software/theme/app_colors.dart';
@@ -125,102 +124,104 @@ class _GymPlansScreenState extends State<GymPlansScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      drawer: isMobile ? const Drawer(child: ErpSidebar(activeItem: 'Membership Plans', isDrawer: true)) : null,
-      body: Row(
-        children: [
-          if (!isMobile) const ErpSidebar(activeItem: 'Membership Plans'),
-          Expanded(
-            child: Column(
-              children: [
-                const ErpTopbar(),
-                Expanded(
-                  child: RefreshIndicator(
-                    onRefresh: loadPlans,
-                    color: AppColors.primary,
-                    backgroundColor: Colors.white,
-                    child: SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: EdgeInsets.all(isMobile ? 14.0 : 24.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Header
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Membership Plans',
-                                    style: TextStyle(
-                                      fontSize: 26,
-                                      fontWeight: FontWeight.w800,
-                                      color: Color(0xFF2563EB),
-                                      letterSpacing: -0.5,
-                                    ),
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text('Create and manage pricing tiers, duration, and discounts', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
-                                ],
-                              ),
-                              ElevatedButton.icon(
-                                onPressed: () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (_) => AddEditPlanDialog(onSaved: loadPlans),
-                                  );
-                                },
-                                icon: const Icon(Icons.add, size: 18),
-                                label: const Text('+ Add Plan'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primary,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
-
-                          // Tab Filter Row
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: [
-                                _buildTabPill('All', _allPlans.length),
-                                const SizedBox(width: 8),
-                                _buildTabPill('Monthly', _allPlans.where((p) => p.durationDays <= 30).length),
-                                const SizedBox(width: 8),
-                                _buildTabPill('Quarterly', _allPlans.where((p) => p.durationDays > 30 && p.durationDays <= 90).length),
-                                const SizedBox(width: 8),
-                                _buildTabPill('Half-Yearly', _allPlans.where((p) => p.durationDays > 90 && p.durationDays <= 180).length),
-                                const SizedBox(width: 8),
-                                _buildTabPill('Yearly', _allPlans.where((p) => p.durationDays > 180).length),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-
-                          if (_isLoading) ...[
-                            const Center(child: Padding(padding: EdgeInsets.all(50), child: CircularProgressIndicator(color: AppColors.primary)))
-                          ] else if (_error != null) ...[
-                            _buildErrorBanner(),
-                          ] else if (_filteredPlans.isEmpty) ...[
-                            _buildEmptyState(),
-                          ] else ...[
-                            _buildPlansGrid(isMobile),
-                          ],
-                        ],
+      appBar: AppBar(
+        leading: const HamburgerButton(),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text('Gym Plans', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline, color: AppColors.primary),
+            tooltip: 'Add Plan',
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (_) => AddEditPlanDialog(onSaved: loadPlans),
+              );
+            },
+          ),
+        ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: loadPlans,
+        color: AppColors.primary,
+        backgroundColor: Colors.white,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(14.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Membership Plans',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF2563EB),
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text('Create and manage pricing tiers, duration, and discounts', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (_) => AddEditPlanDialog(onSaved: loadPlans),
+                        );
+                      },
+                      icon: const Icon(Icons.add_rounded, size: 18),
+                      label: const Text('Create New Plan'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                     ),
                   ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Tab Filter Row
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildTabPill('All', _allPlans.length),
+                    const SizedBox(width: 8),
+                    _buildTabPill('Monthly', _allPlans.where((p) => p.durationDays <= 30).length),
+                    const SizedBox(width: 8),
+                    _buildTabPill('Quarterly', _allPlans.where((p) => p.durationDays > 30 && p.durationDays <= 90).length),
+                    const SizedBox(width: 8),
+                    _buildTabPill('Half-Yearly', _allPlans.where((p) => p.durationDays > 90 && p.durationDays <= 180).length),
+                    const SizedBox(width: 8),
+                    _buildTabPill('Yearly', _allPlans.where((p) => p.durationDays > 180).length),
+                  ],
                 ),
+              ),
+              const SizedBox(height: 16),
+
+              if (_isLoading) ...[
+                const Center(child: Padding(padding: EdgeInsets.all(50), child: CircularProgressIndicator(color: AppColors.primary)))
+              ] else if (_error != null) ...[
+                _buildErrorBanner(),
+              ] else if (_filteredPlans.isEmpty) ...[
+                _buildEmptyState(),
+              ] else ...[
+                _buildPlansGrid(isMobile),
               ],
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

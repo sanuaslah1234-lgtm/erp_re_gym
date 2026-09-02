@@ -29,15 +29,13 @@ class PaymentModel {
   factory PaymentModel.fromJson(Map<String, dynamic> json) {
     return PaymentModel(
       id: _parseInt(json['id']),
-      orderId: _parseInt(json['orderId'] ?? json['order_id'] ?? json['invoice_id']),
-      paymentMethod: (json['paymentMethod'] ?? json['payment_method'] ?? json['method'] ?? 'Cash').toString(),
+      orderId: _parseInt(json['orderId'] ?? json['order_id']),
+      paymentMethod: (json['paymentMethod'] ?? json['payment_method'] ?? 'Cash').toString(),
       amount: _parseDouble(json['amount']),
-      referenceNumber: (json['referenceNumber'] ?? json['reference_number'])?.toString(),
+      referenceNumber: json['referenceNumber']?.toString() ?? json['reference_number']?.toString(),
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'].toString())
-          : (json['created_at'] != null
-              ? DateTime.tryParse(json['created_at'].toString())
-              : (json['payment_date'] != null ? DateTime.tryParse(json['payment_date'].toString()) : null)),
+          : (json['created_at'] != null ? DateTime.tryParse(json['created_at'].toString()) : null),
     );
   }
 

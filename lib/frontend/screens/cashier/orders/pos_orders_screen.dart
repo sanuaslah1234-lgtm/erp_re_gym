@@ -1,13 +1,12 @@
+import 'package:erp_software/frontend/widgets/common/hamburger_button.dart';
 import 'package:flutter/material.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/providers/cashier/order_provider.dart';
 import 'package:erp_software/frontend/screens/cashier/orders/order_details_screen.dart';
 import 'package:erp_software/frontend/screens/cashier/orders/widgets/order_filter_bar.dart';
 import 'package:erp_software/frontend/screens/cashier/orders/widgets/order_list.dart';
-import 'package:erp_software/frontend/screens/cashier/pos/pos_screen.dart';
+import 'package:erp_software/frontend/screens/cashier/orders/new_sale_dialog.dart';
 import 'package:erp_software/frontend/screens/cashier/pos/widgets/receipt_dialog.dart';
-import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
-import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 import 'package:provider/provider.dart';
 
 class PosOrdersScreen extends StatefulWidget {
@@ -31,21 +30,18 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
   Widget build(BuildContext context) {
     final orderProvider = Provider.of<OrderProvider>(context);
     final authProvider = Provider.of<AuthProvider>(context);
-    final isMobile = MediaQuery.of(context).size.width < 800;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      drawer: isMobile ? const Drawer(child: ErpSidebar(isDrawer: true)) : null,
+      appBar: AppBar(leading: const HamburgerButton(), backgroundColor: Colors.white, elevation: 0, title: const Text('Sales Orders', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)))),
       body: Row(
         children: [
-          if (!isMobile) const ErpSidebar(activeItem: 'POS Orders'),
           Expanded(
             child: Column(
               children: [
-                const ErpTopbar(),
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(24.0),
+                    padding: const EdgeInsets.all(14.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -54,39 +50,46 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Sales Management',
-                                  style: TextStyle(
-                                    fontSize: 24,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF0F172A),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Sales Management',
+                                    style: TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF0F172A),
+                                    ),
                                   ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'Manage invoices and customer sales.',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: Color(0xFF64748B),
-                                    fontWeight: FontWeight.w500,
+                                  SizedBox(height: 4),
+                                  Text(
+                                    'Manage invoices and customer sales.',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Color(0xFF64748B),
+                                      fontWeight: FontWeight.w500,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
+                            const SizedBox(width: 8),
                             ElevatedButton.icon(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (_) => const PosScreen()),
+                              onPressed: () async {
+                                final result = await showDialog(
+                                  context: context,
+                                  builder: (_) => const NewSaleDialog(),
                                 );
+                                if (result == true && mounted) {
+                                  final auth = Provider.of<AuthProvider>(context, listen: false);
+                                  Provider.of<OrderProvider>(context, listen: false).fetchOrders(auth.token);
+                                }
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF2563EB),
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                               ),
                               icon: const Icon(Icons.add, size: 18),
@@ -97,7 +100,7 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 16),
 
                         // Filter Bar
                         OrderFilterBar(

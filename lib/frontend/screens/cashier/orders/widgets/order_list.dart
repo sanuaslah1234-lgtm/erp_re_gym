@@ -29,6 +29,7 @@ class OrderList extends StatelessWidget {
     }
 
     return Container(
+      width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -41,134 +42,144 @@ class OrderList extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
-        children: [
-          // Table Header
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            decoration: const BoxDecoration(
-              color: Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
-              border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
-            ),
-            child: const Row(
-              children: [
-                Expanded(flex: 3, child: Text('Invoice', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)))),
-                Expanded(flex: 3, child: Text('Customer', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)))),
-                Expanded(flex: 2, child: Text('Cashier', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)))),
-                Expanded(flex: 2, child: Text('Date', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)))),
-                Expanded(flex: 2, child: Text('Payment', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)))),
-                Expanded(flex: 2, child: Text('Status', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)))),
-                Expanded(flex: 2, child: Text('Total', textAlign: TextAlign.right, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)))),
-                SizedBox(width: 80, child: Text('Action', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)))),
-              ],
-            ),
-          ),
-
-          // Table Data Rows
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: orders.length,
-            separatorBuilder: (_, _) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
-            itemBuilder: (context, index) {
-              final order = orders[index];
-              final dateStr = order.createdAt != null ? "${order.createdAt!.year}-${order.createdAt!.month.toString().padLeft(2, '0')}-${order.createdAt!.day.toString().padLeft(2, '0')}" : '2026-08-14';
-
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                child: Row(
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: SizedBox(
+          width: 850,
+          child: Column(
+            children: [
+              // Table Header
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
+                  border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+                ),
+                child: const Row(
                   children: [
-                    // Invoice Code
-                    Expanded(
-                      flex: 3,
-                      child: Text(
-                        order.orderNumber.startsWith('SO-') ? order.orderNumber : 'SO-${order.orderNumber.replaceAll(RegExp(r'[^0-9]'), '')}',
-                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                      ),
-                    ),
+                    SizedBox(width: 140, child: Text('Invoice', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)))),
+                    SizedBox(width: 150, child: Text('Customer', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)))),
+                    SizedBox(width: 90, child: Text('Cashier', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)))),
+                    SizedBox(width: 110, child: Text('Date', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)))),
+                    SizedBox(width: 100, child: Text('Payment', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)))),
+                    SizedBox(width: 100, child: Text('Status', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)))),
+                    SizedBox(width: 80, child: Text('Total', textAlign: TextAlign.right, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)))),
+                    SizedBox(width: 80, child: Text('Action', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569)))),
+                  ],
+                ),
+              ),
 
-                    // Customer Name
-                    Expanded(
-                      flex: 3,
-                      child: Text(
-                        order.customerName ?? 'Walk-in Customer',
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF334155)),
-                      ),
-                    ),
+              // Table Data Rows
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: orders.length,
+                separatorBuilder: (_, _) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                itemBuilder: (context, index) {
+                  final order = orders[index];
+                  final dateStr = order.createdAt != null ? "${order.createdAt!.year}-${order.createdAt!.month.toString().padLeft(2, '0')}-${order.createdAt!.day.toString().padLeft(2, '0')}" : '2026-08-14';
 
-                    // Cashier Name
-                    const Expanded(
-                      flex: 2,
-                      child: Text(
-                        'Admin',
-                        style: TextStyle(fontSize: 12, color: Color(0xFF334155)),
-                      ),
-                    ),
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                    child: Row(
+                      children: [
+                        // Invoice Code
+                        SizedBox(
+                          width: 140,
+                          child: Text(
+                            order.orderNumber.startsWith('SO-') ? order.orderNumber : 'SO-${order.orderNumber.replaceAll(RegExp(r'[^0-9]'), '')}',
+                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
 
-                    // Date
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        dateStr,
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                      ),
-                    ),
+                        // Customer Name
+                        SizedBox(
+                          width: 150,
+                          child: Text(
+                            order.customerName ?? 'Walk-in Customer',
+                            style: const TextStyle(fontSize: 12, color: Color(0xFF334155)),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
 
-                    // Payment Method
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        order.paymentMethod ?? 'Cash',
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF334155)),
-                      ),
-                    ),
+                        // Cashier Name
+                        const SizedBox(
+                          width: 90,
+                          child: Text(
+                            'Admin',
+                            style: TextStyle(fontSize: 12, color: Color(0xFF334155)),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
 
-                    // Status Badge
-                    Expanded(
-                      flex: 2,
-                      child: Center(
-                        child: _buildStatusPill(order.orderStatus),
-                      ),
-                    ),
+                        // Date
+                        SizedBox(
+                          width: 110,
+                          child: Text(
+                            dateStr,
+                            style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                          ),
+                        ),
 
-                    // Total Price Tag
-                    Expanded(
-                      flex: 2,
-                      child: Text(
-                        '₹${order.grandTotal.toStringAsFixed(0)}',
-                        textAlign: TextAlign.right,
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
-                      ),
-                    ),
+                        // Payment Method
+                        SizedBox(
+                          width: 100,
+                          child: Text(
+                            order.paymentMethod ?? 'Cash',
+                            style: const TextStyle(fontSize: 12, color: Color(0xFF334155)),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
 
-                    // Action Button (View)
-                    SizedBox(
-                      width: 80,
-                      child: Center(
-                        child: InkWell(
-                          onTap: () => onOrderTap(order),
-                          borderRadius: BorderRadius.circular(6),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF2563EB),
+                        // Status Badge
+                        SizedBox(
+                          width: 100,
+                          child: Center(
+                            child: _buildStatusPill(order.orderStatus),
+                          ),
+                        ),
+
+                        // Total Price Tag
+                        SizedBox(
+                          width: 80,
+                          child: Text(
+                            '₹${order.grandTotal.toStringAsFixed(0)}',
+                            textAlign: TextAlign.right,
+                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                          ),
+                        ),
+
+                        // Action Button (View)
+                        SizedBox(
+                          width: 80,
+                          child: Center(
+                            child: InkWell(
+                              onTap: () => onOrderTap(order),
                               borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: const Text(
-                              'View',
-                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF2563EB),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Text(
+                                  'View',
+                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
+                                ),
+                              ),
                             ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
-              );
-            },
+                  );
+                },
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

@@ -1,3 +1,4 @@
+import 'package:erp_software/frontend/widgets/common/hamburger_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
@@ -6,8 +7,7 @@ import 'package:erp_software/frontend/screens/cashier/pos/widgets/cart_panel.dar
 import 'package:erp_software/frontend/screens/cashier/pos/widgets/held_orders_dialog.dart';
 import 'package:erp_software/frontend/screens/cashier/pos/widgets/product_grid.dart';
 import 'package:erp_software/frontend/screens/cashier/pos/widgets/product_search_bar.dart';
-import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
-import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
+import 'package:erp_software/frontend/widgets/erp_toast.dart';
 import 'package:provider/provider.dart';
 
 class PosScreen extends StatefulWidget {
@@ -60,104 +60,29 @@ class _PosScreenState extends State<PosScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
     final isMobile = MediaQuery.of(context).size.width < 900;
 
+    // Show error/warning toast when posProvider has a message
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (posProvider.errorMessage != null && mounted) {
+        ErpToast.showError(context, posProvider.errorMessage!);
+        posProvider.clearError();
+      }
+      if (posProvider.warningMessage != null && mounted) {
+        ErpToast.showWarning(context, posProvider.warningMessage!);
+        posProvider.clearWarning();
+      }
+    });
+
     return KeyboardListener(
       focusNode: _keyboardFocusNode,
       onKeyEvent: _handleKeyEvents,
       child: Scaffold(
         backgroundColor: const Color(0xFFF8FAFC),
-        drawer: isMobile ? const Drawer(child: ErpSidebar(isDrawer: true)) : null,
+      appBar: AppBar(leading: const HamburgerButton(), backgroundColor: Colors.white, elevation: 0, title: const Text('POS Terminal', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)))),
         body: Row(
           children: [
-            if (!isMobile) const ErpSidebar(activeItem: 'POS'),
             Expanded(
               child: Column(
                 children: [
-                  const ErpTopbar(),
-                  if (isMobile) ...[
-                    // Mobile Tab Switcher
-                    Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE2E8F0),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: InkWell(
-                              onTap: () => setState(() => _mobileTabIndex = 0),
-                              borderRadius: BorderRadius.circular(10),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: _mobileTabIndex == 0 ? Colors.white : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(10),
-                                  boxShadow: _mobileTabIndex == 0
-                                      ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))]
-                                      : [],
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.grid_view_rounded,
-                                      size: 16,
-                                      color: _mobileTabIndex == 0 ? const Color(0xFF2563EB) : const Color(0xFF64748B),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      'Products (${posProvider.products.length})',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: _mobileTabIndex == 0 ? FontWeight.bold : FontWeight.w500,
-                                        color: _mobileTabIndex == 0 ? const Color(0xFF0F172A) : const Color(0xFF64748B),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: InkWell(
-                              onTap: () => setState(() => _mobileTabIndex = 1),
-                              borderRadius: BorderRadius.circular(10),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 8),
-                                decoration: BoxDecoration(
-                                  color: _mobileTabIndex == 1 ? Colors.white : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(10),
-                                  boxShadow: _mobileTabIndex == 1
-                                      ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2))]
-                                      : [],
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.shopping_cart_outlined,
-                                      size: 16,
-                                      color: _mobileTabIndex == 1 ? const Color(0xFF2563EB) : const Color(0xFF64748B),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Text(
-                                      'Cart (${posProvider.itemCount})',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: _mobileTabIndex == 1 ? FontWeight.bold : FontWeight.w500,
-                                        color: _mobileTabIndex == 1 ? const Color(0xFF0F172A) : const Color(0xFF64748B),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
                   Expanded(
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
@@ -284,12 +209,13 @@ class _PosScreenState extends State<PosScreen> {
         ),
         const SizedBox(height: 12),
 
-        // Dropdowns Row: All Categories | All Brands | Grid View
+        // Dropdowns Row: All Categories | All Brands | Held Orders
         Row(
           children: [
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                height: 38,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(10),
@@ -307,10 +233,11 @@ class _PosScreenState extends State<PosScreen> {
                 ),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                height: 38,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(10),
@@ -328,24 +255,7 @@ class _PosScreenState extends State<PosScreen> {
                 ),
               ),
             ),
-            const SizedBox(width: 10),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.grid_view_rounded, size: 16, color: Color(0xFF64748B)),
-                  SizedBox(width: 4),
-                  Text('Grid', style: TextStyle(fontSize: 12, color: Color(0xFF475569))),
-                  Icon(Icons.keyboard_arrow_down, size: 16, color: Color(0xFF64748B)),
-                ],
-              ),
-            ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             InkWell(
               onTap: () {
                 showDialog(
@@ -355,7 +265,8 @@ class _PosScreenState extends State<PosScreen> {
               },
               borderRadius: BorderRadius.circular(10),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                height: 38,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
                 decoration: BoxDecoration(
                   color: posProvider.heldOrders.isNotEmpty ? const Color(0xFFFEF3C7) : Colors.white,
                   borderRadius: BorderRadius.circular(10),
@@ -364,6 +275,7 @@ class _PosScreenState extends State<PosScreen> {
                   ),
                 ),
                 child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       Icons.pause_circle_outline,
@@ -385,7 +297,7 @@ class _PosScreenState extends State<PosScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
 
         // Categories / Tags Filter Pills (dynamic from database)
         SingleChildScrollView(

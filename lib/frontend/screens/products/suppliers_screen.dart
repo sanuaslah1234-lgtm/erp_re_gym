@@ -1,9 +1,8 @@
+import 'package:erp_software/frontend/widgets/common/hamburger_button.dart';
 import 'package:flutter/material.dart';
 import 'package:erp_software/core/models/supplier_model.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/providers/product_management_provider.dart';
-import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
-import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 import 'package:erp_software/frontend/widgets/erp_toast.dart';
 import 'package:erp_software/theme/app_colors.dart';
 import 'package:provider/provider.dart';
@@ -29,7 +28,6 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 800;
     final provider = Provider.of<ProductManagementProvider>(context);
     final suppliers = provider.suppliers.where((s) {
       if (_search.isEmpty) return true;
@@ -37,41 +35,63 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
       return s.name.toLowerCase().contains(q) || (s.phone?.toLowerCase().contains(q) ?? false) || (s.email?.toLowerCase().contains(q) ?? false);
     }).toList();
 
+    final isMobile = MediaQuery.of(context).size.width < 700;
+
     return Scaffold(
       backgroundColor: AppColors.background,
-      drawer: isMobile ? Drawer(child: ErpSidebar(activeItem: 'Suppliers', isDrawer: true)) : null,
+      appBar: AppBar(leading: const HamburgerButton(), backgroundColor: Colors.white, elevation: 0, title: const Text('Suppliers', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)))),
       body: Row(
         children: [
-          if (!isMobile) const ErpSidebar(activeItem: 'Suppliers'),
           Expanded(
             child: Column(
               children: [
-                const ErpTopbar(),
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(24),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Suppliers', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-                                SizedBox(height: 4),
-                                Text('Manage your suppliers and vendors', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-                              ],
-                            ),
-                            ElevatedButton.icon(
-                              onPressed: () => _showAddDialog(context),
-                              icon: const Icon(Icons.add, size: 18),
-                              label: const Text('Add Supplier'),
-                              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                            ),
-                          ],
-                        ),
+                        if (isMobile)
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Suppliers', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                                  SizedBox(height: 2),
+                                  Text('Manage your suppliers and vendors', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              ElevatedButton.icon(
+                                onPressed: _showAddDialog,
+                                icon: const Icon(Icons.add, size: 16),
+                                label: const Text('Add Supplier'),
+                                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                              ),
+                            ],
+                          )
+                        else
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Suppliers', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                                  SizedBox(height: 4),
+                                  Text('Manage your suppliers and vendors', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                                ],
+                              ),
+                              ElevatedButton.icon(
+                                onPressed: _showAddDialog,
+                                icon: const Icon(Icons.add, size: 18),
+                                label: const Text('Add Supplier'),
+                                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                              ),
+                            ],
+                          ),
                         const SizedBox(height: 20),
                         // Search
                         Container(
@@ -157,9 +177,9 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
                     child: Text(isActive ? 'ACTIVE' : 'INACTIVE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: isActive ? AppColors.success : AppColors.neutral)),
                   )),
                   SizedBox(width: 70, child: Row(children: [
-                    _iconBtn(Icons.edit_outlined, () => _showEditDialog(context, s)),
+                    _iconBtn(Icons.edit_outlined, () => _showEditDialog(s)),
                     const SizedBox(width: 4),
-                    _iconBtn(Icons.delete_outline, () => _showDeleteDialog(context, s), danger: true),
+                    _iconBtn(Icons.delete_outline, () => _showDeleteDialog(s), danger: true),
                   ])),
                 ]),
               );
@@ -178,7 +198,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
     );
   }
 
-  void _showAddDialog(BuildContext context) {
+  void _showAddDialog() {
     final companyNameCtrl = TextEditingController();
     final nameCtrl = TextEditingController();
     final phoneCtrl = TextEditingController();
@@ -221,10 +241,12 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
                 address: addressCtrl.text.trim().isEmpty ? null : addressCtrl.text.trim(),
                 gstVatNumber: gstCtrl.text.trim().isEmpty ? null : gstCtrl.text.trim(),
               ));
+              if (!mounted) return;
               if (ctx.mounted) Navigator.pop(ctx);
-              if (mounted) ErpToast.showSuccess(context, 'Supplier created');
+              ErpToast.showSuccess(context, 'Supplier created');
             } catch (e) {
-              if (mounted) ErpToast.showError(context, e.toString().replaceAll('Exception: ', ''));
+              if (!mounted) return;
+              ErpToast.showError(context, e.toString().replaceAll('Exception: ', ''));
             }
           },
           icon: const Icon(Icons.add, size: 16), label: const Text('Create'),
@@ -234,7 +256,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
     ));
   }
 
-  void _showEditDialog(BuildContext context, SupplierModel s) {
+  void _showEditDialog(SupplierModel s) {
     final companyNameCtrl = TextEditingController(text: s.companyName ?? s.name);
     final nameCtrl = TextEditingController(text: s.name);
     final phoneCtrl = TextEditingController(text: s.phone ?? '');
@@ -278,10 +300,12 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
                 gstVatNumber: gstCtrl.text.trim().isEmpty ? null : gstCtrl.text.trim(),
                 status: s.status,
               ));
+              if (!mounted) return;
               if (ctx.mounted) Navigator.pop(ctx);
-              if (mounted) ErpToast.showSuccess(context, 'Supplier updated');
+              ErpToast.showSuccess(context, 'Supplier updated');
             } catch (e) {
-              if (mounted) ErpToast.showError(context, e.toString().replaceAll('Exception: ', ''));
+              if (!mounted) return;
+              ErpToast.showError(context, e.toString().replaceAll('Exception: ', ''));
             }
           },
           icon: const Icon(Icons.save, size: 16), label: const Text('Save'),
@@ -291,7 +315,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
     ));
   }
 
-  void _showDeleteDialog(BuildContext context, SupplierModel s) {
+  void _showDeleteDialog(SupplierModel s) {
     showDialog(context: context, builder: (ctx) => AlertDialog(
       title: const Text('Delete Supplier'),
       content: Text('Delete "${s.name}"? This cannot be undone.'),
@@ -303,10 +327,12 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
               final auth = Provider.of<AuthProvider>(context, listen: false);
               final provider = Provider.of<ProductManagementProvider>(context, listen: false);
               await provider.deleteSupplier(auth.token, s.id);
+              if (!mounted) return;
               if (ctx.mounted) Navigator.pop(ctx);
-              if (mounted) ErpToast.showSuccess(context, 'Supplier deleted');
+              ErpToast.showSuccess(context, 'Supplier deleted');
             } catch (e) {
-              if (mounted) ErpToast.showError(ctx, e.toString().replaceAll('Exception: ', ''));
+              if (!mounted) return;
+              ErpToast.showError(context, e.toString().replaceAll('Exception: ', ''));
             }
           },
           style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),

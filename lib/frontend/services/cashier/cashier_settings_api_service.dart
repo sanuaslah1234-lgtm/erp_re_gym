@@ -1,10 +1,10 @@
 import 'dart:convert';
-import 'package:erp_software/core/constants/app_constants.dart';
+import 'package:erp_software/core/config/app_config.dart';
 import 'package:erp_software/core/models/cashier/cashier_settings.dart';
 import 'package:http/http.dart' as http;
 
 class CashierSettingsApiService {
-  String get baseUrl => '${AppConstants.apiBaseUrl}/api/cashier/settings';
+  final String baseUrl = '${AppConfig.apiBaseUrl}/api/cashier/settings';
 
   Map<String, String> _headers(String? token) => {
         'Content-Type': 'application/json',

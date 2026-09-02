@@ -241,9 +241,11 @@ class _LoginScreenState extends State<LoginScreen> {
                               children: [
                                 const Icon(Icons.flash_on_rounded, size: 16, color: Color(0xFFA29BFE)),
                                 const SizedBox(width: 6),
-                                Text(
-                                  'Quick Sign-in (Password: admin123):',
-                                  style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey.shade300),
+                                Expanded(
+                                  child: Text(
+                                    'Quick Sign-in (Password: admin123):',
+                                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey.shade300),
+                                  ),
                                 ),
                               ],
                             ),

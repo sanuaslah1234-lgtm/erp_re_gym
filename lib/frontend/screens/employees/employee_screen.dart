@@ -1,3 +1,4 @@
+import 'package:erp_software/frontend/widgets/common/hamburger_button.dart';
 import 'package:flutter/material.dart';
 
 import 'package:erp_software/core/models/employee_model.dart';
@@ -11,8 +12,6 @@ import 'package:erp_software/frontend/widgets/employees/employee_details_sheet.d
 import 'package:erp_software/frontend/widgets/employees/employee_filter_bar.dart';
 
 import 'package:erp_software/theme/app_colors.dart';
-import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
-import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 
 class EmployeesScreen extends StatefulWidget {
   const EmployeesScreen({
@@ -292,18 +291,15 @@ class _EmployeesScreenState
   @override
   Widget build(BuildContext context) {
     final visibleEmployees = filteredEmployees;
-    final isMobile = MediaQuery.of(context).size.width < 900;
 
     return Scaffold(
       backgroundColor: AppColors.pageBackground,
-      drawer: isMobile ? const Drawer(child: ErpSidebar(activeItem: 'Employees / Staff', isDrawer: true)) : null,
+      appBar: AppBar(leading: const HamburgerButton(), backgroundColor: Colors.white, elevation: 0, title: const Text('Employees', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)))),
       body: Row(
         children: [
-          if (!isMobile) const ErpSidebar(activeItem: 'Employees / Staff'),
           Expanded(
             child: Column(
               children: [
-                const ErpTopbar(),
                 Expanded(
                   child: Column(
                     children: [

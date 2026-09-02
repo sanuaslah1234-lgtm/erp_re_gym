@@ -1,17 +1,14 @@
+import 'package:erp_software/frontend/widgets/common/hamburger_button.dart';
+import 'package:erp_software/frontend/widgets/common/mobile_nav_shell.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:erp_software/core/models/gym/gym_dashboard_model.dart';
 import 'package:erp_software/frontend/services/gym/gym_service.dart';
-import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
-import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 import 'package:erp_software/frontend/widgets/gym/add_edit_member_dialog.dart';
 import 'package:erp_software/frontend/widgets/gym/add_payment_dialog.dart';
 import 'package:erp_software/frontend/widgets/gym/member_details_dialog.dart';
 import 'package:erp_software/frontend/widgets/gym/renew_membership_dialog.dart';
 import 'package:erp_software/frontend/widgets/gym/payment_receipt_dialog.dart';
-import 'package:erp_software/frontend/screens/gym/gym_members_screen.dart';
-import 'package:erp_software/frontend/screens/gym/gym_attendance_screen.dart';
-import 'package:erp_software/frontend/screens/gym/gym_payments_screen.dart';
 import 'package:erp_software/theme/app_colors.dart';
 
 class GymDashboardScreen extends StatefulWidget {
@@ -62,59 +59,57 @@ class _GymDashboardScreenState extends State<GymDashboardScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      drawer: isMobile ? const Drawer(child: ErpSidebar(activeItem: 'Gym Dashboard', isDrawer: true)) : null,
-      body: Row(
-        children: [
-          if (!isMobile) const ErpSidebar(activeItem: 'Gym Dashboard'),
-          Expanded(
-            child: Column(
-              children: [
-                const ErpTopbar(),
-                Expanded(
-                  child: RefreshIndicator(
-                    onRefresh: loadDashboard,
-                    color: AppColors.primary,
-                    backgroundColor: Colors.white,
-                    child: SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: EdgeInsets.all(isMobile ? 14.0 : 24.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Page Header & Quick Actions
-                          _buildPageHeader(context, isMobile),
-                          const SizedBox(height: 20),
-
-                          if (_isLoading) ...[
-                            const Center(
-                              child: Padding(
-                                padding: EdgeInsets.all(60.0),
-                                child: CircularProgressIndicator(color: AppColors.primary),
-                              ),
-                            ),
-                          ] else if (_error != null) ...[
-                            _buildErrorBanner(),
-                          ] else if (_dashboard != null) ...[
-                            // KPI Metric Cards
-                            _buildKpiMetricsRow(isMobile),
-                            const SizedBox(height: 24),
-
-                            // Analytics Charts Row
-                            _buildChartsSection(isMobile),
-                            const SizedBox(height: 24),
-
-                            // Quick Tables: Expiring Soon, Recent Members, Recent Payments
-                            _buildRecentTablesSection(isMobile),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+      appBar: AppBar(
+        leading: const HamburgerButton(),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text('Gym Dashboard', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded, color: AppColors.primary),
+            tooltip: 'Refresh',
+            onPressed: loadDashboard,
           ),
         ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: loadDashboard,
+        color: AppColors.primary,
+        backgroundColor: Colors.white,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(14.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Page Header & Quick Actions
+              _buildPageHeader(context, isMobile),
+              const SizedBox(height: 16),
+
+              if (_isLoading) ...[
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(60.0),
+                    child: CircularProgressIndicator(color: AppColors.primary),
+                  ),
+                ),
+              ] else if (_error != null) ...[
+                _buildErrorBanner(),
+              ] else if (_dashboard != null) ...[
+                // KPI Metric Cards
+                _buildKpiMetricsRow(isMobile),
+                const SizedBox(height: 20),
+
+                // Analytics Charts Row
+                _buildChartsSection(isMobile),
+                const SizedBox(height: 20),
+
+                // Quick Tables: Expiring Soon, Recent Members, Recent Payments
+                _buildRecentTablesSection(isMobile),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -123,113 +118,59 @@ class _GymDashboardScreenState extends State<GymDashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Gym Dashboard',
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF2563EB),
-                    letterSpacing: -0.5,
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'Real-time overview of members, attendance, memberships, and revenue',
-                  style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
-                ),
-              ],
-            ),
-            if (!isMobile)
-              Row(
-                children: [
-                  _buildHeaderButton(
-                    icon: Icons.person_add_rounded,
-                    label: '+ Add Member',
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (_) => AddEditMemberDialog(onSaved: loadDashboard),
-                      );
-                    },
-                  ),
-                  const SizedBox(width: 10),
-                  _buildHeaderButton(
-                    icon: Icons.qr_code_scanner_rounded,
-                    label: 'Check-In',
-                    color: const Color(0xFF16A34A),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const GymAttendanceScreen()),
-                      );
-                    },
-                  ),
-                  const SizedBox(width: 10),
-                  _buildHeaderButton(
-                    icon: Icons.payments_rounded,
-                    label: 'New Payment',
-                    color: const Color(0xFF7C3AED),
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (_) => AddPaymentDialog(onSaved: loadDashboard),
-                      );
-                    },
-                  ),
-                ],
-              ),
-          ],
-        ),
-        if (isMobile) ...[
-          const SizedBox(height: 14),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _buildHeaderButton(
-                  icon: Icons.person_add_rounded,
-                  label: '+ Add Member',
-                  onTap: () {
-                    showDialog(
-                      context: context,
-                      builder: (_) => AddEditMemberDialog(onSaved: loadDashboard),
-                    );
-                  },
-                ),
-                const SizedBox(width: 8),
-                _buildHeaderButton(
-                  icon: Icons.qr_code_scanner_rounded,
-                  label: 'Check-In',
-                  color: const Color(0xFF16A34A),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const GymAttendanceScreen()),
-                    );
-                  },
-                ),
-                const SizedBox(width: 8),
-                _buildHeaderButton(
-                  icon: Icons.payments_rounded,
-                  label: 'New Payment',
-                  color: const Color(0xFF7C3AED),
-                  onTap: () {
-                    showDialog(
-                      context: context,
-                      builder: (_) => AddPaymentDialog(onSaved: loadDashboard),
-                    );
-                  },
-                ),
-              ],
-            ),
+        const Text(
+          'Gym Overview',
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF2563EB),
+            letterSpacing: -0.5,
           ),
-        ],
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          'Real-time overview of members, attendance, memberships, and revenue',
+          style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+        ),
+        const SizedBox(height: 14),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: [
+              _buildHeaderButton(
+                icon: Icons.person_add_rounded,
+                label: '+ Add Member',
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder: (_) => AddEditMemberDialog(onSaved: loadDashboard),
+                  );
+                },
+              ),
+              const SizedBox(width: 8),
+              _buildHeaderButton(
+                icon: Icons.qr_code_scanner_rounded,
+                label: 'Check-In',
+                color: const Color(0xFF16A34A),
+                onTap: () {
+                  navigateToScreen('Attendance');
+                },
+              ),
+              const SizedBox(width: 8),
+              _buildHeaderButton(
+                icon: Icons.payments_rounded,
+                label: 'New Payment',
+                color: const Color(0xFF7C3AED),
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder: (_) => AddPaymentDialog(onSaved: loadDashboard),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -299,7 +240,7 @@ class _GymDashboardScreenState extends State<GymDashboardScreen> {
         icon: Icons.groups_rounded,
         color: const Color(0xFF2563EB),
         bgColor: const Color(0xFFEFF6FF),
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GymMembersScreen())),
+        onTap: () => navigateToScreen('Members'),
       ),
       _buildStatCard(
         title: 'ACTIVE MEMBERS',
@@ -308,7 +249,7 @@ class _GymDashboardScreenState extends State<GymDashboardScreen> {
         icon: Icons.check_circle_rounded,
         color: const Color(0xFF16A34A),
         bgColor: const Color(0xFFDCFCE7),
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GymMembersScreen(initialFilter: 'Active'))),
+        onTap: () => navigateToScreen('Members'),
       ),
       _buildStatCard(
         title: 'EXPIRED MEMBERS',
@@ -317,7 +258,7 @@ class _GymDashboardScreenState extends State<GymDashboardScreen> {
         icon: Icons.cancel_rounded,
         color: const Color(0xFFEF4444),
         bgColor: const Color(0xFFFEE2E2),
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GymMembersScreen(initialFilter: 'Expired'))),
+        onTap: () => navigateToScreen('Members'),
       ),
       _buildStatCard(
         title: 'EXPIRING SOON',
@@ -326,7 +267,7 @@ class _GymDashboardScreenState extends State<GymDashboardScreen> {
         icon: Icons.access_time_filled_rounded,
         color: const Color(0xFFD97706),
         bgColor: const Color(0xFFFEF3C7),
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GymMembersScreen(initialFilter: 'Expiring Soon'))),
+        onTap: () => navigateToScreen('Members'),
       ),
       _buildStatCard(
         title: "TODAY'S ATTENDANCE",
@@ -335,7 +276,7 @@ class _GymDashboardScreenState extends State<GymDashboardScreen> {
         icon: Icons.how_to_reg_rounded,
         color: const Color(0xFF0891B2),
         bgColor: const Color(0xFFCFFAFE),
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GymAttendanceScreen())),
+        onTap: () => navigateToScreen('Attendance'),
       ),
       _buildStatCard(
         title: "TODAY'S REVENUE",
@@ -344,7 +285,7 @@ class _GymDashboardScreenState extends State<GymDashboardScreen> {
         icon: Icons.payments_rounded,
         color: const Color(0xFF16A34A),
         bgColor: const Color(0xFFDCFCE7),
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GymPaymentsScreen())),
+        onTap: () => navigateToScreen('Payments'),
       ),
       _buildStatCard(
         title: 'PENDING PAYMENTS',
@@ -353,7 +294,7 @@ class _GymDashboardScreenState extends State<GymDashboardScreen> {
         icon: Icons.pending_actions_rounded,
         color: const Color(0xFFDC2626),
         bgColor: const Color(0xFFFEE2E2),
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GymPaymentsScreen(initialStatus: 'PENDING'))),
+        onTap: () => navigateToScreen('Payments'),
       ),
     ];
 
@@ -718,7 +659,7 @@ class _GymDashboardScreenState extends State<GymDashboardScreen> {
                       ],
                     ),
                     TextButton(
-                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GymMembersScreen(initialFilter: 'Expiring Soon'))),
+                      onPressed: () => navigateToScreen('Members'),
                       child: const Text('View All', style: TextStyle(color: Color(0xFFD97706), fontWeight: FontWeight.bold)),
                     ),
                   ],
@@ -815,7 +756,7 @@ class _GymDashboardScreenState extends State<GymDashboardScreen> {
             children: [
               const Text('Recent Members', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
               TextButton(
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GymMembersScreen())),
+                onPressed: () => navigateToScreen('Members'),
                 child: const Text('View All', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
               ),
             ],
@@ -883,7 +824,7 @@ class _GymDashboardScreenState extends State<GymDashboardScreen> {
             children: [
               const Text('Recent Payments', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
               TextButton(
-                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GymPaymentsScreen())),
+                onPressed: () => navigateToScreen('Payments'),
                 child: const Text('View All', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
               ),
             ],

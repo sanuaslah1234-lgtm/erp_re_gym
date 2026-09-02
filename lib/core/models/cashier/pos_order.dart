@@ -23,28 +23,24 @@ class PosOrderItem {
     required this.totalAmount,
   });
 
-  static double _parseDouble(dynamic v) {
-    if (v is num) return v.toDouble();
-    return double.tryParse(v?.toString() ?? '0') ?? 0.0;
-  }
-
-  static int? _parseInt(dynamic v) {
-    if (v == null) return null;
+  static int _parseInt(dynamic v, [int def = 0]) {
+    if (v == null) return def;
+    if (v is int) return v;
     if (v is num) return v.toInt();
-    return int.tryParse(v.toString());
+    return int.tryParse(v.toString()) ?? def;
   }
 
   factory PosOrderItem.fromJson(Map<String, dynamic> json) {
     return PosOrderItem(
-      id: _parseInt(json['id']) ?? 0,
-      orderId: _parseInt(json['orderId'] ?? json['order_id']) ?? 0,
-      productId: _parseInt(json['productId'] ?? json['product_id']) ?? 0,
-      productName: (json['productName'] ?? json['product_name'] ?? '').toString(),
-      quantity: _parseDouble(json['quantity']),
-      unitPrice: _parseDouble(json['unitPrice'] ?? json['unit_price']),
-      discountAmount: _parseDouble(json['discountAmount'] ?? json['discount_amount']),
-      taxAmount: _parseDouble(json['taxAmount'] ?? json['tax_amount']),
-      totalAmount: _parseDouble(json['totalAmount'] ?? json['total_amount']),
+      id: _parseInt(json['id']),
+      orderId: _parseInt(json['orderId'] ?? json['order_id']),
+      productId: _parseInt(json['productId'] ?? json['product_id']),
+      productName: json['productName'] ?? json['product_name'] ?? '',
+      quantity: double.tryParse((json['quantity'] ?? '0').toString()) ?? 0.0,
+      unitPrice: double.tryParse((json['unitPrice'] ?? json['unit_price'] ?? '0').toString()) ?? 0.0,
+      discountAmount: double.tryParse((json['discountAmount'] ?? json['discount_amount'] ?? '0').toString()) ?? 0.0,
+      taxAmount: double.tryParse((json['taxAmount'] ?? json['tax_amount'] ?? '0').toString()) ?? 0.0,
+      totalAmount: double.tryParse((json['totalAmount'] ?? json['total_amount'] ?? '0').toString()) ?? 0.0,
     );
   }
 }
@@ -90,34 +86,30 @@ class PosOrder {
     this.createdAt,
   });
 
-  static double _parseDouble(dynamic v) {
-    if (v is num) return v.toDouble();
-    return double.tryParse(v?.toString() ?? '0') ?? 0.0;
-  }
-
-  static int? _parseInt(dynamic v) {
-    if (v == null) return null;
+  static int _parseInt(dynamic v, [int def = 0]) {
+    if (v == null) return def;
+    if (v is int) return v;
     if (v is num) return v.toInt();
-    return int.tryParse(v.toString());
+    return int.tryParse(v.toString()) ?? def;
   }
 
   factory PosOrder.fromJson(Map<String, dynamic> json) {
     return PosOrder(
-      id: _parseInt(json['id']) ?? 0,
-      orderNumber: (json['orderNumber'] ?? json['order_number'] ?? '').toString(),
-      customerId: _parseInt(json['customerId'] ?? json['customer_id']),
-      customerName: (json['customerName'] ?? json['customer_name'])?.toString(),
-      cashierId: _parseInt(json['cashierId'] ?? json['cashier_id']) ?? 1,
-      cashierName: (json['cashierName'] ?? json['cashier_name'])?.toString(),
-      subtotal: _parseDouble(json['subtotal']),
-      discountAmount: _parseDouble(json['discountAmount'] ?? json['discount_amount']),
-      taxAmount: _parseDouble(json['taxAmount'] ?? json['tax_amount']),
-      grandTotal: _parseDouble(json['grandTotal'] ?? json['grand_total']),
-      paymentStatus: (json['paymentStatus'] ?? json['payment_status'] ?? 'paid').toString(),
-      orderStatus: (json['orderStatus'] ?? json['order_status'] ?? 'paid').toString(),
-      paymentMethod: (json['paymentMethod'] ?? json['payment_method'])?.toString(),
-      amountReceived: _parseDouble(json['amountReceived'] ?? json['amount_received']),
-      changeAmount: _parseDouble(json['changeAmount'] ?? json['change_amount']),
+      id: _parseInt(json['id']),
+      orderNumber: json['orderNumber'] ?? json['order_number'] ?? '',
+      customerId: json['customerId'] ?? json['customer_id'],
+      customerName: json['customerName'] ?? json['customer_name'],
+      cashierId: _parseInt(json['cashierId'] ?? json['cashier_id'], 1),
+      cashierName: json['cashierName'] ?? json['cashier_name'],
+      subtotal: double.tryParse((json['subtotal'] ?? '0').toString()) ?? 0.0,
+      discountAmount: double.tryParse((json['discountAmount'] ?? json['discount_amount'] ?? '0').toString()) ?? 0.0,
+      taxAmount: double.tryParse((json['taxAmount'] ?? json['tax_amount'] ?? '0').toString()) ?? 0.0,
+      grandTotal: double.tryParse((json['grandTotal'] ?? json['grand_total'] ?? '0').toString()) ?? 0.0,
+      paymentStatus: json['paymentStatus'] ?? json['payment_status'] ?? 'paid',
+      orderStatus: json['orderStatus'] ?? json['order_status'] ?? 'paid',
+      paymentMethod: json['paymentMethod'] ?? json['payment_method'],
+      amountReceived: double.tryParse((json['amountReceived'] ?? json['amount_received'] ?? '0').toString()) ?? 0.0,
+      changeAmount: double.tryParse((json['changeAmount'] ?? json['change_amount'] ?? '0').toString()) ?? 0.0,
       items: json['items'] != null
           ? (json['items'] as List).map((i) => PosOrderItem.fromJson(i is Map<String, dynamic> ? i : Map<String, dynamic>.from(i as Map))).toList()
           : [],

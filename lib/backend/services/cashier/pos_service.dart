@@ -7,7 +7,7 @@ class PosService {
 
   PosService(this.productRepository);
 
-  Future<List<ProductModel>> searchProducts({String? search, dynamic categoryId, dynamic brandId}) async {
+  Future<List<ProductModel>> searchProducts({String? search, int? categoryId, int? brandId}) async {
     return await productRepository.getAllProducts(search: search, categoryId: categoryId, brandId: brandId);
   }
 

@@ -18,8 +18,8 @@ class RefundRepository {
       parameters: {'prefix': '$prefix%'},
     );
 
-    final count = (result.first[0] as num).toInt() + 1;
-    return "$prefix${count.toString().padLeft(4, '0')}";
+    final count = int.tryParse(result.first[0]?.toString() ?? '0') ?? 0;
+    return "$prefix${(count + 1).toString().padLeft(4, '0')}";
   }
 
   /// Processes a full or partial refund within a single PostgreSQL transaction (`runTx`)
@@ -57,7 +57,7 @@ class RefundRepository {
 
       for (final item in itemsToRefund) {
         final orderItemId = int.tryParse(item['order_item_id'].toString()) ?? item['order_item_id'];
-        final requestedRefundQty = (item['quantity'] as num).toDouble();
+        final requestedRefundQty = double.tryParse(item['quantity'].toString()) ?? 1.0;
 
         final itemRes = await session.execute(
           Sql.named('''
@@ -72,10 +72,10 @@ class RefundRepository {
           throw ApiException('Order item #$orderItemId not found in Order #$orderNumber', statusCode: 400);
         }
 
-        final productId = int.tryParse(itemRes.first[0].toString()) ?? itemRes.first[0];
+        final productId = int.tryParse(itemRes.first[0]?.toString() ?? '0') ?? 0;
         final productName = itemRes.first[1].toString();
-        final purchasedQty = (itemRes.first[2] as num).toDouble();
-        final totalItemAmount = (itemRes.first[3] as num).toDouble();
+        final purchasedQty = double.tryParse(itemRes.first[2]?.toString() ?? '0') ?? 0.0;
+        final totalItemAmount = double.tryParse(itemRes.first[3]?.toString() ?? '0') ?? 0.0;
         final unitRefundPrice = purchasedQty > 0 ? totalItemAmount / purchasedQty : 0.0;
 
         // Sum previously refunded quantity for this order item
@@ -83,7 +83,7 @@ class RefundRepository {
           Sql.named('SELECT COALESCE(SUM(quantity), 0) FROM refund_items WHERE order_item_id = @orderItemId OR order_item_id::text = @orderItemIdStr'),
           parameters: {'orderItemId': orderItemId, 'orderItemIdStr': orderItemId.toString()},
         );
-        final alreadyRefundedQty = (prevRefundRes.first[0] as num).toDouble();
+        final alreadyRefundedQty = double.tryParse(prevRefundRes.first[0]?.toString() ?? '0') ?? 0.0;
         final maxRefundableQty = purchasedQty - alreadyRefundedQty;
 
         if (requestedRefundQty <= 0) {
@@ -159,8 +159,8 @@ class RefundRepository {
           orderItemId: int.tryParse(vi['order_item_id'].toString()) ?? 0,
           productId: int.tryParse(vi['product_id'].toString()) ?? 0,
           productName: vi['product_name'].toString(),
-          quantity: (vi['quantity'] as num).toDouble(),
-          refundAmount: (vi['refund_amount'] as num).toDouble(),
+          quantity: double.tryParse(vi['quantity']?.toString() ?? '0') ?? 0.0,
+          refundAmount: double.tryParse(vi['refund_amount']?.toString() ?? '0') ?? 0.0,
         ));
       }
 
@@ -179,8 +179,8 @@ class RefundRepository {
         parameters: {'orderId': orderId, 'orderIdStr': orderId.toString()},
       );
 
-      final totalPurchased = (totalPurchasedQtyRes.first[0] as num).toDouble();
-      final totalRefunded = (totalRefundedQtyRes.first[0] as num).toDouble();
+      final totalPurchased = double.tryParse(totalPurchasedQtyRes.first[0]?.toString() ?? '0') ?? 0.0;
+      final totalRefunded = double.tryParse(totalRefundedQtyRes.first[0]?.toString() ?? '0') ?? 0.0;
 
       final newStatus = totalRefunded >= totalPurchased ? 'refunded' : 'partially_refunded';
       await session.execute(

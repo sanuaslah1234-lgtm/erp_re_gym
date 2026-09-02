@@ -1,11 +1,10 @@
+import 'package:erp_software/frontend/widgets/common/hamburger_button.dart';
 import 'package:flutter/material.dart';
 import 'package:erp_software/core/models/category_model.dart';
 import 'package:erp_software/core/utils/export_print_helper.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/providers/product_management_provider.dart';
-import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
 import 'package:erp_software/frontend/widgets/erp_toast.dart';
-import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 import 'package:provider/provider.dart';
 
 class CategoriesScreen extends StatefulWidget {
@@ -105,14 +104,12 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      drawer: isMobile ? const Drawer(child: ErpSidebar(activeItem: 'Categories', isDrawer: true)) : null,
+      appBar: AppBar(leading: const HamburgerButton(), backgroundColor: Colors.white, elevation: 0, title: const Text('Categories', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)))),
       body: Row(
         children: [
-          if (!isMobile) const ErpSidebar(activeItem: 'Categories'),
           Expanded(
             child: Column(
               children: [
-                const ErpTopbar(),
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(24.0),
@@ -120,96 +117,189 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Page Header
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: const [
-                                Text(
-                                  'Categories',
-                                  style: TextStyle(
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF0F172A),
+                        if (isMobile)
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Categories',
+                                    style: TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF0F172A),
+                                    ),
                                   ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  'Manage your product categories',
-                                  style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                                ),
-                              ],
-                            ),
-                            Wrap(
-                              spacing: 8,
-                              children: [
-                                OutlinedButton.icon(
-                                  onPressed: () {
-                                    ExportPrintHelper.showPrintPage(
-                                      context: context,
-                                      title: 'Categories',
-                                      headers: ['Category', 'Category Slug', 'No of Products', 'Status'],
-                                      rows: filteredCategories
-                                          .map((c) => [c.name, c.description ?? c.name.toLowerCase(), c.productCount.toString(), c.status.toUpperCase()])
-                                          .toList(),
-                                    );
-                                  },
-                                  style: OutlinedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    foregroundColor: const Color(0xFF334155),
-                                    side: const BorderSide(color: Color(0xFFCBD5E1)),
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                  SizedBox(height: 2),
+                                  Text(
+                                    'Manage your product categories',
+                                    style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
                                   ),
-                                  icon: const Icon(Icons.print_outlined, size: 16),
-                                  label: const Text('Print'),
-                                ),
-                                OutlinedButton.icon(
-                                  onPressed: () {
-                                    ExportPrintHelper.exportCsv(
-                                      context: context,
-                                      filename: 'categories_export',
-                                      headers: ['Category', 'Category Slug', 'No of Products', 'Status'],
-                                      rows: filteredCategories
-                                          .map((c) => [c.name, c.description ?? c.name.toLowerCase(), c.productCount, c.status])
-                                          .toList(),
-                                    );
-                                  },
-                                  style: OutlinedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    foregroundColor: const Color(0xFF334155),
-                                    side: const BorderSide(color: Color(0xFFCBD5E1)),
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: OutlinedButton.icon(
+                                      onPressed: () {
+                                        ExportPrintHelper.showPrintPage(
+                                          context: context,
+                                          title: 'Categories',
+                                          headers: ['Category', 'Category Slug', 'No of Products', 'Status'],
+                                          rows: filteredCategories
+                                              .map((c) => [c.name, c.description ?? c.name.toLowerCase(), c.productCount.toString(), c.status.toUpperCase()])
+                                              .toList(),
+                                        );
+                                      },
+                                      style: OutlinedButton.styleFrom(
+                                        backgroundColor: Colors.white,
+                                        foregroundColor: const Color(0xFF334155),
+                                        side: const BorderSide(color: Color(0xFFCBD5E1)),
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                                      ),
+                                      icon: const Icon(Icons.print_outlined, size: 16),
+                                      label: const Text('Print'),
+                                    ),
                                   ),
-                                  icon: const Icon(Icons.download_outlined, size: 16),
-                                  label: const Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text('Export'),
-                                      SizedBox(width: 4),
-                                      Icon(Icons.keyboard_arrow_down, size: 16),
-                                    ],
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: OutlinedButton.icon(
+                                      onPressed: () {
+                                        ExportPrintHelper.exportCsv(
+                                          context: context,
+                                          filename: 'categories_export',
+                                          headers: ['Category', 'Category Slug', 'No of Products', 'Status'],
+                                          rows: filteredCategories
+                                              .map((c) => [c.name, c.description ?? c.name.toLowerCase(), c.productCount, c.status])
+                                              .toList(),
+                                        );
+                                      },
+                                      style: OutlinedButton.styleFrom(
+                                        backgroundColor: Colors.white,
+                                        foregroundColor: const Color(0xFF334155),
+                                        side: const BorderSide(color: Color(0xFFCBD5E1)),
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                                      ),
+                                      icon: const Icon(Icons.download_outlined, size: 16),
+                                      label: const Text('Export'),
+                                    ),
                                   ),
-                                ),
-                                ElevatedButton.icon(
-                                  onPressed: () {
-                                    setState(() {
-                                      _showAddSection = !_showAddSection;
-                                    });
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF0F172A),
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: ElevatedButton.icon(
+                                      onPressed: () {
+                                        setState(() {
+                                          _showAddSection = !_showAddSection;
+                                        });
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFF0F172A),
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                      ),
+                                      icon: const Icon(Icons.add, size: 16),
+                                      label: const Text('Add'),
+                                    ),
                                   ),
-                                  icon: const Icon(Icons.add, size: 18),
-                                  label: const Text('Add New'),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+                                ],
+                              ),
+                            ],
+                          )
+                        else
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: const [
+                                  Text(
+                                    'Categories',
+                                    style: TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF0F172A),
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    'Manage your product categories',
+                                    style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                                  ),
+                                ],
+                              ),
+                              Wrap(
+                                spacing: 8,
+                                children: [
+                                  OutlinedButton.icon(
+                                    onPressed: () {
+                                      ExportPrintHelper.showPrintPage(
+                                        context: context,
+                                        title: 'Categories',
+                                        headers: ['Category', 'Category Slug', 'No of Products', 'Status'],
+                                        rows: filteredCategories
+                                            .map((c) => [c.name, c.description ?? c.name.toLowerCase(), c.productCount.toString(), c.status.toUpperCase()])
+                                            .toList(),
+                                      );
+                                    },
+                                    style: OutlinedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: const Color(0xFF334155),
+                                      side: const BorderSide(color: Color(0xFFCBD5E1)),
+                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                    ),
+                                    icon: const Icon(Icons.print_outlined, size: 16),
+                                    label: const Text('Print'),
+                                  ),
+                                  OutlinedButton.icon(
+                                    onPressed: () {
+                                      ExportPrintHelper.exportCsv(
+                                        context: context,
+                                        filename: 'categories_export',
+                                        headers: ['Category', 'Category Slug', 'No of Products', 'Status'],
+                                        rows: filteredCategories
+                                            .map((c) => [c.name, c.description ?? c.name.toLowerCase(), c.productCount, c.status])
+                                            .toList(),
+                                      );
+                                    },
+                                    style: OutlinedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: const Color(0xFF334155),
+                                      side: const BorderSide(color: Color(0xFFCBD5E1)),
+                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                    ),
+                                    icon: const Icon(Icons.download_outlined, size: 16),
+                                    label: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text('Export'),
+                                        SizedBox(width: 4),
+                                        Icon(Icons.keyboard_arrow_down, size: 16),
+                                      ],
+                                    ),
+                                  ),
+                                  ElevatedButton.icon(
+                                    onPressed: () {
+                                      setState(() {
+                                        _showAddSection = !_showAddSection;
+                                      });
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF0F172A),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    ),
+                                    icon: const Icon(Icons.add, size: 18),
+                                    label: const Text('Add New'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         const SizedBox(height: 20),
 
                         // Inline Add New Category Section

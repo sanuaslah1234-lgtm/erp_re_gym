@@ -327,7 +327,7 @@ class ProductManagementController {
     try {
       final payload = jsonDecode(await request.readAsString()) as Map<String, dynamic>;
       final productId = payload['productId'] ?? payload['product_id'];
-      final quantity = (payload['quantity'] as num).toDouble();
+      final quantity = double.tryParse(payload['quantity'].toString()) ?? 0.0;
       final reason = (payload['reason'] ?? '').toString();
       final movementType = payload['movementType']?.toString();
       final user = request.context['user'];

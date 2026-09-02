@@ -1,6 +1,5 @@
 import 'package:erp_software/backend/database/postgres_service.dart';
 import 'package:postgres/postgres.dart';
-import 'package:uuid/uuid.dart';
 
 class WarehouseService {
   final PostgresService postgresService;
@@ -22,9 +21,9 @@ class WarehouseService {
 
     final result = await postgresService.connection.execute(
       Sql.named('''
-        INSERT INTO warehouses (id, name, code, address, phone, status)
-        VALUES (@id, @name, @code, @address, @phone, 'ACTIVE')
-        RETURNING id, name, code, address, phone, status, created_at, updated_at
+        INSERT INTO warehouses (id, name, code, address, phone, is_active)
+        VALUES (@id, @name, @code, @address, @phone, true)
+        RETURNING id, name, code, address, phone, is_active, created_at, updated_at
       '''),
       parameters: {
         'name': name.trim(),
@@ -44,7 +43,7 @@ class WarehouseService {
   Future<List<Map<String, dynamic>>> getWarehouses() async {
     final result = await postgresService.connection.execute(
       Sql.named('''
-        SELECT id, name, code, address, phone, COALESCE(status, 'ACTIVE') AS status, created_at, updated_at
+        SELECT id, name, code, address, phone, is_active, created_at, updated_at
         FROM warehouses
         ORDER BY created_at DESC
       '''),
@@ -60,7 +59,7 @@ class WarehouseService {
   Future<Map<String, dynamic>?> getWarehouseById(String id) async {
     final result = await postgresService.connection.execute(
       Sql.named('''
-        SELECT id, name, code, address, phone, COALESCE(status, 'ACTIVE') AS status, created_at, updated_at
+        SELECT id, name, code, address, phone, is_active, created_at, updated_at
         FROM warehouses
         WHERE id = @id
         LIMIT 1
@@ -83,11 +82,6 @@ class WarehouseService {
     String? phone,
     bool? isActive,
   }) async {
-    String? statusVal;
-    if (isActive != null) {
-      statusVal = isActive ? 'ACTIVE' : 'INACTIVE';
-    }
-
     final result = await postgresService.connection.execute(
       Sql.named('''
         UPDATE warehouses

@@ -57,6 +57,7 @@ class BranchToolbar extends StatelessWidget {
         ),
         child: DropdownButton<BranchSort>(
           value: provider.sortOption,
+          isExpanded: true,
           icon: const Icon(Icons.arrow_drop_down, color: AppColors.textSecondary),
           items: BranchSort.values
               .map((s) => DropdownMenuItem(value: s, child: Text(_sortLabel(s), style: const TextStyle(fontSize: 13, color: AppColors.textPrimary))))
@@ -87,7 +88,7 @@ class BranchToolbar extends StatelessWidget {
     final addButton = FilledButton.icon(
       onPressed: () => showDialog(
         context: context,
-        builder: (_) => const BranchFormDialog(),
+        builder: (_) => BranchFormDialog(branchProvider: provider),
       ),
       icon: const Icon(Icons.add, size: 18),
       label: const Text('Add Branch'),

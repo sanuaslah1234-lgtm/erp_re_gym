@@ -1,11 +1,10 @@
+import 'package:erp_software/frontend/widgets/common/hamburger_button.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:erp_software/core/constants/app_constants.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
-import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
-import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 import 'package:erp_software/frontend/widgets/erp_toast.dart';
 import 'package:erp_software/theme/app_colors.dart';
 
@@ -88,18 +87,14 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 800;
-
     return Scaffold(
       backgroundColor: AppColors.background,
-      drawer: isMobile ? Drawer(child: ErpSidebar(activeItem: 'Invoices', isDrawer: true)) : null,
+      appBar: AppBar(leading: const HamburgerButton(), backgroundColor: Colors.white, elevation: 0, title: const Text('Invoices', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)))),
       body: Row(
         children: [
-          if (!isMobile) const ErpSidebar(activeItem: 'Invoices'),
           Expanded(
             child: Column(
               children: [
-                const ErpTopbar(),
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(24),
@@ -166,59 +161,147 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
   }
 
   Widget _buildTable(List<_Invoice> invoices) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border), boxShadow: AppShadows.soft),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: SizedBox(
-          width: 750,
-          child: Column(children: [
-            Container(
-              height: 44, padding: const EdgeInsets.symmetric(horizontal: 20), color: AppColors.surfaceSecondary,
-              child: const Row(children: [
-                SizedBox(width: 130, child: Text('INVOICE #', style: TextStyle(fontSize: 10, letterSpacing: 0.5, fontWeight: FontWeight.w800, color: AppColors.textMuted))),
-                SizedBox(width: 120, child: Text('DATE', style: TextStyle(fontSize: 10, letterSpacing: 0.5, fontWeight: FontWeight.w800, color: AppColors.textMuted))),
-                SizedBox(width: 100, child: Text('TOTAL', style: TextStyle(fontSize: 10, letterSpacing: 0.5, fontWeight: FontWeight.w800, color: AppColors.textMuted))),
-                SizedBox(width: 100, child: Text('PAYMENT', style: TextStyle(fontSize: 10, letterSpacing: 0.5, fontWeight: FontWeight.w800, color: AppColors.textMuted))),
-                SizedBox(width: 100, child: Text('STATUS', style: TextStyle(fontSize: 10, letterSpacing: 0.5, fontWeight: FontWeight.w800, color: AppColors.textMuted))),
-                SizedBox(width: 100, child: Text('ACTION', style: TextStyle(fontSize: 10, letterSpacing: 0.5, fontWeight: FontWeight.w800, color: AppColors.textMuted))),
-              ]),
-            ),
-            const Divider(height: 1, color: AppColors.border),
-            ...List.generate(invoices.length, (index) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 600) {
+          return ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: invoices.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 10),
+            itemBuilder: (context, index) {
               final inv = invoices[index];
-              final isLast = index == invoices.length - 1;
               final dateStr = '${inv.createdAt.day}/${inv.createdAt.month}/${inv.createdAt.year}';
               final isPaid = inv.paymentStatus == 'paid';
+
               return Container(
-                constraints: const BoxConstraints(minHeight: 56),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                decoration: BoxDecoration(border: isLast ? null : const Border(bottom: BorderSide(color: AppColors.borderLight))),
-                child: Row(children: [
-                  SizedBox(width: 130, child: Text(inv.orderNumber, style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary), overflow: TextOverflow.ellipsis)),
-                  SizedBox(width: 120, child: Text(dateStr, style: const TextStyle(color: AppColors.textSecondary))),
-                  SizedBox(width: 100, child: Text('\$${inv.grandTotal.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.textPrimary))),
-                  SizedBox(width: 100, child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(color: isPaid ? AppColors.successLight : AppColors.warningLight, borderRadius: BorderRadius.circular(6)),
-                    child: Text(inv.paymentStatus.toUpperCase(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: isPaid ? AppColors.success : AppColors.warning)),
-                  )),
-                  SizedBox(width: 100, child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(color: AppColors.successLight, borderRadius: BorderRadius.circular(6)),
-                    child: Text(inv.orderStatus.toUpperCase(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.success)),
-                  )),
-                  SizedBox(width: 100, child: IconButton(
-                    icon: const Icon(Icons.visibility_outlined, size: 18),
-                    onPressed: () => ErpToast.showInfo(context, 'Invoice ${inv.orderNumber}', title: 'Invoice Details'),
-                  )),
-                ]),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.border),
+                  boxShadow: AppShadows.soft,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryLight,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.receipt_outlined, color: AppColors.primary, size: 18),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(inv.orderNumber, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary), maxLines: 1, overflow: TextOverflow.ellipsis),
+                              Text(dateStr, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                            ],
+                          ),
+                        ),
+                        Text(
+                          '\$${inv.grandTotal.toStringAsFixed(2)}',
+                          style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16, color: AppColors.textPrimary),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: isPaid ? AppColors.successLight : AppColors.warningLight,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(inv.paymentStatus.toUpperCase(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isPaid ? AppColors.success : AppColors.warning)),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceSecondary,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(inv.orderStatus.toUpperCase(), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.textSecondary)),
+                        ),
+                        const Spacer(),
+                        TextButton.icon(
+                          style: TextButton.styleFrom(foregroundColor: AppColors.primary, padding: EdgeInsets.zero),
+                          icon: const Icon(Icons.visibility_outlined, size: 16),
+                          label: const Text('View', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                          onPressed: () => ErpToast.showInfo(context, 'Invoice ${inv.orderNumber}', title: 'Invoice Details'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               );
-            }),
-          ]),
-        ),
-      ),
+            },
+          );
+        }
+
+        return Container(
+          width: double.infinity,
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14), border: Border.all(color: AppColors.border), boxShadow: AppShadows.soft),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: SizedBox(
+              width: 750,
+              child: Column(children: [
+                Container(
+                  height: 44, padding: const EdgeInsets.symmetric(horizontal: 20), color: AppColors.surfaceSecondary,
+                  child: const Row(children: [
+                    SizedBox(width: 130, child: Text('INVOICE #', style: TextStyle(fontSize: 10, letterSpacing: 0.5, fontWeight: FontWeight.w800, color: AppColors.textMuted))),
+                    SizedBox(width: 120, child: Text('DATE', style: TextStyle(fontSize: 10, letterSpacing: 0.5, fontWeight: FontWeight.w800, color: AppColors.textMuted))),
+                    SizedBox(width: 100, child: Text('TOTAL', style: TextStyle(fontSize: 10, letterSpacing: 0.5, fontWeight: FontWeight.w800, color: AppColors.textMuted))),
+                    SizedBox(width: 100, child: Text('PAYMENT', style: TextStyle(fontSize: 10, letterSpacing: 0.5, fontWeight: FontWeight.w800, color: AppColors.textMuted))),
+                    SizedBox(width: 100, child: Text('STATUS', style: TextStyle(fontSize: 10, letterSpacing: 0.5, fontWeight: FontWeight.w800, color: AppColors.textMuted))),
+                    SizedBox(width: 100, child: Text('ACTION', style: TextStyle(fontSize: 10, letterSpacing: 0.5, fontWeight: FontWeight.w800, color: AppColors.textMuted))),
+                  ]),
+                ),
+                const Divider(height: 1, color: AppColors.border),
+                ...List.generate(invoices.length, (index) {
+                  final inv = invoices[index];
+                  final isLast = index == invoices.length - 1;
+                  final dateStr = '${inv.createdAt.day}/${inv.createdAt.month}/${inv.createdAt.year}';
+                  final isPaid = inv.paymentStatus == 'paid';
+                  return Container(
+                    constraints: const BoxConstraints(minHeight: 56),
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    decoration: BoxDecoration(border: isLast ? null : const Border(bottom: BorderSide(color: AppColors.borderLight))),
+                    child: Row(children: [
+                      SizedBox(width: 130, child: Text(inv.orderNumber, style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary), overflow: TextOverflow.ellipsis)),
+                      SizedBox(width: 120, child: Text(dateStr, style: const TextStyle(color: AppColors.textSecondary))),
+                      SizedBox(width: 100, child: Text('\$${inv.grandTotal.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.textPrimary))),
+                      SizedBox(width: 100, child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(color: isPaid ? AppColors.successLight : AppColors.warningLight, borderRadius: BorderRadius.circular(6)),
+                        child: Text(inv.paymentStatus.toUpperCase(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: isPaid ? AppColors.success : AppColors.warning)),
+                      )),
+                      SizedBox(width: 100, child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(color: AppColors.successLight, borderRadius: BorderRadius.circular(6)),
+                        child: Text(inv.orderStatus.toUpperCase(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.success)),
+                      )),
+                      SizedBox(width: 100, child: IconButton(
+                        icon: const Icon(Icons.visibility_outlined, size: 18),
+                        onPressed: () => ErpToast.showInfo(context, 'Invoice ${inv.orderNumber}', title: 'Invoice Details'),
+                      )),
+                    ]),
+                  );
+                }),
+              ]),
+            ),
+          ),
+        );
+      },
     );
   }
 }

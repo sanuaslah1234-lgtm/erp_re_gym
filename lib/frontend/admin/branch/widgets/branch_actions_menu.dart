@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:erp_software/theme/app_colors.dart';
 
 import 'package:erp_software/core/models/branch_model.dart';
@@ -8,8 +7,9 @@ import 'branch_form_dialog.dart';
 
 class BranchActionsMenu extends StatelessWidget {
   final BranchModel branch;
+  final BranchProvider branchProvider;
 
-  const BranchActionsMenu({super.key, required this.branch});
+  const BranchActionsMenu({super.key, required this.branch, required this.branchProvider});
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +21,7 @@ class BranchActionsMenu extends StatelessWidget {
         if (value == 'edit') {
           showDialog(
             context: context,
-            builder: (_) => BranchFormDialog(existingBranch: branch),
+            builder: (_) => BranchFormDialog(existingBranch: branch, branchProvider: branchProvider),
           );
         } else if (value == 'delete') {
           _confirmDelete(context);
@@ -53,7 +53,7 @@ class BranchActionsMenu extends StatelessWidget {
   }
 
   void _confirmDelete(BuildContext context) {
-    final provider = context.read<BranchProvider>();
+    final provider = branchProvider;
 
     showDialog(
       context: context,

@@ -28,6 +28,23 @@ import 'package:erp_software/backend/controllers/product_management_controller.d
 import 'package:erp_software/backend/repositories/product_management_repository.dart';
 import 'package:erp_software/backend/repositories/auth_repository.dart';
 
+// Cashier Imports
+import 'package:erp_software/backend/repositories/cashier/product_repository.dart';
+import 'package:erp_software/backend/repositories/cashier/order_repository.dart';
+import 'package:erp_software/backend/repositories/cashier/cashier_settings_repository.dart';
+import 'package:erp_software/backend/repositories/cashier/refund_repository.dart';
+import 'package:erp_software/backend/repositories/cashier/barcode_repository.dart';
+import 'package:erp_software/backend/services/cashier/pos_service.dart';
+import 'package:erp_software/backend/services/cashier/order_service.dart';
+import 'package:erp_software/backend/services/cashier/cashier_settings_service.dart';
+import 'package:erp_software/backend/services/cashier/refund_service.dart';
+import 'package:erp_software/backend/services/cashier/barcode_service.dart';
+import 'package:erp_software/backend/controllers/cashier/pos_controller.dart';
+import 'package:erp_software/backend/controllers/cashier/order_controller.dart';
+import 'package:erp_software/backend/controllers/cashier/cashier_settings_controller.dart';
+import 'package:erp_software/backend/controllers/cashier/refund_controller.dart';
+import 'package:erp_software/backend/controllers/cashier/barcode_controller.dart';
+
 // Admin Imports
 import 'package:erp_software/backend/admin/audit_log/services/audit_log_service.dart';
 import 'package:erp_software/backend/admin/branch/services/branch_service.dart';
@@ -52,28 +69,6 @@ import 'package:erp_software/backend/admin/settings/repositories/settings_reposi
 
 import 'package:erp_software/backend/services/gym_service.dart';
 import 'package:erp_software/backend/controllers/gym_controller.dart';
-
-// Cashier Repositories
-import 'package:erp_software/backend/repositories/cashier/barcode_repository.dart';
-import 'package:erp_software/backend/repositories/cashier/cashier_settings_repository.dart';
-import 'package:erp_software/backend/repositories/cashier/order_repository.dart';
-import 'package:erp_software/backend/repositories/cashier/product_repository.dart' as cashier_repo;
-import 'package:erp_software/backend/repositories/cashier/refund_repository.dart';
-
-// Cashier Services
-import 'package:erp_software/backend/services/cashier/barcode_service.dart';
-import 'package:erp_software/backend/services/cashier/cashier_settings_service.dart';
-import 'package:erp_software/backend/services/cashier/order_service.dart';
-import 'package:erp_software/backend/services/cashier/pos_service.dart';
-import 'package:erp_software/backend/services/cashier/refund_service.dart';
-
-// Cashier Controllers
-import 'package:erp_software/backend/controllers/cashier/barcode_controller.dart';
-import 'package:erp_software/backend/controllers/cashier/cashier_settings_controller.dart';
-import 'package:erp_software/backend/controllers/cashier/order_controller.dart';
-import 'package:erp_software/backend/controllers/cashier/pos_controller.dart';
-import 'package:erp_software/backend/controllers/cashier/refund_controller.dart';
-
 import 'package:erp_software/backend/database/rbac_seeder.dart';
 
 Future<void> main() async {
@@ -150,31 +145,30 @@ Future<void> main() async {
   final productManagementService = ProductManagementService(productManagementRepository);
   final productManagementController = ProductManagementController(productManagementService);
 
-  // Initialize Gym Service & Controller
-  final gymService = GymService(postgresService);
-  final gymController = GymController(gymService);
-
-  // Initialize Cashier Repositories, Services & Controllers
-  final cashierSettingsRepository = CashierSettingsRepository(postgresService);
-  final cashierProductRepository = cashier_repo.ProductRepository(postgresService);
+  // Initialize Cashier Repositories
+  final cashierProductRepository = ProductRepository(postgresService);
   final cashierOrderRepository = OrderRepository(postgresService);
+  final cashierSettingsRepository = CashierSettingsRepository(postgresService);
   final cashierRefundRepository = RefundRepository(postgresService);
   final cashierBarcodeRepository = BarcodeRepository(postgresService);
 
-  final cashierSettingsService = CashierSettingsService(cashierSettingsRepository);
+  // Initialize Cashier Services
   final posService = PosService(cashierProductRepository);
-  final cashierOrderService = OrderService(
-    orderRepository: cashierOrderRepository,
-    settingsRepository: cashierSettingsRepository,
-  );
+  final cashierOrderService = OrderService(orderRepository: cashierOrderRepository, settingsRepository: cashierSettingsRepository);
+  final cashierSettingsService = CashierSettingsService(cashierSettingsRepository);
   final cashierRefundService = RefundService(cashierRefundRepository);
   final cashierBarcodeService = BarcodeService(cashierBarcodeRepository);
 
-  final cashierSettingsController = CashierSettingsController(cashierSettingsService);
+  // Initialize Cashier Controllers
   final posController = PosController(posService);
-  final orderController = OrderController(cashierOrderService);
-  final refundController = RefundController(cashierRefundService);
-  final barcodeController = BarcodeController(cashierBarcodeService);
+  final cashierOrderController = OrderController(cashierOrderService);
+  final cashierSettingsController = CashierSettingsController(cashierSettingsService);
+  final cashierRefundController = RefundController(cashierRefundService);
+  final cashierBarcodeController = BarcodeController(cashierBarcodeService);
+
+  // Initialize Gym Service & Controller
+  final gymService = GymService(postgresService);
+  final gymController = GymController(gymService);
 
   // Setup App Router
   final appRouter = AppRouter(
@@ -187,10 +181,10 @@ Future<void> main() async {
     productManagementController: productManagementController,
     gymController: gymController,
     posController: posController,
-    orderController: orderController,
-    refundController: refundController,
-    barcodeController: barcodeController,
-    cashierSettingsController: cashierSettingsController,
+    orderController: cashierOrderController,
+    refundController: cashierRefundController,
+    barcodeController: cashierBarcodeController,
+    settingsController2: cashierSettingsController,
     auditLogController: auditLogController,
     branchController: branchController,
     landingPageController: landingPageController,

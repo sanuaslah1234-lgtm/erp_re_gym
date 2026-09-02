@@ -38,7 +38,7 @@ class AppConstants {
     }
 
     // Default to the developer's PC LAN IP so mobile devices connect seamlessly
-    return 'http://192.168.1.18:5000';
+    return 'http://localhost:5000';
   }
 
   // ==========================================

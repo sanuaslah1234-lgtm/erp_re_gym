@@ -21,6 +21,8 @@ class ReceiptSettingsWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 600;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -37,13 +39,19 @@ class ReceiptSettingsWidget extends StatelessWidget {
           const SizedBox(height: 12),
           TextFormField(controller: addrCtrl, decoration: const InputDecoration(labelText: 'Store Address')),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(child: TextFormField(controller: phoneCtrl, decoration: const InputDecoration(labelText: 'Phone'))),
-              const SizedBox(width: 12),
-              Expanded(child: TextFormField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'Email'))),
-            ],
-          ),
+          if (isMobile) ...[
+            TextFormField(controller: phoneCtrl, decoration: const InputDecoration(labelText: 'Phone')),
+            const SizedBox(height: 12),
+            TextFormField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'Email')),
+          ] else ...[
+            Row(
+              children: [
+                Expanded(child: TextFormField(controller: phoneCtrl, decoration: const InputDecoration(labelText: 'Phone'))),
+                const SizedBox(width: 12),
+                Expanded(child: TextFormField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'Email'))),
+              ],
+            ),
+          ],
           const SizedBox(height: 12),
           TextFormField(controller: footerCtrl, decoration: const InputDecoration(labelText: 'Receipt Footer Message')),
           const SizedBox(height: 16),

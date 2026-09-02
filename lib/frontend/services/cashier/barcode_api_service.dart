@@ -1,22 +1,23 @@
 import 'dart:convert';
-import 'package:erp_software/core/constants/app_constants.dart';
+import 'package:erp_software/core/config/app_config.dart';
 import 'package:http/http.dart' as http;
 
 class BarcodeApiService {
-  String get baseUrl => '${AppConstants.apiBaseUrl}/api/cashier/barcodes';
+  final String baseUrl = '${AppConfig.apiBaseUrl}/api/cashier/barcodes';
 
   Map<String, String> _headers(String? token) => {
         'Content-Type': 'application/json',
         if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
       };
 
-  Future<Map<String, dynamic>> recordBarcodePrint(String? token, int productId, String barcode, int labelQuantity) async {
+  Future<Map<String, dynamic>> recordBarcodePrint(String? token, dynamic productId, String barcode, int labelQuantity) async {
+    final numericProductId = productId is int ? productId : (int.tryParse(productId.toString()) ?? 1);
     final response = await http
         .post(
           Uri.parse(baseUrl),
           headers: _headers(token),
           body: jsonEncode({
-            'productId': productId,
+            'productId': numericProductId,
             'barcode': barcode,
             'labelQuantity': labelQuantity,
           }),

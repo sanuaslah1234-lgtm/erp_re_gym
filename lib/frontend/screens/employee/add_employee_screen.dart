@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/providers/employee_provider.dart';
-import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
-import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 import 'package:provider/provider.dart';
 
 import 'package:erp_software/frontend/widgets/erp_toast.dart';
@@ -101,17 +99,14 @@ class _AddEmployeeScreenState extends State<AddEmployeeScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      drawer: isMobile ? const Drawer(child: ErpSidebar(isDrawer: true)) : null,
       body: Row(
         children: [
           // Sidebar Panel for Desktop
-          if (!isMobile) const ErpSidebar(activeItem: 'Employees'),
 
           // Main Screen Content Area
           Expanded(
             child: Column(
               children: [
-                const ErpTopbar(),
 
                 Expanded(
                   child: SingleChildScrollView(

@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:erp_software/core/models/cashier/product_model.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/providers/product_management_provider.dart';
-import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
 import 'package:erp_software/frontend/widgets/erp_toast.dart';
-import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 import 'package:provider/provider.dart';
 
 class AddProductScreen extends StatefulWidget {
@@ -134,14 +132,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      drawer: isMobile ? const Drawer(child: ErpSidebar(isDrawer: true)) : null,
       body: Row(
         children: [
-          if (!isMobile) const ErpSidebar(activeItem: 'Products'),
           Expanded(
             child: Column(
               children: [
-                const ErpTopbar(),
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(24.0),
@@ -150,41 +145,43 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       children: [
                         // Page Header with Save Product button
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.arrow_back, color: Color(0xFF0F172A)),
-                                  onPressed: () => Navigator.pop(context),
-                                ),
-                                const SizedBox(width: 8),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: const [
-                                    Text(
-                                      'Add Product',
-                                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                                    ),
-                                    SizedBox(height: 2),
-                                    Text(
-                                      'Create a new product for inventory',
-                                      style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                            IconButton(
+                              icon: const Icon(Icons.arrow_back, color: Color(0xFF0F172A)),
+                              onPressed: () => Navigator.pop(context),
                             ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: const [
+                                  Text(
+                                    'Add Product',
+                                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  SizedBox(height: 2),
+                                  Text(
+                                    'Create a new product for inventory',
+                                    style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
                             ElevatedButton.icon(
                               onPressed: () => _handleSaveProduct(provider, authProvider),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF4F46E5),
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                                padding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 20, vertical: 12),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                               ),
-                              icon: const Icon(Icons.save_outlined, size: 18),
-                              label: const Text('Save Product'),
+                              icon: const Icon(Icons.save_outlined, size: 16),
+                              label: Text(isMobile ? 'Save' : 'Save Product'),
                             ),
                           ],
                         ),
@@ -206,144 +203,123 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                       children: [
                                         _buildSectionTitle(Icons.widgets_outlined, 'Product Information'),
                                         const SizedBox(height: 16),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: _buildInputField('Product Name', _nameController, hint: 'Apple iPhone 15'),
-                                            ),
-                                            const SizedBox(width: 16),
-                                            Expanded(
-                                              child: _buildInputField('Product Code', _codeController, hint: 'PRD001'),
-                                            ),
-                                          ],
+                                        _buildResponsiveRow(
+                                          isMobile,
+                                          _buildInputField('Product Name', _nameController, hint: 'Apple iPhone 15'),
+                                          _buildInputField('Product Code', _codeController, hint: 'PRD001'),
                                         ),
                                         const SizedBox(height: 16),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: _buildInputField('SKU', _skuController, hint: 'SKU-1001'),
-                                            ),
-                                            const SizedBox(width: 16),
-
-                                            // Category Dropdown
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  const Text('Category', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                                                  const SizedBox(height: 6),
-                                                  DropdownButtonFormField<String>(
-                                                    initialValue: (_selectedCategory != null && provider.categories.any((c) => c.name == _selectedCategory))
-                                                        ? _selectedCategory
-                                                        : (_selectedCategory != null && _selectedCategory!.isNotEmpty ? _selectedCategory : null),
-                                                    hint: const Text('Choose Category', style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
-                                                    decoration: const InputDecoration(isDense: true),
-                                                    items: () {
-                                                      final items = provider.categories.map((c) => c.name).toSet().toList();
-                                                      if (_selectedCategory != null && _selectedCategory!.isNotEmpty && !items.contains(_selectedCategory)) {
-                                                        items.insert(0, _selectedCategory!);
-                                                      }
-                                                      return items.map((name) => DropdownMenuItem<String>(value: name, child: Text(name))).toList();
-                                                    }(),
-                                                    onChanged: (val) {
-                                                      setState(() => _selectedCategory = val);
-                                                    },
-                                                  ),
-                                                ],
+                                        _buildResponsiveRow(
+                                          isMobile,
+                                          _buildInputField('SKU', _skuController, hint: 'SKU-1001'),
+                                          // Category Dropdown
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              const Text('Category', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                                              const SizedBox(height: 6),
+                                              DropdownButtonFormField<String>(
+                                                isExpanded: true,
+                                                initialValue: (_selectedCategory != null && provider.categories.any((c) => c.name == _selectedCategory))
+                                                    ? _selectedCategory
+                                                    : (_selectedCategory != null && _selectedCategory!.isNotEmpty ? _selectedCategory : null),
+                                                hint: const Text('Choose Category', style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
+                                                decoration: const InputDecoration(isDense: true),
+                                                items: () {
+                                                  final items = provider.categories.map((c) => c.name).toSet().toList();
+                                                  if (_selectedCategory != null && _selectedCategory!.isNotEmpty && !items.contains(_selectedCategory)) {
+                                                    items.insert(0, _selectedCategory!);
+                                                  }
+                                                  return items.map((name) => DropdownMenuItem<String>(value: name, child: Text(name, overflow: TextOverflow.ellipsis))).toList();
+                                                }(),
+                                                onChanged: (val) {
+                                                  setState(() => _selectedCategory = val);
+                                                },
                                               ),
-                                            ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
                                         const SizedBox(height: 16),
 
-                                        Row(
-                                          children: [
-                                            // Brand Dropdown
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  const Text('Brand', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                                                  const SizedBox(height: 6),
-                                                  DropdownButtonFormField<String>(
-                                                    initialValue: (_selectedBrand != null && provider.brands.any((b) => b.name == _selectedBrand))
-                                                        ? _selectedBrand
-                                                        : (_selectedBrand != null && _selectedBrand!.isNotEmpty ? _selectedBrand : null),
-                                                    hint: const Text('Select Brand', style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
-                                                    decoration: const InputDecoration(isDense: true),
-                                                    items: () {
-                                                      final items = provider.brands.map((b) => b.name).toSet().toList();
-                                                      if (_selectedBrand != null && _selectedBrand!.isNotEmpty && !items.contains(_selectedBrand)) {
-                                                        items.insert(0, _selectedBrand!);
-                                                      }
-                                                      return items.map((name) => DropdownMenuItem<String>(value: name, child: Text(name))).toList();
-                                                    }(),
-                                                    onChanged: (val) {
-                                                      setState(() => _selectedBrand = val);
-                                                    },
-                                                  ),
-                                                ],
+                                        _buildResponsiveRow(
+                                          isMobile,
+                                          // Brand Dropdown
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              const Text('Brand', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                                              const SizedBox(height: 6),
+                                              DropdownButtonFormField<String>(
+                                                isExpanded: true,
+                                                initialValue: (_selectedBrand != null && provider.brands.any((b) => b.name == _selectedBrand))
+                                                    ? _selectedBrand
+                                                    : (_selectedBrand != null && _selectedBrand!.isNotEmpty ? _selectedBrand : null),
+                                                hint: const Text('Select Brand', style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
+                                                decoration: const InputDecoration(isDense: true),
+                                                items: () {
+                                                  final items = provider.brands.map((b) => b.name).toSet().toList();
+                                                  if (_selectedBrand != null && _selectedBrand!.isNotEmpty && !items.contains(_selectedBrand)) {
+                                                    items.insert(0, _selectedBrand!);
+                                                  }
+                                                  return items.map((name) => DropdownMenuItem<String>(value: name, child: Text(name, overflow: TextOverflow.ellipsis))).toList();
+                                                }(),
+                                                onChanged: (val) {
+                                                  setState(() => _selectedBrand = val);
+                                                },
                                               ),
-                                            ),
-                                            const SizedBox(width: 16),
-
-                                            // Unit Dropdown
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  const Text('Unit', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                                                  const SizedBox(height: 6),
-                                                  DropdownButtonFormField<String>(
-                                                    initialValue: (_selectedUnit != null && provider.units.any((u) => u.name == _selectedUnit))
-                                                        ? _selectedUnit
-                                                        : (_selectedUnit != null && _selectedUnit!.isNotEmpty ? _selectedUnit : null),
-                                                    hint: const Text('Choose Unit', style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
-                                                    decoration: const InputDecoration(isDense: true),
-                                                    items: () {
-                                                      final items = provider.units.map((u) => u.name).toSet().toList();
-                                                      if (_selectedUnit != null && _selectedUnit!.isNotEmpty && !items.contains(_selectedUnit)) {
-                                                        items.insert(0, _selectedUnit!);
-                                                      }
-                                                      return items.map((name) => DropdownMenuItem<String>(value: name, child: Text(name))).toList();
-                                                    }(),
-                                                    onChanged: (val) {
-                                                      setState(() => _selectedUnit = val);
-                                                    },
-                                                  ),
-                                                ],
+                                            ],
+                                          ),
+                                          // Unit Dropdown
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              const Text('Unit', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                                              const SizedBox(height: 6),
+                                              DropdownButtonFormField<String>(
+                                                isExpanded: true,
+                                                initialValue: (_selectedUnit != null && provider.units.any((u) => u.name == _selectedUnit))
+                                                    ? _selectedUnit
+                                                    : (_selectedUnit != null && _selectedUnit!.isNotEmpty ? _selectedUnit : null),
+                                                hint: const Text('Choose Unit', style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
+                                                decoration: const InputDecoration(isDense: true),
+                                                items: () {
+                                                  final items = provider.units.map((u) => u.name).toSet().toList();
+                                                  if (_selectedUnit != null && _selectedUnit!.isNotEmpty && !items.contains(_selectedUnit)) {
+                                                    items.insert(0, _selectedUnit!);
+                                                  }
+                                                  return items.map((name) => DropdownMenuItem<String>(value: name, child: Text(name, overflow: TextOverflow.ellipsis))).toList();
+                                                }(),
+                                                onChanged: (val) {
+                                                  setState(() => _selectedUnit = val);
+                                                },
                                               ),
-                                            ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
                                         const SizedBox(height: 16),
 
                                         // Status
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                children: [
-                                                  const Text('Status', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
-                                                  const SizedBox(height: 6),
-                                                  DropdownButtonFormField<String>(
-                                                    initialValue: _selectedStatus,
-                                                    decoration: const InputDecoration(isDense: true),
-                                                    items: const [
-                                                      DropdownMenuItem(value: 'Active', child: Text('Active')),
-                                                      DropdownMenuItem(value: 'Inactive', child: Text('Inactive')),
-                                                    ],
-                                                    onChanged: (val) {
-                                                      if (val != null) setState(() => _selectedStatus = val);
-                                                    },
-                                                  ),
+                                        _buildResponsiveRow(
+                                          isMobile,
+                                          Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              const Text('Status', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                                              const SizedBox(height: 6),
+                                              DropdownButtonFormField<String>(
+                                                isExpanded: true,
+                                                initialValue: _selectedStatus,
+                                                decoration: const InputDecoration(isDense: true),
+                                                items: const [
+                                                  DropdownMenuItem(value: 'Active', child: Text('Active')),
+                                                  DropdownMenuItem(value: 'Inactive', child: Text('Inactive')),
                                                 ],
+                                                onChanged: (val) {
+                                                  if (val != null) setState(() => _selectedStatus = val);
+                                                },
                                               ),
-                                            ),
-                                            const SizedBox(width: 16),
-                                            const Spacer(),
-                                          ],
+                                            ],
+                                          ),
                                         ),
                                         const SizedBox(height: 16),
 
@@ -375,28 +351,16 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                       children: [
                                         const Text('Pricing', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
                                         const SizedBox(height: 16),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: _buildInputField('Purchase Price (Cost)', _purchasePriceController, hint: '0.00'),
-                                            ),
-                                            const SizedBox(width: 16),
-                                            Expanded(
-                                              child: _buildInputField('Selling Price', _sellingPriceController, hint: '0.00'),
-                                            ),
-                                          ],
+                                        _buildResponsiveRow(
+                                          isMobile,
+                                          _buildInputField('Purchase Price (Cost)', _purchasePriceController, hint: '0.00'),
+                                          _buildInputField('Selling Price', _sellingPriceController, hint: '0.00'),
                                         ),
                                         const SizedBox(height: 16),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: _buildInputField('Tax (%)', _taxController, hint: '18'),
-                                            ),
-                                            const SizedBox(width: 16),
-                                            Expanded(
-                                              child: _buildInputField('Discount', _discountController, hint: '5'),
-                                            ),
-                                          ],
+                                        _buildResponsiveRow(
+                                          isMobile,
+                                          _buildInputField('Tax (%)', _taxController, hint: '18'),
+                                          _buildInputField('Discount', _discountController, hint: '5'),
                                         ),
                                       ],
                                     ),
@@ -415,30 +379,25 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                           style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                                         ),
                                         const SizedBox(height: 16),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: _buildInputField('Opening Stock (Read-only)', _openingStockController, readOnly: true),
-                                            ),
-                                            const SizedBox(width: 16),
-                                            Expanded(
-                                              child: _buildInputField('Low Stock Alert', _lowStockAlertController, hint: '10'),
-                                            ),
-                                          ],
+                                        _buildResponsiveRow(
+                                          isMobile,
+                                          _buildInputField('Opening Stock (Read-only)', _openingStockController, readOnly: true),
+                                          _buildInputField('Low Stock Alert', _lowStockAlertController, hint: '10'),
                                         ),
                                         const SizedBox(height: 16),
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: _buildInputField('Warehouse', _warehouseController),
-                                            ),
-                                            const SizedBox(width: 16),
-                                            const Spacer(),
-                                          ],
+                                        _buildResponsiveRow(
+                                          isMobile,
+                                          _buildInputField('Warehouse', _warehouseController),
                                         ),
                                       ],
                                     ),
                                   ),
+                                  if (isMobile) ...[
+                                    const SizedBox(height: 20),
+                                    _buildProductImageCard(),
+                                    const SizedBox(height: 20),
+                                    _buildQuickTipsCard(),
+                                  ],
                                 ],
                               ),
                             ),
@@ -450,64 +409,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                 flex: 2,
                                 child: Column(
                                   children: [
-                                    // Card 4: Product Image
-                                    _buildCardContainer(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          const Text('Product Image', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                                          const SizedBox(height: 16),
-                                          Container(
-                                            width: double.infinity,
-                                            height: 180,
-                                            decoration: BoxDecoration(
-                                              color: const Color(0xFFF8FAFC),
-                                              borderRadius: BorderRadius.circular(12),
-                                              border: Border.all(color: const Color(0xFFCBD5E1), style: BorderStyle.solid),
-                                            ),
-                                            child: Column(
-                                              mainAxisAlignment: MainAxisAlignment.center,
-                                              children: [
-                                                const Icon(Icons.upload_file_outlined, size: 36, color: Color(0xFF4F46E5)),
-                                                const SizedBox(height: 10),
-                                                const Text('Click or Drag Image here', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
-                                                const Text('PNG, JPG up to 5MB', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-                                                const SizedBox(height: 14),
-                                                ElevatedButton(
-                                                  onPressed: () {
-                                                    ErpToast.showInfo(context, 'Image upload selected');
-                                                  },
-                                                  style: ElevatedButton.styleFrom(
-                                                    backgroundColor: const Color(0xFF4F46E5),
-                                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                                                  ),
-                                                  child: const Text('Upload Image', style: TextStyle(fontSize: 12)),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
+                                    _buildProductImageCard(),
                                     const SizedBox(height: 20),
-
-                                    // Card 5: Quick Tips
-                                    _buildCardContainer(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: const [
-                                          Text('Quick Tips', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                                          SizedBox(height: 14),
-                                          _TipItem(text: 'Use a unique SKU.'),
-                                          SizedBox(height: 8),
-                                          _TipItem(text: 'Upload a high-quality product image.'),
-                                          SizedBox(height: 8),
-                                          _TipItem(text: 'Set low stock alerts.'),
-                                          SizedBox(height: 8),
-                                          _TipItem(text: 'Verify pricing before saving.'),
-                                        ],
-                                      ),
-                                    ),
+                                    _buildQuickTipsCard(),
                                   ],
                                 ),
                               ),
@@ -520,6 +424,88 @@ class _AddProductScreenState extends State<AddProductScreen> {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResponsiveRow(bool isMobile, Widget first, [Widget? second]) {
+    if (isMobile || second == null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          first,
+          if (second != null) ...[
+            const SizedBox(height: 16),
+            second,
+          ],
+        ],
+      );
+    }
+    return Row(
+      children: [
+        Expanded(child: first),
+        const SizedBox(width: 16),
+        Expanded(child: second),
+      ],
+    );
+  }
+
+  Widget _buildProductImageCard() {
+    return _buildCardContainer(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Product Image', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            height: 180,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFCBD5E1), style: BorderStyle.solid),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.upload_file_outlined, size: 36, color: Color(0xFF4F46E5)),
+                const SizedBox(height: 10),
+                const Text('Click or Drag Image here', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                const Text('PNG, JPG up to 5MB', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                const SizedBox(height: 14),
+                ElevatedButton(
+                  onPressed: () {
+                    ErpToast.showInfo(context, 'Image upload selected');
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4F46E5),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  ),
+                  child: const Text('Upload Image', style: TextStyle(fontSize: 12)),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickTipsCard() {
+    return _buildCardContainer(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: const [
+          Text('Quick Tips', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+          SizedBox(height: 14),
+          _TipItem(text: 'Use a unique SKU.'),
+          SizedBox(height: 8),
+          _TipItem(text: 'Upload a high-quality product image.'),
+          SizedBox(height: 8),
+          _TipItem(text: 'Set low stock alerts.'),
+          SizedBox(height: 8),
+          _TipItem(text: 'Verify pricing before saving.'),
         ],
       ),
     );

@@ -1,9 +1,8 @@
+import 'package:erp_software/frontend/widgets/common/hamburger_button.dart';
 import 'package:flutter/material.dart';
 import 'package:erp_software/core/models/gym/gym_trainer_model.dart';
 import 'package:erp_software/core/models/gym/gym_member_model.dart';
 import 'package:erp_software/frontend/services/gym/gym_service.dart';
-import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
-import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 import 'package:erp_software/frontend/widgets/gym/add_edit_trainer_dialog.dart';
 import 'package:erp_software/frontend/widgets/gym/assign_trainer_dialog.dart';
 import 'package:erp_software/frontend/widgets/erp_toast.dart';
@@ -157,139 +156,152 @@ class _GymTrainersScreenState extends State<GymTrainersScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      drawer: isMobile ? const Drawer(child: ErpSidebar(activeItem: 'Trainers', isDrawer: true)) : null,
-      body: Row(
-        children: [
-          if (!isMobile) const ErpSidebar(activeItem: 'Trainers'),
-          Expanded(
-            child: Column(
-              children: [
-                const ErpTopbar(),
-                Expanded(
-                  child: RefreshIndicator(
-                    onRefresh: loadTrainers,
-                    color: AppColors.primary,
-                    backgroundColor: Colors.white,
-                    child: SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: EdgeInsets.all(isMobile ? 14.0 : 24.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+      appBar: AppBar(
+        leading: const HamburgerButton(),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text('Gym Trainers', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person_add_alt_1_rounded, color: AppColors.primary),
+            tooltip: 'Add Trainer',
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (_) => AddEditTrainerDialog(onSaved: loadTrainers),
+              );
+            },
+          ),
+        ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: loadTrainers,
+        color: AppColors.primary,
+        backgroundColor: Colors.white,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(14.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Trainers & Staff',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF2563EB),
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text('Manage personal trainers, specializations, and member coaching', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (_) => AssignTrainerDialog(onAssigned: loadTrainers),
+                            );
+                          },
+                          icon: const Icon(Icons.assignment_ind_rounded, size: 18),
+                          label: const Text('Assign Client'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.primary,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (_) => AddEditTrainerDialog(onSaved: loadTrainers),
+                            );
+                          },
+                          icon: const Icon(Icons.add_rounded, size: 18),
+                          label: const Text('Add Trainer'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
+              // Search & Tab Filter
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  boxShadow: const [BoxShadow(color: Color(0x050F172A), blurRadius: 10, offset: Offset(0, 2))],
+                ),
+                child: Column(
+                  children: [
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
                         children: [
-                          // Header
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Gym Trainers & Staff',
-                                    style: TextStyle(
-                                      fontSize: 26,
-                                      fontWeight: FontWeight.w800,
-                                      color: Color(0xFF2563EB),
-                                      letterSpacing: -0.5,
-                                    ),
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text('Manage personal trainers, specializations, and member coaching', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
-                                ],
-                              ),
-                              Row(
-                                children: [
-                                  OutlinedButton.icon(
-                                    onPressed: () {
-                                      showDialog(
-                                        context: context,
-                                        builder: (_) => AssignTrainerDialog(onAssigned: loadTrainers),
-                                      );
-                                    },
-                                    icon: const Icon(Icons.assignment_ind_rounded, size: 18),
-                                    label: const Text('Assign Member'),
-                                    style: OutlinedButton.styleFrom(foregroundColor: AppColors.primary),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  ElevatedButton.icon(
-                                    onPressed: () {
-                                      showDialog(
-                                        context: context,
-                                        builder: (_) => AddEditTrainerDialog(onSaved: loadTrainers),
-                                      );
-                                    },
-                                    icon: const Icon(Icons.add, size: 18),
-                                    label: const Text('+ Add Trainer'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.primary,
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
-
-                          // Search & Tab Filter
-                          Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
-                              boxShadow: const [BoxShadow(color: Color(0x050F172A), blurRadius: 10, offset: Offset(0, 2))],
-                            ),
-                            child: Row(
-                              children: [
-                                _buildTabPill('All', _allTrainers.length),
-                                const SizedBox(width: 8),
-                                _buildTabPill('Active', _allTrainers.where((t) => t.isActive).length),
-                                const SizedBox(width: 8),
-                                _buildTabPill('Inactive', _allTrainers.where((t) => !t.isActive).length),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: TextField(
-                                    onChanged: (v) {
-                                      setState(() => _searchQuery = v);
-                                      _applyFilters();
-                                    },
-                                    decoration: InputDecoration(
-                                      hintText: 'Search trainers by name, specialization...',
-                                      hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
-                                      prefixIcon: const Icon(Icons.search, color: Color(0xFF2563EB), size: 18),
-                                      filled: true,
-                                      fillColor: const Color(0xFFFAFAFA),
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          if (_isLoading) ...[
-                            const Center(child: Padding(padding: EdgeInsets.all(50), child: CircularProgressIndicator(color: AppColors.primary)))
-                          ] else if (_error != null) ...[
-                            _buildErrorBanner(),
-                          ] else if (_filteredTrainers.isEmpty) ...[
-                            _buildEmptyState(),
-                          ] else ...[
-                            _buildTrainersGrid(isMobile),
-                          ],
+                          _buildTabPill('All', _allTrainers.length),
+                          const SizedBox(width: 8),
+                          _buildTabPill('Active', _allTrainers.where((t) => t.isActive).length),
+                          const SizedBox(width: 8),
+                          _buildTabPill('Inactive', _allTrainers.where((t) => !t.isActive).length),
                         ],
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      onChanged: (v) {
+                        setState(() => _searchQuery = v);
+                        _applyFilters();
+                      },
+                      decoration: InputDecoration(
+                        hintText: 'Search trainers by name, specialization...',
+                        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                        prefixIcon: const Icon(Icons.search, color: Color(0xFF2563EB), size: 18),
+                        filled: true,
+                        fillColor: const Color(0xFFFAFAFA),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5)),
+                      ),
+                    ),
+                  ],
                 ),
+              ),
+              const SizedBox(height: 16),
+
+              if (_isLoading) ...[
+                const Center(child: Padding(padding: EdgeInsets.all(50), child: CircularProgressIndicator(color: AppColors.primary)))
+              ] else if (_error != null) ...[
+                _buildErrorBanner(),
+              ] else if (_filteredTrainers.isEmpty) ...[
+                _buildEmptyState(),
+              ] else ...[
+                _buildTrainersGrid(isMobile),
               ],
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

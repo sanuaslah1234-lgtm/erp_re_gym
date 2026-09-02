@@ -1,3 +1,4 @@
+import 'package:erp_software/frontend/widgets/common/hamburger_button.dart';
 import 'package:flutter/material.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/providers/cashier/refund_provider.dart';
@@ -5,8 +6,6 @@ import 'package:erp_software/frontend/screens/cashier/refunds/refund_details_scr
 import 'package:erp_software/frontend/screens/cashier/refunds/widgets/refund_item_selector.dart';
 import 'package:erp_software/frontend/screens/cashier/refunds/widgets/refund_order_search.dart';
 import 'package:erp_software/frontend/screens/cashier/refunds/widgets/refund_summary.dart';
-import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
-import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 import 'package:erp_software/frontend/widgets/erp_toast.dart';
 import 'package:provider/provider.dart';
 
@@ -39,18 +38,15 @@ class _RefundsScreenState extends State<RefundsScreen> {
   Widget build(BuildContext context) {
     final refundProvider = Provider.of<RefundProvider>(context);
     final authProvider = Provider.of<AuthProvider>(context);
-    final isMobile = MediaQuery.of(context).size.width < 800;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      drawer: isMobile ? const Drawer(child: ErpSidebar(isDrawer: true)) : null,
+      appBar: AppBar(leading: const HamburgerButton(), backgroundColor: Colors.white, elevation: 0, title: const Text('Refunds', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)))),
       body: Row(
         children: [
-          if (!isMobile) const ErpSidebar(activeItem: 'Refunds'),
           Expanded(
             child: Column(
               children: [
-                const ErpTopbar(),
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(24.0),

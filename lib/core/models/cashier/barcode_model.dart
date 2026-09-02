@@ -27,7 +27,7 @@ class BarcodeModel {
       productId: json['productId'] ?? json['product_id'],
       productName: json['productName'] ?? json['product_name'],
       productCode: json['productCode'] ?? json['product_code'],
-      sellingPrice: json['sellingPrice'] != null ? (json['sellingPrice']).toDouble() : (json['selling_price'] != null ? (json['selling_price']).toDouble() : null),
+      sellingPrice: json['sellingPrice'] != null ? double.tryParse(json['sellingPrice'].toString()) : (json['selling_price'] != null ? double.tryParse(json['selling_price'].toString()) : null),
       barcode: json['barcode']?.toString() ?? '',
       labelQuantity: json['labelQuantity'] ?? json['label_quantity'] ?? 1,
       createdBy: json['createdBy'] ?? json['created_by'],

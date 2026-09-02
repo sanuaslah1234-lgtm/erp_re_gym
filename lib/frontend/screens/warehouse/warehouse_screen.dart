@@ -1,9 +1,8 @@
+import 'package:erp_software/frontend/widgets/common/hamburger_button.dart';
 import 'package:flutter/material.dart';
 import 'package:erp_software/core/models/warehouse_model.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/services/warehouse/warehouse_api_service.dart';
-import 'package:erp_software/frontend/widgets/common/erp_sidebar.dart';
-import 'package:erp_software/frontend/widgets/common/erp_topbar.dart';
 import 'package:erp_software/frontend/widgets/erp_toast.dart';
 import 'package:erp_software/theme/app_colors.dart';
 import 'package:provider/provider.dart';
@@ -193,52 +192,77 @@ class _WarehouseScreenState extends State<WarehouseScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 800;
+    final isMobile = MediaQuery.of(context).size.width < 700;
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      drawer: isMobile ? Drawer(child: ErpSidebar(activeItem: 'Warehouse Management', isDrawer: true)) : null,
+      appBar: AppBar(leading: const HamburgerButton(), backgroundColor: Colors.white, elevation: 0, title: const Text('Warehouse', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.textPrimary))),
       body: Row(
         children: [
-          if (!isMobile) const ErpSidebar(activeItem: 'Warehouse Management'),
           Expanded(
             child: Column(
               children: [
-                const ErpTopbar(),
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(24),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Warehouse Management', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-                                SizedBox(height: 4),
-                                Text('Manage warehouses and storage locations', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-                              ],
-                            ),
-                            ElevatedButton.icon(
-                              onPressed: _showAddDialog,
-                              icon: const Icon(Icons.add, size: 18),
-                              label: const Text('Add Warehouse'),
-                              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                            ),
-                          ],
-                        ),
+                        if (isMobile)
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Warehouse Management', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                                  SizedBox(height: 2),
+                                  Text('Manage warehouses and storage locations', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              ElevatedButton.icon(
+                                onPressed: _showAddDialog,
+                                icon: const Icon(Icons.add, size: 16),
+                                label: const Text('Add Warehouse'),
+                                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                              ),
+                            ],
+                          )
+                        else
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Warehouse Management', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                                  SizedBox(height: 4),
+                                  Text('Manage warehouses and storage locations', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                                ],
+                              ),
+                              ElevatedButton.icon(
+                                onPressed: _showAddDialog,
+                                icon: const Icon(Icons.add, size: 18),
+                                label: const Text('Add Warehouse'),
+                                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                              ),
+                            ],
+                          ),
                         const SizedBox(height: 20),
                         // Stats
-                        Row(children: [
-                          _statCard('Total', '${_warehouses.length}', Icons.warehouse_outlined, AppColors.primary, AppColors.primarySoft),
-                          const SizedBox(width: 16),
-                          _statCard('Active', '${_warehouses.where((w) => w.isActive).length}', Icons.check_circle_outline, AppColors.success, AppColors.successLight),
-                          const SizedBox(width: 16),
-                          _statCard('Inactive', '${_warehouses.where((w) => !w.isActive).length}', Icons.pause_circle_outline, AppColors.warning, AppColors.warningLight),
-                        ]),
+                        LayoutBuilder(
+                          builder: (context, constraints) {
+                            final isNarrow = constraints.maxWidth < 600;
+                            return Row(children: [
+                              Expanded(child: _statCard('Total', '${_warehouses.length}', Icons.warehouse_outlined, AppColors.primary, AppColors.primarySoft)),
+                              SizedBox(width: isNarrow ? 8 : 16),
+                              Expanded(child: _statCard('Active', '${_warehouses.where((w) => w.isActive).length}', Icons.check_circle_outline, AppColors.success, AppColors.successLight)),
+                              SizedBox(width: isNarrow ? 8 : 16),
+                              Expanded(child: _statCard('Inactive', '${_warehouses.where((w) => !w.isActive).length}', Icons.pause_circle_outline, AppColors.warning, AppColors.warningLight)),
+                            ]);
+                          },
+                        ),
                         const SizedBox(height: 20),
                         // Search
                         Container(
@@ -303,20 +327,20 @@ class _WarehouseScreenState extends State<WarehouseScreen> {
   }
 
   Widget _statCard(String title, String value, IconData icon, Color color, Color bg) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.border), boxShadow: AppShadows.soft),
-        child: Row(children: [
-          Container(width: 40, height: 40, decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(11)), child: Icon(icon, color: color, size: 20)),
-          const SizedBox(width: 10),
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 3),
-            Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.border), boxShadow: AppShadows.soft),
+      child: Row(children: [
+        Container(width: 34, height: 34, decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(9)), child: Icon(icon, color: color, size: 17)),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+            Text(title, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis),
+            const SizedBox(height: 2),
+            Text(value, style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
           ]),
-        ]),
-      ),
+        ),
+      ]),
     );
   }
 

@@ -34,7 +34,7 @@ class RefundItemModel {
       refundId: _parseInt(json['refundId'] ?? json['refund_id']),
       orderItemId: _parseInt(json['orderItemId'] ?? json['order_item_id']) ?? 0,
       productId: _parseInt(json['productId'] ?? json['product_id']) ?? 0,
-      productName: (json['productName'] ?? json['product_name'])?.toString(),
+      productName: json['productName'] ?? json['product_name'],
       quantity: _parseDouble(json['quantity']),
       refundAmount: _parseDouble(json['refundAmount'] ?? json['refund_amount']),
     );
@@ -93,12 +93,12 @@ class RefundModel {
 
   factory RefundModel.fromJson(Map<String, dynamic> json) {
     return RefundModel(
-      id: _parseInt(json['id']),
-      refundNumber: (json['refundNumber'] ?? json['refund_number'] ?? '').toString(),
-      orderId: _parseInt(json['orderId'] ?? json['order_id']) ?? 0,
-      orderNumber: (json['orderNumber'] ?? json['order_number'])?.toString(),
+      id: json['id'] as int?,
+      refundNumber: json['refundNumber'] ?? json['refund_number'] ?? '',
+      orderId: json['orderId'] ?? json['order_id'],
+      orderNumber: json['orderNumber'] ?? json['order_number'],
       refundAmount: _parseDouble(json['refundAmount'] ?? json['refund_amount']),
-      refundMethod: (json['refundMethod'] ?? json['refund_method'] ?? 'Cash').toString(),
+      refundMethod: json['refundMethod'] ?? json['refund_method'] ?? 'Cash',
       reason: json['reason']?.toString(),
       processedBy: _parseInt(json['processedBy'] ?? json['processed_by']) ?? 1,
       processorName: (json['processorName'] ?? json['processor_name'])?.toString(),

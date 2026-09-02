@@ -40,6 +40,50 @@ class PostgresService {
       await connection.execute('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";');
     } catch (_) {}
 
+    // Ensure POS tables exist early (before any ALTER TABLE references them)
+    await connection.execute('''
+      CREATE TABLE IF NOT EXISTS pos_orders (
+        id SERIAL PRIMARY KEY,
+        order_number VARCHAR(50) UNIQUE NOT NULL,
+        customer_id INT,
+        cashier_id INT,
+        subtotal NUMERIC(12,2) NOT NULL DEFAULT 0,
+        discount_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
+        tax_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
+        grand_total NUMERIC(12,2) NOT NULL DEFAULT 0,
+        payment_status VARCHAR(30) NOT NULL DEFAULT 'paid',
+        order_status VARCHAR(30) NOT NULL DEFAULT 'paid',
+        amount_received NUMERIC(12,2) NOT NULL DEFAULT 0,
+        change_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    ''');
+    await connection.execute('''
+      CREATE TABLE IF NOT EXISTS pos_order_items (
+        id SERIAL PRIMARY KEY,
+        order_id INT NOT NULL REFERENCES pos_orders(id) ON DELETE CASCADE,
+        product_id INT NOT NULL,
+        product_name VARCHAR(255) NOT NULL,
+        quantity NUMERIC(12,3) NOT NULL DEFAULT 1,
+        unit_price NUMERIC(12,2) NOT NULL DEFAULT 0,
+        discount_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
+        tax_amount NUMERIC(12,2) NOT NULL DEFAULT 0,
+        total_amount NUMERIC(12,2) NOT NULL DEFAULT 0
+      );
+    ''');
+    await connection.execute('''
+      CREATE TABLE IF NOT EXISTS payments (
+        id SERIAL PRIMARY KEY,
+        order_id INT NOT NULL REFERENCES pos_orders(id) ON DELETE CASCADE,
+        payment_method VARCHAR(50) NOT NULL DEFAULT 'cash',
+        amount NUMERIC(12,2) NOT NULL DEFAULT 0,
+        reference_number VARCHAR(100),
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    ''');
+    stdout.writeln('POS tables (pos_orders, pos_order_items, payments) ensured');
+
     // Explicit fixes for existing tables
     final tableDefaults = [
       // Categories
@@ -125,6 +169,11 @@ class PostgresService {
       "ALTER TABLE return_items ADD CONSTRAINT return_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL ON UPDATE CASCADE;",
       "ALTER TABLE stock_transfer_items DROP CONSTRAINT IF EXISTS stock_transfer_items_product_id_fkey;",
       "ALTER TABLE stock_transfer_items ADD CONSTRAINT stock_transfer_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL ON UPDATE CASCADE;",
+
+      // POS payments & refunds (ensure they exist even if main CREATE TABLE fails)
+      "CREATE TABLE IF NOT EXISTS pos_orders (id SERIAL PRIMARY KEY, order_number VARCHAR(50) UNIQUE NOT NULL, customer_id INT, cashier_id INT, subtotal NUMERIC(12,2) NOT NULL DEFAULT 0, discount_amount NUMERIC(12,2) NOT NULL DEFAULT 0, tax_amount NUMERIC(12,2) NOT NULL DEFAULT 0, grand_total NUMERIC(12,2) NOT NULL DEFAULT 0, payment_status VARCHAR(30) NOT NULL DEFAULT 'paid', order_status VARCHAR(30) NOT NULL DEFAULT 'paid', amount_received NUMERIC(12,2) NOT NULL DEFAULT 0, change_amount NUMERIC(12,2) NOT NULL DEFAULT 0, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);",
+      "CREATE TABLE IF NOT EXISTS pos_order_items (id SERIAL PRIMARY KEY, order_id INT NOT NULL, product_id INT, product_name VARCHAR(255) NOT NULL, quantity NUMERIC(12,3) NOT NULL DEFAULT 1, unit_price NUMERIC(12,2) NOT NULL DEFAULT 0, discount_amount NUMERIC(12,2) NOT NULL DEFAULT 0, tax_amount NUMERIC(12,2) NOT NULL DEFAULT 0, total_amount NUMERIC(12,2) NOT NULL DEFAULT 0);",
+      "CREATE TABLE IF NOT EXISTS payments (id SERIAL PRIMARY KEY, order_id INT NOT NULL, payment_method VARCHAR(50) NOT NULL DEFAULT 'cash', amount NUMERIC(12,2) NOT NULL DEFAULT 0, reference_number VARCHAR(100), created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP);",
     ];
 
     for (final cmd in tableDefaults) {
@@ -339,18 +388,27 @@ class PostgresService {
       try { await connection.execute(cmd); } catch (_) {}
     }
 
-    await connection.execute('''
-      CREATE TABLE IF NOT EXISTS purchase_items (
-        id SERIAL PRIMARY KEY,
-        purchase_id INT NOT NULL REFERENCES purchases(id) ON DELETE CASCADE,
-        product_id INT NOT NULL REFERENCES products(id),
-        quantity NUMERIC(12,3) NOT NULL,
-        purchase_price NUMERIC(12,2) NOT NULL,
-        tax_amount NUMERIC(12,2) DEFAULT 0,
-        discount_amount NUMERIC(12,2) DEFAULT 0,
-        total_amount NUMERIC(12,2) NOT NULL
-      );
-    ''');
+    // Create purchase_items without FK constraints first (may fail if table doesn't exist yet)
+    try {
+      await connection.execute('''
+        CREATE TABLE IF NOT EXISTS purchase_items (
+          id SERIAL PRIMARY KEY,
+          purchase_id INT NOT NULL,
+          product_id INT,
+          quantity NUMERIC(12,3) NOT NULL,
+          purchase_price NUMERIC(12,2) NOT NULL,
+          tax_amount NUMERIC(12,2) DEFAULT 0,
+          discount_amount NUMERIC(12,2) DEFAULT 0,
+          total_amount NUMERIC(12,2) NOT NULL
+        );
+      ''');
+      // Add FK constraints separately
+      await connection.execute("ALTER TABLE purchase_items ADD CONSTRAINT purchase_items_purchase_id_fkey FOREIGN KEY (purchase_id) REFERENCES purchases(id) ON DELETE CASCADE");
+    } catch (_) {}
+    // Add product FK constraint
+    try {
+      await connection.execute("ALTER TABLE purchase_items ADD CONSTRAINT purchase_items_product_id_fkey FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL");
+    } catch (_) {}
 
     // 6. Stock Movements Audit Trail
     await connection.execute('''
@@ -488,7 +546,7 @@ class PostgresService {
 
     // 5. Seed admin user if users table is empty
     final userCheck = await connection.execute('SELECT COUNT(*) FROM users');
-    final count = (userCheck.first[0] as num).toInt();
+    final count = int.tryParse(userCheck.first[0]?.toString() ?? '0') ?? 0;
     if (count == 0) {
       final hashedPassword = BCrypt.hashpw('admin123', BCrypt.gensalt());
       await connection.runTx((session) async {
@@ -522,7 +580,7 @@ class PostgresService {
 
     // 6. Seed cashier settings if empty
     final settingsCheck = await connection.execute('SELECT COUNT(*) FROM cashier_settings');
-    final settingsCount = (settingsCheck.first[0] as num).toInt();
+    final settingsCount = int.tryParse(settingsCheck.first[0]?.toString() ?? '0') ?? 0;
     if (settingsCount == 0) {
       await connection.execute('''
         INSERT INTO cashier_settings (store_name, store_address, phone, email, receipt_footer)

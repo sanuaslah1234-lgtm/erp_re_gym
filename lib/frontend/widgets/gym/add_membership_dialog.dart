@@ -137,7 +137,7 @@ class _AddMembershipDialogState extends State<AddMembershipDialog> {
       );
 
       if (!mounted) return;
-      ErpToast.showSuccess(context, 'Membership activated and invoice generated!', title: 'Membership Created');
+      ErpToast.showSuccess(context, 'Membership activated!', title: 'Success');
       widget.onSaved();
       Navigator.of(context).pop();
     } catch (e) {
@@ -150,10 +150,13 @@ class _AddMembershipDialogState extends State<AddMembershipDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final dialogWidth = (screenWidth - 40).clamp(320.0, 500.0);
+
     final memberItems = _members.map((m) {
       return DropdownMenuItem<int>(
         value: m.id,
-        child: Text('${m.name} (${m.memberCode} - ${m.phone})'),
+        child: Text('${m.name} (${m.memberCode})', maxLines: 1, overflow: TextOverflow.ellipsis),
       );
     }).toList();
 
@@ -167,7 +170,7 @@ class _AddMembershipDialogState extends State<AddMembershipDialog> {
     final planItems = _plans.map((p) {
       return DropdownMenuItem<int>(
         value: p.id,
-        child: Text('${p.name} (${p.durationDays} Days - \$${p.totalAmount.toStringAsFixed(0)})'),
+        child: Text('${p.name} (${p.durationDays}D)', maxLines: 1, overflow: TextOverflow.ellipsis),
       );
     }).toList();
 
@@ -189,15 +192,16 @@ class _AddMembershipDialogState extends State<AddMembershipDialog> {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       backgroundColor: Colors.white,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: Container(
-        width: 680,
+        width: dialogWidth,
         constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             // Header
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+              padding: const EdgeInsets.all(16),
               decoration: const BoxDecoration(
                 color: Color(0xFFEFF6FF),
                 borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
@@ -210,160 +214,114 @@ class _AddMembershipDialogState extends State<AddMembershipDialog> {
                       color: AppColors.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.card_membership_rounded, color: AppColors.primary, size: 24),
+                    child: const Icon(Icons.card_membership_rounded, color: AppColors.primary, size: 22),
                   ),
-                  const SizedBox(width: 14),
+                  const SizedBox(width: 12),
                   const Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Activate New Membership', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                        Text('Assign plan, calculate duration and record initial payment', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                        Text('New Membership', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                        SizedBox(height: 2),
+                        Text('Assign plan & record payment', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
                       ],
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close, color: Color(0xFF94A3B8)),
+                    icon: const Icon(Icons.close, size: 20, color: Color(0xFF94A3B8)),
                     onPressed: () => Navigator.of(context).pop(),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
                   ),
                 ],
               ),
             ),
 
             // Form
-            Expanded(
+            Flexible(
               child: _isInitLoading
                   ? const Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator(color: AppColors.primary))
                   : SingleChildScrollView(
-                      padding: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(16),
                       child: Form(
                         key: _formKey,
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            // Member Selection
-                            DropdownButtonFormField<int>(
+                            // Member
+                            DropdownButtonFormField<int?>(
                               initialValue: safeMemberValue,
-                              decoration: _inputDecoration('Select Gym Member *', icon: Icons.person_outline),
+                              decoration: _inputDecoration('Member *', icon: Icons.person_outline),
                               items: memberItems,
+                              isExpanded: true,
                               onChanged: (v) => setState(() => _selectedMemberId = v),
-                              validator: (v) => v == null ? 'Please choose a member' : null,
+                              validator: (v) => v == null ? 'Select a member' : null,
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 12),
 
-                            // Plan Selection
-                            DropdownButtonFormField<int>(
+                            // Plan
+                            DropdownButtonFormField<int?>(
                               initialValue: safePlanValue,
-                              decoration: _inputDecoration('Select Membership Plan *', icon: Icons.fitness_center_outlined),
+                              decoration: _inputDecoration('Plan *', icon: Icons.fitness_center_outlined),
                               items: planItems,
+                              isExpanded: true,
                               onChanged: _onPlanChanged,
-                              validator: (v) => v == null ? 'Please choose a plan' : null,
+                              validator: (v) => v == null ? 'Select a plan' : null,
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 12),
 
-                            // Dates Row
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: InkWell(
-                                    onTap: () async {
-                                      final picked = await showDatePicker(
-                                        context: context,
-                                        initialDate: _startDate,
-                                        firstDate: DateTime.now().subtract(const Duration(days: 30)),
-                                        lastDate: DateTime.now().add(const Duration(days: 365)),
-                                      );
-                                      if (picked != null) {
-                                        setState(() {
-                                          _startDate = picked;
-                                          if (_selectedPlanId != null && _plans.isNotEmpty) {
-                                            final plan = _plans.firstWhere((p) => p.id == _selectedPlanId, orElse: () => _plans.first);
-                                            _endDate = _startDate.add(Duration(days: plan.durationDays));
-                                          }
-                                        });
-                                      }
-                                    },
-                                    child: InputDecorator(
-                                      decoration: _inputDecoration('Start Date', icon: Icons.event_available_outlined),
-                                      child: Text(_startDate.toIso8601String().split('T').first, style: const TextStyle(fontSize: 13)),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: InputDecorator(
-                                    decoration: _inputDecoration('Calculated End Date', icon: Icons.event_busy_outlined),
-                                    child: Text(_endDate.toIso8601String().split('T').first, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary)),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 14),
+                            // Dates - single column on mobile
+                            _buildDateField('Start Date', Icons.event_available_outlined, _startDate.toIso8601String().split('T').first, onTap: () async {
+                              final picked = await showDatePicker(
+                                context: context,
+                                initialDate: _startDate,
+                                firstDate: DateTime.now().subtract(const Duration(days: 30)),
+                                lastDate: DateTime.now().add(const Duration(days: 365)),
+                              );
+                              if (picked != null) {
+                                setState(() {
+                                  _startDate = picked;
+                                  if (_selectedPlanId != null && _plans.isNotEmpty) {
+                                    final plan = _plans.firstWhere((p) => p.id == _selectedPlanId, orElse: () => _plans.first);
+                                    _endDate = _startDate.add(Duration(days: plan.durationDays));
+                                  }
+                                });
+                              }
+                            }),
+                            const SizedBox(height: 12),
+                            _buildDateField('End Date', Icons.event_busy_outlined, _endDate.toIso8601String().split('T').first, valueColor: AppColors.primary),
+                            const SizedBox(height: 12),
 
-                            // Price Breakdown Row
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TextFormField(
-                                    controller: _amountController,
-                                    decoration: _inputDecoration('Base Price (\$)', icon: Icons.attach_money),
-                                    keyboardType: TextInputType.number,
-                                    onChanged: (_) => setState(() {}),
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: TextFormField(
-                                    controller: _discountController,
-                                    decoration: _inputDecoration('Discount (\$)', icon: Icons.discount_outlined),
-                                    keyboardType: TextInputType.number,
-                                    onChanged: (_) => setState(() {}),
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: TextFormField(
-                                    controller: _taxController,
-                                    decoration: _inputDecoration('Tax (\$)', icon: Icons.receipt_outlined),
-                                    keyboardType: TextInputType.number,
-                                    onChanged: (_) => setState(() {}),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 14),
+                            // Price fields - single column on mobile
+                            _buildTextField('Base Price', Icons.attach_money, _amountController),
+                            const SizedBox(height: 12),
+                            _buildTextField('Discount', Icons.discount_outlined, _discountController),
+                            const SizedBox(height: 12),
+                            _buildTextField('Tax', Icons.receipt_outlined, _taxController),
+                            const SizedBox(height: 12),
 
-                            // Payment Row
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TextFormField(
-                                    controller: _paidAmountController,
-                                    decoration: _inputDecoration('Amount Paid Now (\$)', icon: Icons.payments_outlined),
-                                    keyboardType: TextInputType.number,
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: DropdownButtonFormField<String>(
-                                    initialValue: _paymentMethod,
-                                    decoration: _inputDecoration('Payment Method', icon: Icons.account_balance_wallet_outlined),
-                                    items: const [
-                                      DropdownMenuItem(value: 'CASH', child: Text('Cash')),
-                                      DropdownMenuItem(value: 'CARD', child: Text('Credit / Debit Card')),
-                                      DropdownMenuItem(value: 'UPI', child: Text('UPI / QR')),
-                                      DropdownMenuItem(value: 'BANK_TRANSFER', child: Text('Bank Transfer')),
-                                    ],
-                                    onChanged: (v) => setState(() => _paymentMethod = v ?? 'CASH'),
-                                  ),
-                                ),
+                            // Amount Paid
+                            _buildTextField('Amount Paid', Icons.payments_outlined, _paidAmountController),
+                            const SizedBox(height: 12),
+
+                            // Payment Method
+                            DropdownButtonFormField<String>(
+                              initialValue: _paymentMethod,
+                              decoration: _inputDecoration('Payment Method', icon: Icons.account_balance_wallet_outlined),
+                              isExpanded: true,
+                              items: const [
+                                DropdownMenuItem(value: 'CASH', child: Text('Cash')),
+                                DropdownMenuItem(value: 'CARD', child: Text('Card')),
+                                DropdownMenuItem(value: 'UPI', child: Text('UPI / QR')),
+                                DropdownMenuItem(value: 'BANK_TRANSFER', child: Text('Bank Transfer')),
                               ],
+                              onChanged: (v) => setState(() => _paymentMethod = v ?? 'CASH'),
                             ),
                             const SizedBox(height: 16),
 
-                            // Summary Banner
+                            // Summary
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
                                 color: const Color(0xFFF0FDF4),
                                 borderRadius: BorderRadius.circular(10),
@@ -372,7 +330,7 @@ class _AddMembershipDialogState extends State<AddMembershipDialog> {
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  const Text('Total Membership Fee', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF166534))),
+                                  const Text('Total Fee', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF166534), fontSize: 13)),
                                   Text('\$${_finalAmount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF15803D))),
                                 ],
                               ),
@@ -385,35 +343,38 @@ class _AddMembershipDialogState extends State<AddMembershipDialog> {
 
             // Footer
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              padding: const EdgeInsets.all(16),
               decoration: const BoxDecoration(
                 color: Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
                 border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  OutlinedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
                     ),
-                    child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
                   ),
                   const SizedBox(width: 12),
-                  ElevatedButton.icon(
-                    onPressed: _isLoading ? null : _save,
-                    icon: _isLoading
-                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Icon(Icons.check, size: 18),
-                    label: const Text('Activate Membership'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _isLoading ? null : _save,
+                      icon: _isLoading
+                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Icon(Icons.check, size: 18),
+                      label: const Text('Activate'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
                     ),
                   ),
                 ],
@@ -425,14 +386,42 @@ class _AddMembershipDialogState extends State<AddMembershipDialog> {
     );
   }
 
+  Widget _buildDateField(String label, IconData icon, String value, {VoidCallback? onTap, Color? valueColor}) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: InputDecorator(
+        decoration: _inputDecoration(label, icon: icon),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Expanded(
+              child: Text(value, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: valueColor)),
+            ),
+            if (onTap != null) const Icon(Icons.edit_calendar, size: 14, color: Color(0xFF94A3B8)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(String label, IconData icon, TextEditingController controller) {
+    return TextFormField(
+      controller: controller,
+      decoration: _inputDecoration(label, icon: icon),
+      keyboardType: TextInputType.number,
+      onChanged: (_) => setState(() {}),
+    );
+  }
+
   InputDecoration _inputDecoration(String label, {IconData? icon}) {
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
-      prefixIcon: icon != null ? Icon(icon, size: 18, color: const Color(0xFF2563EB)) : null,
+      labelStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
+      prefixIcon: icon != null ? Icon(icon, size: 16, color: const Color(0xFF2563EB)) : null,
       filled: true,
       fillColor: const Color(0xFFFAFAFA),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
       enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
       focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5)),

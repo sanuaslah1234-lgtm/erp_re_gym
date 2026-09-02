@@ -47,14 +47,11 @@ class Product {
       name: (json['name'] ?? json['product_name'] ?? '').toString(),
       categoryId: json['categoryId'] ?? json['category_id'],
       categoryName: json['categoryName'] ?? json['category_name'],
-      brandId: json['brandId'] ?? json['brand_id'],
-      brand: json['brand']?.toString() ?? json['brand_name']?.toString(),
       purchasePrice: _parseDouble(json['purchasePrice'] ?? json['purchase_price']),
       sellingPrice: _parseDouble(json['sellingPrice'] ?? json['selling_price']),
       taxPercentage: _parseDouble(json['taxPercentage'] ?? json['tax_percentage']),
-      stockQuantity: _parseDouble(json['stockQuantity'] ?? json['stock_quantity'] ?? json['stock']),
-      unit: (json['unit'] ?? 'pcs').toString(),
-      imageUrl: json['imageUrl'] ?? json['image_url'],
+      stockQuantity: _parseDouble(json['stockQuantity'] ?? json['stock_quantity']),
+      unit: json['unit']?.toString() ?? 'pcs',
       isActive: json['isActive'] ?? json['is_active'] ?? true,
     );
   }

@@ -104,17 +104,4 @@ class InventoryModel {
   String get warehouse => warehouseName ?? 'Main Warehouse';
   int get minStock => minimumStock;
   int get maxStock => maximumStock;
-
-  static DateTime? _parseDateTime(dynamic value) {
-    if (value == null) return null;
-    if (value is DateTime) return value;
-    if (value is String) {
-      try {
-        return DateTime.parse(value);
-      } catch (_) {
-        return null;
-      }
-    }
-    return null;
-  }
 }

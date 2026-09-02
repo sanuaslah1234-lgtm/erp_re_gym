@@ -92,104 +92,167 @@ class _PurchaseManagementDialogState extends State<PurchaseManagementDialog> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<ProductManagementProvider>(context);
+    final isMobile = MediaQuery.of(context).size.width < 600;
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      insetPadding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 24, vertical: 20),
       child: Container(
-        width: 600,
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Create Purchase (Stock IN)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
-              ],
-            ),
-            const Divider(height: 20),
+        width: isMobile ? double.infinity : 600,
+        constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.85),
+        padding: EdgeInsets.all(isMobile ? 16 : 24),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Create Purchase (Stock IN)',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
+                ],
+              ),
+              const Divider(height: 16),
 
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _invoiceCtrl,
-                    decoration: const InputDecoration(labelText: 'Invoice Number *', border: OutlineInputBorder()),
-                  ),
+              if (isMobile) ...[
+                TextField(
+                  controller: _invoiceCtrl,
+                  decoration: const InputDecoration(labelText: 'Invoice Number *', border: OutlineInputBorder(), isDense: true),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: DropdownButtonFormField<dynamic>(
-                    initialValue: _selectedSupplierId,
-                    decoration: const InputDecoration(labelText: 'Supplier', border: OutlineInputBorder()),
-                    items: provider.suppliers.map((s) => DropdownMenuItem<dynamic>(value: s.id, child: Text(s.name))).toList(),
-                    onChanged: (v) => setState(() => _selectedSupplierId = v),
-                  ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<dynamic>(
+                  initialValue: _selectedSupplierId,
+                  isExpanded: true,
+                  decoration: const InputDecoration(labelText: 'Supplier', border: OutlineInputBorder(), isDense: true),
+                  items: provider.suppliers.map((s) => DropdownMenuItem<dynamic>(value: s.id, child: Text(s.name, overflow: TextOverflow.ellipsis))).toList(),
+                  onChanged: (v) => setState(() => _selectedSupplierId = v),
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            DropdownButtonFormField<ProductModel>(
-              initialValue: _selectedProduct,
-              decoration: const InputDecoration(labelText: 'Select Product *', border: OutlineInputBorder()),
-              items: provider.products.map((p) => DropdownMenuItem(value: p, child: Text('${p.name} (${p.productCode}) - Stock: ${p.stockQuantity}'))).toList(),
-              onChanged: (p) {
-                setState(() {
-                  _selectedProduct = p;
-                  if (p != null) {
-                    _priceCtrl.text = p.purchasePrice.toString();
-                  }
-                });
-              },
-            ),
-            const SizedBox(height: 16),
-
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _qtyCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Quantity (Stock IN) *', border: OutlineInputBorder()),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: _priceCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Purchase Unit Price (\$) *', border: OutlineInputBorder()),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: _discountCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Discount (\$) ', border: OutlineInputBorder()),
-                  ),
+              ] else ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _invoiceCtrl,
+                        decoration: const InputDecoration(labelText: 'Invoice Number *', border: OutlineInputBorder()),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: DropdownButtonFormField<dynamic>(
+                        initialValue: _selectedSupplierId,
+                        isExpanded: true,
+                        decoration: const InputDecoration(labelText: 'Supplier', border: OutlineInputBorder()),
+                        items: provider.suppliers.map((s) => DropdownMenuItem<dynamic>(value: s.id, child: Text(s.name, overflow: TextOverflow.ellipsis))).toList(),
+                        onChanged: (v) => setState(() => _selectedSupplierId = v),
+                      ),
+                    ),
+                  ],
                 ),
               ],
-            ),
-            const SizedBox(height: 24),
+              const SizedBox(height: 12),
 
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-                const SizedBox(width: 12),
-                ElevatedButton.icon(
-                  onPressed: provider.isLoading ? null : _submitPurchase,
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB), padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12)),
-                  icon: const Icon(Icons.download),
-                  label: const Text('Process Stock IN'),
+              DropdownButtonFormField<ProductModel>(
+                initialValue: _selectedProduct,
+                isExpanded: true,
+                decoration: const InputDecoration(labelText: 'Select Product *', border: OutlineInputBorder(), isDense: true),
+                items: provider.products.map((p) => DropdownMenuItem(
+                  value: p,
+                  child: Text('${p.name} (${p.productCode}) - Stock: ${p.stockQuantity.toInt()}', overflow: TextOverflow.ellipsis),
+                )).toList(),
+                onChanged: (p) {
+                  setState(() {
+                    _selectedProduct = p;
+                    if (p != null) {
+                      _priceCtrl.text = p.purchasePrice.toString();
+                    }
+                  });
+                },
+              ),
+              const SizedBox(height: 12),
+
+              if (isMobile) ...[
+                TextField(
+                  controller: _qtyCtrl,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(labelText: 'Quantity (Stock IN) *', border: OutlineInputBorder(), isDense: true),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _priceCtrl,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(labelText: 'Unit Price (\$) *', border: OutlineInputBorder(), isDense: true),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: _discountCtrl,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(labelText: 'Discount (\$) ', border: OutlineInputBorder(), isDense: true),
+                      ),
+                    ),
+                  ],
+                ),
+              ] else ...[
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _qtyCtrl,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(labelText: 'Quantity (Stock IN) *', border: OutlineInputBorder()),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: _priceCtrl,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(labelText: 'Purchase Unit Price (\$) *', border: OutlineInputBorder()),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: _discountCtrl,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(labelText: 'Discount (\$) ', border: OutlineInputBorder()),
+                      ),
+                    ),
+                  ],
                 ),
               ],
-            ),
-          ],
+              const SizedBox(height: 20),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+                  const SizedBox(width: 8),
+                  ElevatedButton.icon(
+                    onPressed: provider.isLoading ? null : _submitPurchase,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2563EB),
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 20, vertical: 12),
+                    ),
+                    icon: const Icon(Icons.download, size: 16),
+                    label: const Text('Process Stock IN', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

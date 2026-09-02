@@ -70,20 +70,29 @@ class _StockMovementDialogState extends State<StockMovementDialog> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<ProductManagementProvider>(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      insetPadding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 40, vertical: 24),
       child: Container(
-        width: 750,
-        height: 600,
-        padding: const EdgeInsets.all(24),
+        width: isMobile ? double.infinity : 750,
+        height: isMobile ? MediaQuery.of(context).size.height * 0.85 : 600,
+        padding: EdgeInsets.all(isMobile ? 16 : 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Stock Movement Audit & Damage Record', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                Expanded(
+                  child: Text(
+                    isMobile ? 'Stock Movement & Damage' : 'Stock Movement Audit & Damage Record',
+                    style: TextStyle(fontSize: isMobile ? 16 : 18, fontWeight: FontWeight.bold),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
                 IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
               ],
             ),
@@ -99,60 +108,114 @@ class _StockMovementDialogState extends State<StockMovementDialog> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Record Stock Damage / Manual Adjustment', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  const Text('Record Stock Damage / Manual Adjustment', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                   const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: DropdownButtonFormField<ProductModel>(
-                          initialValue: _selectedProduct,
-                          decoration: const InputDecoration(labelText: 'Product', border: OutlineInputBorder(), isDense: true),
-                          items: {for (var p in provider.products) p.id: p}.values.map((p) => DropdownMenuItem(value: p, child: Text('${p.name} (Stock: ${p.stockQuantity})'))).toList(),
-                          onChanged: (p) => setState(() => _selectedProduct = p),
+                  if (isMobile) ...[
+                    DropdownButtonFormField<ProductModel>(
+                      isExpanded: true,
+                      initialValue: _selectedProduct,
+                      decoration: const InputDecoration(labelText: 'Product', border: OutlineInputBorder(), isDense: true),
+                      items: {for (var p in provider.products) p.id: p}.values.map((p) => DropdownMenuItem(value: p, child: Text('${p.name} (Stock: ${p.stockQuantity})', overflow: TextOverflow.ellipsis))).toList(),
+                      onChanged: (p) => setState(() => _selectedProduct = p),
+                    ),
+                    const SizedBox(height: 10),
+                    DropdownButtonFormField<String>(
+                      isExpanded: true,
+                      initialValue: _movementType,
+                      decoration: const InputDecoration(labelText: 'Movement Type', border: OutlineInputBorder(), isDense: true),
+                      items: const [
+                        DropdownMenuItem(value: 'DAMAGE_OUT', child: Text('DAMAGE (Stock OUT)')),
+                        DropdownMenuItem(value: 'ADJUSTMENT_IN', child: Text('ADJUSTMENT (Stock IN)')),
+                        DropdownMenuItem(value: 'ADJUSTMENT_OUT', child: Text('ADJUSTMENT (Stock OUT)')),
+                      ],
+                      onChanged: (v) => setState(() => _movementType = v!),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        SizedBox(
+                          width: 90,
+                          child: TextField(
+                            controller: _qtyCtrl,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(labelText: 'Qty', border: OutlineInputBorder(), isDense: true),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: DropdownButtonFormField<String>(
-                          initialValue: _movementType,
-                          decoration: const InputDecoration(labelText: 'Movement Type', border: OutlineInputBorder(), isDense: true),
-                          items: const [
-                            DropdownMenuItem(value: 'DAMAGE_OUT', child: Text('DAMAGE (Stock OUT)')),
-                            DropdownMenuItem(value: 'ADJUSTMENT_IN', child: Text('ADJUSTMENT (Stock IN)')),
-                            DropdownMenuItem(value: 'ADJUSTMENT_OUT', child: Text('ADJUSTMENT (Stock OUT)')),
-                          ],
-                          onChanged: (v) => setState(() => _movementType = v!),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: _reasonCtrl,
+                            decoration: const InputDecoration(labelText: 'Reason / Notes *', border: OutlineInputBorder(), isDense: true),
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      SizedBox(
-                        width: 100,
-                        child: TextField(
-                          controller: _qtyCtrl,
-                          keyboardType: TextInputType.number,
-                          decoration: const InputDecoration(labelText: 'Qty', border: OutlineInputBorder(), isDense: true),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _reasonCtrl,
-                          decoration: const InputDecoration(labelText: 'Reason / Notes *', border: OutlineInputBorder(), isDense: true),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      ElevatedButton.icon(
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
                         onPressed: _recordAdjustment,
-                        icon: const Icon(Icons.check_circle),
+                        icon: const Icon(Icons.check_circle, size: 16),
                         label: const Text('Record'),
-                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444), padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14)),
+                        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 12)),
                       ),
-                    ],
-                  ),
+                    ),
+                  ] else ...[
+                    Row(
+                      children: [
+                        Expanded(
+                          child: DropdownButtonFormField<ProductModel>(
+                            isExpanded: true,
+                            initialValue: _selectedProduct,
+                            decoration: const InputDecoration(labelText: 'Product', border: OutlineInputBorder(), isDense: true),
+                            items: {for (var p in provider.products) p.id: p}.values.map((p) => DropdownMenuItem(value: p, child: Text('${p.name} (Stock: ${p.stockQuantity})', overflow: TextOverflow.ellipsis))).toList(),
+                            onChanged: (p) => setState(() => _selectedProduct = p),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: DropdownButtonFormField<String>(
+                            isExpanded: true,
+                            initialValue: _movementType,
+                            decoration: const InputDecoration(labelText: 'Movement Type', border: OutlineInputBorder(), isDense: true),
+                            items: const [
+                              DropdownMenuItem(value: 'DAMAGE_OUT', child: Text('DAMAGE (Stock OUT)')),
+                              DropdownMenuItem(value: 'ADJUSTMENT_IN', child: Text('ADJUSTMENT (Stock IN)')),
+                              DropdownMenuItem(value: 'ADJUSTMENT_OUT', child: Text('ADJUSTMENT (Stock OUT)')),
+                            ],
+                            onChanged: (v) => setState(() => _movementType = v!),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        SizedBox(
+                          width: 100,
+                          child: TextField(
+                            controller: _qtyCtrl,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(labelText: 'Qty', border: OutlineInputBorder(), isDense: true),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _reasonCtrl,
+                            decoration: const InputDecoration(labelText: 'Reason / Notes *', border: OutlineInputBorder(), isDense: true),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        ElevatedButton.icon(
+                          onPressed: _recordAdjustment,
+                          icon: const Icon(Icons.check_circle),
+                          label: const Text('Record'),
+                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEF4444), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14)),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),

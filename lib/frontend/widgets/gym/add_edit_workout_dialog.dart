@@ -149,7 +149,7 @@ class _AddEditWorkoutDialogState extends State<AddEditWorkoutDialog> {
                   const SizedBox(height: 10),
                   TextField(
                     controller: weightCtrl,
-                    decoration: const InputDecoration(labelText: 'Target Weight (e.g. 25 kg)'),
+                    decoration: const InputDecoration(labelText: 'Weight'),
                   ),
                 ],
               ),
@@ -225,6 +225,8 @@ class _AddEditWorkoutDialogState extends State<AddEditWorkoutDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final dialogWidth = (screenWidth - 40).clamp(320.0, 500.0);
     final isEdit = widget.workoutPlan != null;
 
     // Build member dropdown items with safe fallback
@@ -269,7 +271,7 @@ class _AddEditWorkoutDialogState extends State<AddEditWorkoutDialog> {
       backgroundColor: Colors.white,
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: Container(
-        width: 720,
+        width: dialogWidth,
         constraints: BoxConstraints(maxHeight: MediaQuery.of(context).size.height * 0.9),
         child: Column(
           children: [
@@ -310,59 +312,45 @@ class _AddEditWorkoutDialogState extends State<AddEditWorkoutDialog> {
               child: _isInitLoading
                   ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
                   : SingleChildScrollView(
-                      padding: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(18),
                       child: Form(
                         key: _formKey,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: DropdownButtonFormField<int>(
-                                    initialValue: safeMemberValue,
-                                    decoration: _inputDecoration('Select Member *', icon: Icons.person_outline),
-                                    items: memberItems,
-                                    onChanged: (v) => setState(() => _selectedMemberId = v),
-                                    validator: (v) => v == null ? 'Select member' : null,
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: DropdownButtonFormField<int?>(
-                                    initialValue: safeTrainerValue,
-                                    decoration: _inputDecoration('Assigned Trainer', icon: Icons.sports_gymnastics_rounded),
-                                    items: trainerItems,
-                                    onChanged: (v) => setState(() => _selectedTrainerId = v),
-                                  ),
-                                ),
-                              ],
+                            DropdownButtonFormField<int>(
+                              initialValue: safeMemberValue,
+                              decoration: _inputDecoration('Select Member *', icon: Icons.person_outline),
+                              isExpanded: true,
+                              items: memberItems,
+                              onChanged: (v) => setState(() => _selectedMemberId = v),
+                              validator: (v) => v == null ? 'Select member' : null,
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 12),
 
-                            Row(
-                              children: [
-                                Expanded(
-                                  flex: 2,
-                                  child: TextFormField(
-                                    controller: _nameController,
-                                    decoration: _inputDecoration('Workout Plan Name *', icon: Icons.badge_outlined),
-                                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Plan name required' : null,
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  flex: 2,
-                                  child: TextFormField(
-                                    controller: _goalController,
-                                    decoration: _inputDecoration('Target Goal (e.g. Weight Loss)', icon: Icons.flag_outlined),
-                                  ),
-                                ),
-                              ],
+                            DropdownButtonFormField<int?>(
+                              initialValue: safeTrainerValue,
+                              decoration: _inputDecoration('Assigned Trainer', icon: Icons.sports_gymnastics_rounded),
+                              isExpanded: true,
+                              items: trainerItems,
+                              onChanged: (v) => setState(() => _selectedTrainerId = v),
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 12),
 
-                            // Dates Row
+                            TextFormField(
+                              controller: _nameController,
+                              decoration: _inputDecoration('Plan Name *', icon: Icons.badge_outlined),
+                              validator: (v) => (v == null || v.trim().isEmpty) ? 'Plan name required' : null,
+                            ),
+                            const SizedBox(height: 12),
+
+                            TextFormField(
+                              controller: _goalController,
+                              decoration: _inputDecoration('Goal (e.g. Muscle Building, Fat Loss)', icon: Icons.flag_outlined),
+                            ),
+                            const SizedBox(height: 12),
+
+                            // Dates
                             Row(
                               children: [
                                 Expanded(
@@ -378,11 +366,11 @@ class _AddEditWorkoutDialogState extends State<AddEditWorkoutDialog> {
                                     },
                                     child: InputDecorator(
                                       decoration: _inputDecoration('Start Date', icon: Icons.calendar_today_outlined),
-                                      child: Text(_startDate.toIso8601String().split('T').first, style: const TextStyle(fontSize: 13)),
+                                      child: Text(_startDate.toIso8601String().split('T').first, style: const TextStyle(fontSize: 12)),
                                     ),
                                   ),
                                 ),
-                                const SizedBox(width: 14),
+                                const SizedBox(width: 10),
                                 Expanded(
                                   child: InkWell(
                                     onTap: () async {
@@ -398,21 +386,21 @@ class _AddEditWorkoutDialogState extends State<AddEditWorkoutDialog> {
                                       decoration: _inputDecoration('End Date (Optional)', icon: Icons.event_available_outlined),
                                       child: Text(
                                         _endDate != null ? _endDate!.toIso8601String().split('T').first : 'No End Date',
-                                        style: TextStyle(fontSize: 13, color: _endDate != null ? const Color(0xFF0F172A) : const Color(0xFF94A3B8)),
+                                        style: TextStyle(fontSize: 12, color: _endDate != null ? const Color(0xFF0F172A) : const Color(0xFF94A3B8)),
                                       ),
                                     ),
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 12),
 
                             TextFormField(
                               controller: _notesController,
                               maxLines: 2,
-                              decoration: _inputDecoration('Special Instructions / Notes (Optional)', icon: Icons.notes_outlined),
+                              decoration: _inputDecoration('Notes (Optional)', icon: Icons.notes_outlined),
                             ),
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 18),
 
                             // Exercises List Section
                             Row(
@@ -423,7 +411,10 @@ class _AddEditWorkoutDialogState extends State<AddEditWorkoutDialog> {
                                   onPressed: _addExerciseDialog,
                                   icon: const Icon(Icons.add, size: 16),
                                   label: const Text('Add Exercise'),
-                                  style: OutlinedButton.styleFrom(foregroundColor: AppColors.primary),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppColors.primary,
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  ),
                                 ),
                               ],
                             ),
@@ -432,9 +423,9 @@ class _AddEditWorkoutDialogState extends State<AddEditWorkoutDialog> {
                             if (_exercises.isEmpty)
                               Container(
                                 width: double.infinity,
-                                padding: const EdgeInsets.all(20),
+                                padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(color: const Color(0xFFF8FAFC), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFE2E8F0))),
-                                child: const Center(child: Text('No exercises added yet. Click "+ Add Exercise" above.', style: TextStyle(color: Color(0xFF64748B), fontSize: 13))),
+                                child: const Center(child: Text('No exercises added yet. Click "+ Add Exercise" above.', style: TextStyle(color: Color(0xFF64748B), fontSize: 12))),
                               )
                             else
                               ListView.separated(
@@ -445,7 +436,7 @@ class _AddEditWorkoutDialogState extends State<AddEditWorkoutDialog> {
                                 itemBuilder: (context, index) {
                                   final ex = _exercises[index];
                                   return Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                    padding: const EdgeInsets.all(10),
                                     decoration: BoxDecoration(color: const Color(0xFFFAFAFA), borderRadius: BorderRadius.circular(10), border: Border.all(color: const Color(0xFFE2E8F0))),
                                     child: Row(
                                       children: [
@@ -454,13 +445,27 @@ class _AddEditWorkoutDialogState extends State<AddEditWorkoutDialog> {
                                           decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(6)),
                                           child: Text(ex.muscleGroup ?? 'Chest', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary)),
                                         ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Text(ex.exerciseName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
-                                        ),
-                                        Text('${ex.sets} sets × ${ex.reps}  ${ex.weight != null && ex.weight!.isNotEmpty ? "(${ex.weight})" : ""}', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
                                         const SizedBox(width: 10),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                ex.exerciseName,
+                                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                '${ex.sets} sets × ${ex.reps}${ex.weight != null && ex.weight!.isNotEmpty ? " (${ex.weight})" : ""}',
+                                                style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
                                         IconButton(
+                                          visualDensity: VisualDensity.compact,
                                           icon: const Icon(Icons.delete_outline, size: 18, color: Color(0xFFEF4444)),
                                           onPressed: () => setState(() => _exercises.removeAt(index)),
                                         ),
@@ -477,35 +482,38 @@ class _AddEditWorkoutDialogState extends State<AddEditWorkoutDialog> {
 
             // Footer
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              padding: const EdgeInsets.all(16),
               decoration: const BoxDecoration(
                 color: Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
                 border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  OutlinedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
                     ),
-                    child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
                   ),
-                  const SizedBox(width: 12),
-                  ElevatedButton.icon(
-                    onPressed: _isLoading ? null : _save,
-                    icon: _isLoading
-                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Icon(Icons.check, size: 18),
-                    label: Text(isEdit ? 'Save Workout' : 'Create Workout'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _isLoading ? null : _save,
+                      icon: _isLoading
+                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Icon(Icons.check, size: 18),
+                      label: Text(isEdit ? 'Save' : 'Create', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
                     ),
                   ),
                 ],

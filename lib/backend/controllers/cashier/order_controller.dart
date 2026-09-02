@@ -19,7 +19,17 @@ class OrderController {
 
       final body = jsonDecode(bodyStr) as Map<String, dynamic>;
       final user = request.context['user'] as JwtPayload?;
-      final cashierId = user?.userId ?? body['cashierId'] ?? 1;
+      final cashierId = int.tryParse((user?.userId ?? body['cashierId'] ?? 1).toString()) ?? 1;
+      print('--- CREATE ORDER ---');
+      print('cashierId: $cashierId (type: ${cashierId.runtimeType})');
+      print('subtotal: ${body['subtotal']} (type: ${body['subtotal']?.runtimeType})');
+      print('grandTotal: ${body['grandTotal']} (type: ${body['grandTotal']?.runtimeType})');
+      print('items count: ${(body['items'] as List?)?.length ?? 0}');
+      if (body['items'] != null && (body['items'] as List).isNotEmpty) {
+        final firstItem = (body['items'] as List).first;
+        print('first item: $firstItem');
+        print('first item types: quantity=${firstItem['quantity']?.runtimeType}, unit_price=${firstItem['unit_price']?.runtimeType}');
+      }
 
       final itemsData = (body['items'] as List? ?? []).cast<Map<String, dynamic>>();
       final paymentsData = (body['payments'] as List? ?? []).cast<Map<String, dynamic>>();
@@ -56,7 +66,9 @@ class OrderController {
       );
     } on ApiException catch (e) {
       return ResponseUtils.error(message: e.message, statusCode: e.statusCode);
-    } catch (e) {
+    } catch (e, st) {
+      print('ORDER CREATE ERROR: $e');
+      print('STACK TRACE: $st');
       return ResponseUtils.error(message: 'Failed to create order: $e', statusCode: 500, error: e);
     }
   }
@@ -93,11 +105,11 @@ class OrderController {
 
   Future<Response> getOrderById(Request request, String idStr) async {
     try {
-      final id = int.tryParse(idStr);
-      if (id == null) {
-        return ResponseUtils.error(message: 'Invalid order ID', statusCode: 400);
+      if (idStr.isEmpty) {
+        return ResponseUtils.error(message: 'Order ID is required', statusCode: 400);
       }
 
+      final id = int.tryParse(idStr) ?? idStr;
       final order = await orderService.getOrderById(id);
       return ResponseUtils.success(
         message: 'Order details fetched',
@@ -112,11 +124,11 @@ class OrderController {
 
   Future<Response> cancelOrder(Request request, String idStr) async {
     try {
-      final id = int.tryParse(idStr);
-      if (id == null) {
-        return ResponseUtils.error(message: 'Invalid order ID', statusCode: 400);
+      if (idStr.isEmpty) {
+        return ResponseUtils.error(message: 'Order ID is required', statusCode: 400);
       }
 
+      final id = int.tryParse(idStr) ?? idStr;
       await orderService.cancelOrder(id);
       return ResponseUtils.success(message: 'Order cancelled successfully and stock restored.');
     } on ApiException catch (e) {
