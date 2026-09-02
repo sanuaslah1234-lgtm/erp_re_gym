@@ -15,14 +15,27 @@ class Payment {
     this.createdAt,
   });
 
+  static double _parseDouble(dynamic v) {
+    if (v is num) return v.toDouble();
+    return double.tryParse(v?.toString() ?? '0') ?? 0.0;
+  }
+
+  static int? _parseInt(dynamic v) {
+    if (v == null) return null;
+    if (v is num) return v.toInt();
+    return int.tryParse(v.toString());
+  }
+
   factory Payment.fromJson(Map<String, dynamic> json) {
     return Payment(
-      id: json['id'] is int ? json['id'] as int : int.tryParse(json['id']?.toString() ?? ''),
-      orderId: json['orderId'] is int ? json['orderId'] as int : (json['order_id'] is int ? json['order_id'] as int : int.tryParse((json['orderId'] ?? json['order_id'] ?? '').toString())),
-      paymentMethod: json['paymentMethod'] ?? json['payment_method'] ?? 'Cash',
-      amount: double.tryParse((json['amount'] ?? '0').toString()) ?? 0.0,
-      referenceNumber: json['referenceNumber'] ?? json['reference_number'],
-      createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'].toString()) : null,
+      id: _parseInt(json['id']),
+      orderId: _parseInt(json['orderId'] ?? json['order_id']),
+      paymentMethod: (json['paymentMethod'] ?? json['payment_method'] ?? 'Cash').toString(),
+      amount: _parseDouble(json['amount']),
+      referenceNumber: json['referenceNumber']?.toString() ?? json['reference_number']?.toString(),
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'].toString())
+          : (json['created_at'] != null ? DateTime.tryParse(json['created_at'].toString()) : null),
     );
   }
 

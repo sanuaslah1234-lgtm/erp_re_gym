@@ -192,106 +192,107 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
               children: [
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(24.0),
+                    padding: const EdgeInsets.all(14.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Page Header
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'Products',
+                              'Products Management',
                               style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                             ),
-                            Wrap(
-                              spacing: 8,
+                            const SizedBox(height: 12),
+                            Row(
                               children: [
-                                OutlinedButton.icon(
-                                  onPressed: () {
-                                    ExportPrintHelper.showPrintPage(
-                                      context: context,
-                                      title: 'Products List',
-                                      headers: ['Code', 'Product', 'SKU', 'Category', 'Brand', 'Unit', 'Qty', 'Selling Price', 'Purchase Price', 'Status'],
-                                      rows: products
-                                          .map((p) => [
-                                                p.barcode ?? '#${p.id}',
-                                                p.name,
-                                                p.productCode,
-                                                p.categoryName ?? 'N/A',
-                                                p.brand ?? 'N/A',
-                                                p.unit,
-                                                p.stockQuantity.toInt().toString(),
-                                                '\$${p.sellingPrice.toStringAsFixed(2)}',
-                                                '\$${p.purchasePrice.toStringAsFixed(2)}',
-                                                p.stockQuantity == 0 ? 'No Stock' : (p.isLowStock ? 'Low Stock' : 'In Stock')
-                                              ])
-                                          .toList(),
-                                    );
-                                  },
-                                  style: OutlinedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    foregroundColor: const Color(0xFF334155),
-                                    side: const BorderSide(color: Color(0xFFCBD5E1)),
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                                  ),
-                                  icon: const Icon(Icons.print_outlined, size: 16),
-                                  label: const Text('Print'),
-                                ),
-                                OutlinedButton.icon(
-                                  onPressed: () {
-                                    ExportPrintHelper.exportCsv(
-                                      context: context,
-                                      filename: 'products_export',
-                                      headers: ['Code', 'Product', 'SKU', 'Category', 'Brand', 'Unit', 'Qty', 'Selling Price', 'Purchase Price', 'Status'],
-                                      rows: products
-                                          .map((p) => [
-                                                p.barcode ?? '#${p.id}',
-                                                p.name,
-                                                p.productCode,
-                                                p.categoryName ?? 'N/A',
-                                                p.brand ?? 'N/A',
-                                                p.unit,
-                                                p.stockQuantity,
-                                                p.sellingPrice,
-                                                p.purchasePrice,
-                                                p.stockQuantity == 0 ? 'No Stock' : (p.isLowStock ? 'Low Stock' : 'In Stock')
-                                              ])
-                                          .toList(),
-                                    );
-                                  },
-                                  style: OutlinedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    foregroundColor: const Color(0xFF334155),
-                                    side: const BorderSide(color: Color(0xFFCBD5E1)),
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                                  ),
-                                  icon: const Icon(Icons.download_outlined, size: 16),
-                                  label: const Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text('Export'),
-                                      SizedBox(width: 4),
-                                      Icon(Icons.keyboard_arrow_down, size: 16),
-                                    ],
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    onPressed: () {
+                                      ExportPrintHelper.showPrintPage(
+                                        context: context,
+                                        title: 'Products List',
+                                        headers: ['Code', 'Product', 'SKU', 'Category', 'Brand', 'Unit', 'Qty', 'Selling Price', 'Purchase Price', 'Status'],
+                                        rows: products
+                                            .map((p) => [
+                                                  p.barcode ?? '#${p.id}',
+                                                  p.name,
+                                                  p.productCode,
+                                                  p.categoryName ?? 'N/A',
+                                                  p.brand ?? 'N/A',
+                                                  p.unit,
+                                                  p.stockQuantity.toInt().toString(),
+                                                  '\$${p.sellingPrice.toStringAsFixed(2)}',
+                                                  '\$${p.purchasePrice.toStringAsFixed(2)}',
+                                                  p.stockQuantity == 0 ? 'No Stock' : (p.isLowStock ? 'Low Stock' : 'In Stock')
+                                                ])
+                                            .toList(),
+                                      );
+                                    },
+                                    style: OutlinedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: const Color(0xFF334155),
+                                      side: const BorderSide(color: Color(0xFFCBD5E1)),
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                                    ),
+                                    icon: const Icon(Icons.print_outlined, size: 16),
+                                    label: const Text('Print'),
                                   ),
                                 ),
-                                ElevatedButton.icon(
-                                  onPressed: () => _openAddProductScreen(),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF4F46E5),
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    onPressed: () {
+                                      ExportPrintHelper.exportCsv(
+                                        context: context,
+                                        filename: 'products_export',
+                                        headers: ['Code', 'Product', 'SKU', 'Category', 'Brand', 'Unit', 'Qty', 'Selling Price', 'Purchase Price', 'Status'],
+                                        rows: products
+                                            .map((p) => [
+                                                  p.barcode ?? '#${p.id}',
+                                                  p.name,
+                                                  p.productCode,
+                                                  p.categoryName ?? 'N/A',
+                                                  p.brand ?? 'N/A',
+                                                  p.unit,
+                                                  p.stockQuantity,
+                                                  p.sellingPrice,
+                                                  p.purchasePrice,
+                                                  p.stockQuantity == 0 ? 'No Stock' : (p.isLowStock ? 'Low Stock' : 'In Stock')
+                                                ])
+                                            .toList(),
+                                      );
+                                    },
+                                    style: OutlinedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: const Color(0xFF334155),
+                                      side: const BorderSide(color: Color(0xFFCBD5E1)),
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                                    ),
+                                    icon: const Icon(Icons.download_outlined, size: 16),
+                                    label: const Text('Export'),
                                   ),
-                                  icon: const Icon(Icons.add, size: 18),
-                                  label: const Text('Add New'),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: () => _openAddProductScreen(),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF4F46E5),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    ),
+                                    icon: const Icon(Icons.add, size: 18),
+                                    label: const Text('Add'),
+                                  ),
                                 ),
                               ],
                             ),
                           ],
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 16),
 
                         // Metric Stat Cards Row
                         LayoutBuilder(
@@ -314,7 +315,7 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
 
                         // Search and Filter Bar Card
                         Container(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(12),
@@ -323,63 +324,122 @@ class _ProductManagementScreenState extends State<ProductManagementScreen> {
                               BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2))
                             ],
                           ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Container(
-                                  constraints: const BoxConstraints(maxWidth: 260),
-                                  child: TextField(
-                                    decoration: const InputDecoration(
-                                      hintText: 'Search...',
-                                      prefixIcon: Icon(Icons.search, size: 18),
-                                      isDense: true,
+                          child: LayoutBuilder(
+                            builder: (context, constraints) {
+                              final isNarrow = constraints.maxWidth < 650;
+                              if (isNarrow) {
+                                return Column(
+                                  children: [
+                                    TextField(
+                                      decoration: const InputDecoration(
+                                        hintText: 'Search products by name, SKU...',
+                                        prefixIcon: Icon(Icons.search, size: 18),
+                                        isDense: true,
+                                      ),
+                                      onChanged: (val) {
+                                        provider.setSearchQuery(val);
+                                      },
                                     ),
-                                    onChanged: (val) {
-                                      provider.setSearchQuery(val);
-                                    },
+                                    const SizedBox(height: 10),
+                                    SingleChildScrollView(
+                                      scrollDirection: Axis.horizontal,
+                                      child: Row(
+                                        children: [
+                                          OutlinedButton.icon(
+                                            onPressed: () {},
+                                            icon: const Icon(Icons.calendar_today, size: 14),
+                                            label: const Text('Today'),
+                                            style: OutlinedButton.styleFrom(
+                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                              foregroundColor: const Color(0xFF334155),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          OutlinedButton.icon(
+                                            onPressed: () {},
+                                            icon: const Icon(Icons.filter_list, size: 14),
+                                            label: const Text('Filter'),
+                                            style: OutlinedButton.styleFrom(
+                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                              foregroundColor: const Color(0xFF334155),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          OutlinedButton.icon(
+                                            onPressed: () {},
+                                            icon: const Icon(Icons.arrow_downward, size: 14),
+                                            label: const Text('Sort By'),
+                                            style: OutlinedButton.styleFrom(
+                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                              foregroundColor: const Color(0xFF334155),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          IconButton(
+                                            icon: const Icon(Icons.refresh_rounded, color: Color(0xFF64748B), size: 20),
+                                            onPressed: () => provider.loadAllData(authProvider.token),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }
+                              return Row(
+                                children: [
+                                  Expanded(
+                                    child: Container(
+                                      constraints: const BoxConstraints(maxWidth: 260),
+                                      child: TextField(
+                                        decoration: const InputDecoration(
+                                          hintText: 'Search...',
+                                          prefixIcon: Icon(Icons.search, size: 18),
+                                          isDense: true,
+                                        ),
+                                        onChanged: (val) {
+                                          provider.setSearchQuery(val);
+                                        },
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              OutlinedButton.icon(
-                                onPressed: () {},
-                                icon: const Icon(Icons.calendar_today, size: 14),
-                                label: const Text('Today'),
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                  foregroundColor: const Color(0xFF334155),
-                                ),
-                              ),
-                              const Spacer(),
-                              OutlinedButton.icon(
-                                onPressed: () {},
-                                icon: const Icon(Icons.filter_list, size: 14),
-                                label: const Text('Filter'),
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                  foregroundColor: const Color(0xFF334155),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              OutlinedButton.icon(
-                                onPressed: () {},
-                                icon: const Icon(Icons.arrow_downward, size: 14),
-                                label: const Text('Sort By'),
-                                style: OutlinedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                                  foregroundColor: const Color(0xFF334155),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              IconButton(
-                                icon: const Icon(Icons.view_headline, color: Color(0xFF64748B)),
-                                onPressed: () {},
-                              ),
-                               IconButton(
-                                 icon: const Icon(Icons.refresh_rounded, color: Color(0xFF64748B)),
-                                 onPressed: () => provider.loadAllData(authProvider.token),
-                               ),
-                            ],
+                                  const SizedBox(width: 12),
+                                  OutlinedButton.icon(
+                                    onPressed: () {},
+                                    icon: const Icon(Icons.calendar_today, size: 14),
+                                    label: const Text('Today'),
+                                    style: OutlinedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                      foregroundColor: const Color(0xFF334155),
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  OutlinedButton.icon(
+                                    onPressed: () {},
+                                    icon: const Icon(Icons.filter_list, size: 14),
+                                    label: const Text('Filter'),
+                                    style: OutlinedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                      foregroundColor: const Color(0xFF334155),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  OutlinedButton.icon(
+                                    onPressed: () {},
+                                    icon: const Icon(Icons.arrow_downward, size: 14),
+                                    label: const Text('Sort By'),
+                                    style: OutlinedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                                      foregroundColor: const Color(0xFF334155),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                    icon: const Icon(Icons.refresh_rounded, color: Color(0xFF64748B)),
+                                    onPressed: () => provider.loadAllData(authProvider.token),
+                                  ),
+                                ],
+                              );
+                            },
                           ),
                         ),
                         const SizedBox(height: 20),

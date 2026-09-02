@@ -207,11 +207,12 @@ class RefundRepository {
 
   Future<List<RefundModel>> getAllRefunds() async {
     final sql = '''
-      SELECT r.*, o.order_number, e.full_name as processor_name
+      SELECT r.*, o.order_number, 
+             COALESCE(u.full_name, e.full_name, 'Staff') as processor_name
       FROM refunds r
-      JOIN pos_orders o ON r.order_id = o.id
-      LEFT JOIN users u ON r.processed_by = u.id
-      LEFT JOIN employees e ON e.user_id = u.id
+      LEFT JOIN pos_orders o ON r.order_id::text = o.id::text OR r.original_order_id::text = o.id::text
+      LEFT JOIN users u ON r.processed_by::text = u.id::text
+      LEFT JOIN employees e ON e.user_id::text = u.id::text OR e.id::text = r.processed_by::text
       ORDER BY r.created_at DESC
     ''';
 
@@ -226,7 +227,7 @@ class RefundRepository {
         Sql.named('''
           SELECT ri.*, p.name as product_name
           FROM refund_items ri
-          JOIN products p ON ri.product_id = p.id
+          JOIN products p ON ri.product_id::text = p.id::text
           WHERE ri.refund_id = @refundId OR ri.refund_id::text = @refundIdStr
         '''),
         parameters: {'refundId': refundId, 'refundIdStr': refundId.toString()},
@@ -241,16 +242,17 @@ class RefundRepository {
 
   Future<RefundModel?> findById(int id) async {
     final sql = '''
-      SELECT r.*, o.order_number, e.full_name as processor_name
+      SELECT r.*, o.order_number, 
+             COALESCE(u.full_name, e.full_name, 'Staff') as processor_name
       FROM refunds r
-      JOIN pos_orders o ON r.order_id = o.id
-      LEFT JOIN users u ON r.processed_by = u.id
-      LEFT JOIN employees e ON e.user_id = u.id
-      WHERE r.id = @id
+      LEFT JOIN pos_orders o ON r.order_id::text = o.id::text OR r.original_order_id::text = o.id::text
+      LEFT JOIN users u ON r.processed_by::text = u.id::text
+      LEFT JOIN employees e ON e.user_id::text = u.id::text OR e.id::text = r.processed_by::text
+      WHERE r.id = @id OR r.id::text = @idStr
       LIMIT 1
     ''';
 
-    final result = await db.connection.execute(Sql.named(sql), parameters: {'id': id});
+    final result = await db.connection.execute(Sql.named(sql), parameters: {'id': id, 'idStr': id.toString()});
     if (result.isEmpty) return null;
 
     final map = result.first.toColumnMap();
@@ -258,10 +260,10 @@ class RefundRepository {
       Sql.named('''
         SELECT ri.*, p.name as product_name
         FROM refund_items ri
-        JOIN products p ON ri.product_id = p.id
-        WHERE ri.refund_id = @id
+        JOIN products p ON ri.product_id::text = p.id::text
+        WHERE ri.refund_id = @id OR ri.refund_id::text = @idStr
       '''),
-      parameters: {'id': id},
+      parameters: {'id': id, 'idStr': id.toString()},
     );
 
     map['items'] = itemsRes.map((i) => i.toColumnMap()).toList();

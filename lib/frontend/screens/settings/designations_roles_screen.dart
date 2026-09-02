@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:erp_software/core/constants/app_constants.dart';
-import 'package:erp_software/frontend/widgets/erp_toast.dart';
 import 'package:erp_software/theme/app_colors.dart';
 
 class _Role {
@@ -81,11 +80,9 @@ class _DesignationsRolesScreenState extends State<DesignationsRolesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 800;
-
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(leading: const HamburgerButton(), backgroundColor: Colors.white, elevation: 0, title: const Text('Roles appBar: AppBar(leading: const HamburgerButton(), backgroundColor: Colors.white, elevation: 0), Designations', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)))),
+      appBar: AppBar(leading: const HamburgerButton(), backgroundColor: Colors.white, elevation: 0, title: const Text('Roles & Designations', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)))),
       body: Row(
         children: [
           Expanded(

@@ -23,6 +23,16 @@ class _CashierDashboardScreenState extends State<CashierDashboardScreen> {
     _activeTab = widget.initialTab;
   }
 
+  @override
+  void didUpdateWidget(covariant CashierDashboardScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialTab != widget.initialTab) {
+      setState(() {
+        _activeTab = widget.initialTab;
+      });
+    }
+  }
+
   Widget _buildActiveTabScreen() {
     switch (_activeTab) {
       case 'POS':

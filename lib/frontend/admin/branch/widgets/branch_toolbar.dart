@@ -57,6 +57,7 @@ class BranchToolbar extends StatelessWidget {
         ),
         child: DropdownButton<BranchSort>(
           value: provider.sortOption,
+          isExpanded: true,
           icon: const Icon(Icons.arrow_drop_down, color: AppColors.textSecondary),
           items: BranchSort.values
               .map((s) => DropdownMenuItem(value: s, child: Text(_sortLabel(s), style: const TextStyle(fontSize: 13, color: AppColors.textPrimary))))

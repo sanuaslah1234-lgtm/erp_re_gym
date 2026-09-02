@@ -12,9 +12,9 @@ class ProductRepository {
     String sql = '''
       SELECT p.*, c.name as category_name, b.name as brand_name
       FROM products p
-      LEFT JOIN categories c ON p.category_id = c.id
-      LEFT JOIN brands b ON p.brand_id = b.id
-      WHERE p.is_active = true
+      LEFT JOIN categories c ON p.category_id::text = c.id::text
+      LEFT JOIN brands b ON p.brand_id::text = b.id::text
+      WHERE (p.is_active IS NULL OR p.is_active = true)
     ''';
 
     final params = <String, dynamic>{};
@@ -24,14 +24,14 @@ class ProductRepository {
       params['search'] = '%${search.trim()}%';
     }
 
-    if (categoryId != null && categoryId > 0) {
-      sql += ' AND p.category_id = @catId';
-      params['catId'] = categoryId;
+    if (categoryId != null && categoryId.toString().trim().isNotEmpty && categoryId.toString() != '0') {
+      sql += ' AND p.category_id::text = @catId';
+      params['catId'] = categoryId.toString();
     }
 
     if (brandId != null && brandId > 0) {
-      sql += ' AND p.brand_id = @brandId';
-      params['brandId'] = brandId;
+      sql += ' AND p.brand_id::text = @brandId';
+      params['brandId'] = brandId.toString();
     }
 
     sql += ' ORDER BY p.name ASC';
@@ -46,10 +46,15 @@ class ProductRepository {
 
   Future<ProductModel?> findByBarcode(String barcode) async {
     final sql = '''
-      SELECT p.*, c.name as category_name
+      SELECT 
+        p.*, 
+        c.name as category_name,
+        b.name as brand_name
       FROM products p
-      LEFT JOIN categories c ON p.category_id = c.id
-      WHERE p.barcode = @barcode AND p.is_active = true
+      LEFT JOIN categories c ON p.category_id::text = c.id::text
+      LEFT JOIN brands b ON p.brand_id::text = b.id::text
+      WHERE (p.barcode = @barcode OR p.sku = @barcode OR p.product_code = @barcode) 
+        AND (p.is_active IS NULL OR p.is_active = true)
       LIMIT 1
     ''';
 
@@ -62,18 +67,22 @@ class ProductRepository {
     return ProductModel.fromJson(result.first.toColumnMap());
   }
 
-  Future<ProductModel?> findById(int id) async {
+  Future<ProductModel?> findById(dynamic id) async {
     final sql = '''
-      SELECT p.*, c.name as category_name
+      SELECT 
+        p.*, 
+        c.name as category_name,
+        b.name as brand_name
       FROM products p
-      LEFT JOIN categories c ON p.category_id = c.id
-      WHERE p.id = @id
+      LEFT JOIN categories c ON p.category_id::text = c.id::text
+      LEFT JOIN brands b ON p.brand_id::text = b.id::text
+      WHERE p.id::text = @id
       LIMIT 1
     ''';
 
     final result = await db.connection.execute(
       Sql.named(sql),
-      parameters: {'id': id},
+      parameters: {'id': id.toString()},
     );
 
     if (result.isEmpty) return null;
@@ -82,12 +91,11 @@ class ProductRepository {
 
   Future<List<Map<String, dynamic>>> getCategories() async {
     final result = await db.connection.execute('SELECT id, name FROM categories ORDER BY name ASC');
-    return result.map((row) => {'id': int.tryParse(row[0].toString()) ?? row[0], 'name': row[1].toString()}).toList();
+    return result.map((row) => {'id': row[0], 'name': row[1].toString()}).toList();
   }
 
   Future<List<Map<String, dynamic>>> getBrands() async {
     final result = await db.connection.execute('SELECT id, name FROM brands ORDER BY name ASC');
-    return result.map((row) => {'id': int.tryParse(row[0].toString()) ?? row[0], 'name': row[1].toString()}).toList();
+    return result.map((row) => {'id': row[0], 'name': row[1].toString()}).toList();
   }
 }
-

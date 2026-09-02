@@ -249,8 +249,8 @@ class _AddMembershipDialogState extends State<AddMembershipDialog> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             // Member
-                            DropdownButtonFormField<int>(
-                              value: safeMemberValue,
+                            DropdownButtonFormField<int?>(
+                              initialValue: safeMemberValue,
                               decoration: _inputDecoration('Member *', icon: Icons.person_outline),
                               items: memberItems,
                               isExpanded: true,
@@ -260,8 +260,8 @@ class _AddMembershipDialogState extends State<AddMembershipDialog> {
                             const SizedBox(height: 12),
 
                             // Plan
-                            DropdownButtonFormField<int>(
-                              value: safePlanValue,
+                            DropdownButtonFormField<int?>(
+                              initialValue: safePlanValue,
                               decoration: _inputDecoration('Plan *', icon: Icons.fitness_center_outlined),
                               items: planItems,
                               isExpanded: true,
@@ -306,7 +306,7 @@ class _AddMembershipDialogState extends State<AddMembershipDialog> {
 
                             // Payment Method
                             DropdownButtonFormField<String>(
-                              value: _paymentMethod,
+                              initialValue: _paymentMethod,
                               decoration: _inputDecoration('Payment Method', icon: Icons.account_balance_wallet_outlined),
                               isExpanded: true,
                               items: const [

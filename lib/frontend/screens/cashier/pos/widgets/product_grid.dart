@@ -29,19 +29,26 @@ class ProductGrid extends StatelessWidget {
 
     final screenWidth = MediaQuery.of(context).size.width;
     int crossAxisCount = 4;
+    double childAspectRatio = 0.72;
+
     if (screenWidth < 600) {
       crossAxisCount = 2;
-    } else if (screenWidth < 1100) {
+      childAspectRatio = 0.62;
+    } else if (screenWidth < 900) {
       crossAxisCount = 3;
+      childAspectRatio = 0.68;
+    } else if (screenWidth < 1200) {
+      crossAxisCount = 3;
+      childAspectRatio = 0.72;
     }
 
     return GridView.builder(
-      padding: const EdgeInsets.only(top: 8, bottom: 20),
+      padding: const EdgeInsets.only(top: 4, bottom: 20),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: crossAxisCount,
-        childAspectRatio: 1.1,
-        crossAxisSpacing: 14,
-        mainAxisSpacing: 14,
+        childAspectRatio: childAspectRatio,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
       ),
       itemCount: products.length,
       itemBuilder: (context, index) {

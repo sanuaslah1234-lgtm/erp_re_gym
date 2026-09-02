@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:erp_software/core/models/customer_model.dart';
 
 class CustomerService {
-static const baseUrl = AppConstants.apiBaseUrl;
+  static String get baseUrl => AppConstants.apiBaseUrl;
   Future<List<CustomerModel>> getCustomers() async {
     final response = await http.get(
       Uri.parse('$baseUrl/api/customers'),

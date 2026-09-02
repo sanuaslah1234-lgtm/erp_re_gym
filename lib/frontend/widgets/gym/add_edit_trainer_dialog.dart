@@ -178,92 +178,72 @@ class _AddEditTrainerDialogState extends State<AddEditTrainerDialog> {
             _isInitLoading
                 ? const Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator(color: AppColors.primary))
                 : SingleChildScrollView(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(18),
                     child: Form(
                       key: _formKey,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           if (_employees.isNotEmpty) ...[
-                            DropdownButtonFormField<int>(
-                              value: _selectedEmployeeId,
-                              decoration: _inputDecoration('Employee (Optional)', icon: Icons.badge_outlined),
+                            DropdownButtonFormField<int?>(
+                              initialValue: _selectedEmployeeId,
+                              decoration: _inputDecoration('Link to Employee (Optional)', icon: Icons.badge_outlined),
+                              isExpanded: true,
                               items: [
-                                const DropdownMenuItem<int>(value: null, child: Text('None (Direct Trainer)')),
-                                ..._employees.map((e) => DropdownMenuItem<int>(
+                                const DropdownMenuItem<int?>(value: null, child: Text('None (Direct Trainer)')),
+                                ..._employees.map((e) => DropdownMenuItem<int?>(
                                   value: int.tryParse(e.id ?? ''),
                                   child: Text('${e.fullName ?? "Employee"} (${e.employeeId ?? ""})'),
                                 )),
                               ],
                               onChanged: _onEmployeeSelected,
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 12),
                           ],
 
-                          Row(
-                            children: [
-                              Expanded(
-                                flex: 2,
-                                child: TextFormField(
-                                  controller: _nameController,
-                                  decoration: _inputDecoration('Trainer Name *', icon: Icons.person_outline),
-                                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Name is required' : null,
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                flex: 2,
-                                child: TextFormField(
-                                  controller: _phoneController,
-                                  decoration: _inputDecoration('Phone Number', icon: Icons.phone_outlined),
-                                ),
-                              ),
-                            ],
+                          TextFormField(
+                            controller: _nameController,
+                            decoration: _inputDecoration('Trainer Name *', icon: Icons.person_outline),
+                            validator: (v) => (v == null || v.trim().isEmpty) ? 'Name is required' : null,
                           ),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 12),
 
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _specializationController,
-                                  decoration: _inputDecoration('Specialization *', icon: Icons.fitness_center_outlined),
-                                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Specialization required' : null,
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _experienceController,
-                                  decoration: _inputDecoration('Experience', icon: Icons.timeline_outlined),
-                                ),
-                              ),
-                            ],
+                          TextFormField(
+                            controller: _phoneController,
+                            decoration: _inputDecoration('Phone Number', icon: Icons.phone_outlined),
+                            keyboardType: TextInputType.phone,
                           ),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 12),
 
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextFormField(
-                                  controller: _salaryController,
-                                  decoration: _inputDecoration('Monthly Salary / Retainer (\$)', icon: Icons.attach_money),
-                                  keyboardType: TextInputType.number,
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: DropdownButtonFormField<String>(
-                                  value: _status,
-                                  decoration: _inputDecoration('Status', icon: Icons.toggle_on_outlined),
-                                  items: const [
-                                    DropdownMenuItem(value: 'ACTIVE', child: Text('ACTIVE')),
-                                    DropdownMenuItem(value: 'INACTIVE', child: Text('INACTIVE')),
-                                  ],
-                                  onChanged: (v) => setState(() => _status = v ?? 'ACTIVE'),
-                                ),
-                              ),
+                          TextFormField(
+                            controller: _specializationController,
+                            decoration: _inputDecoration('Specialization * (e.g. Strength & Conditioning)', icon: Icons.fitness_center_outlined),
+                            validator: (v) => (v == null || v.trim().isEmpty) ? 'Specialization required' : null,
+                          ),
+                          const SizedBox(height: 12),
+
+                          TextFormField(
+                            controller: _experienceController,
+                            decoration: _inputDecoration('Experience (e.g. 5+ Years)', icon: Icons.timeline_outlined),
+                          ),
+                          const SizedBox(height: 12),
+
+                          TextFormField(
+                            controller: _salaryController,
+                            decoration: _inputDecoration('Monthly Salary / Retainer (\$)', icon: Icons.attach_money),
+                            keyboardType: TextInputType.number,
+                          ),
+                          const SizedBox(height: 12),
+
+                          DropdownButtonFormField<String>(
+                            initialValue: _status,
+                            decoration: _inputDecoration('Status', icon: Icons.toggle_on_outlined),
+                            isExpanded: true,
+                            items: const [
+                              DropdownMenuItem(value: 'ACTIVE', child: Text('ACTIVE')),
+                              DropdownMenuItem(value: 'INACTIVE', child: Text('INACTIVE')),
                             ],
+                            onChanged: (v) => setState(() => _status = v ?? 'ACTIVE'),
                           ),
                         ],
                       ),
@@ -272,35 +252,38 @@ class _AddEditTrainerDialogState extends State<AddEditTrainerDialog> {
 
             // Footer
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              padding: const EdgeInsets.all(16),
               decoration: const BoxDecoration(
                 color: Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
                 border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  OutlinedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
                     ),
-                    child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
                   ),
-                  const SizedBox(width: 12),
-                  ElevatedButton.icon(
-                    onPressed: _isLoading ? null : _save,
-                    icon: _isLoading
-                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Icon(Icons.check, size: 18),
-                    label: Text(isEdit ? 'Save Changes' : 'Add Trainer'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _isLoading ? null : _save,
+                      icon: _isLoading
+                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Icon(Icons.check, size: 18),
+                      label: Text(isEdit ? 'Save' : 'Add Trainer', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
                     ),
                   ),
                 ],

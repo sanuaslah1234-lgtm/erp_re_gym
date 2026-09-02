@@ -34,21 +34,27 @@ class OrderController {
       final itemsData = (body['items'] as List? ?? []).cast<Map<String, dynamic>>();
       final paymentsData = (body['payments'] as List? ?? []).cast<Map<String, dynamic>>();
 
+      double toDbl(dynamic v) {
+        if (v == null) return 0.0;
+        if (v is num) return v.toDouble();
+        return double.tryParse(v.toString()) ?? 0.0;
+      }
+
       final order = await orderService.createOrder(
-        cashierId: cashierId,
+        cashierId: int.tryParse(cashierId.toString()) ?? 1,
         customerId: body['customerId'] != null ? int.tryParse(body['customerId'].toString()) : null,
-        subtotal: double.tryParse(body['subtotal'].toString()) ?? 0.0,
-        discountAmount: double.tryParse(body['discountAmount'].toString()) ?? 0.0,
-        taxAmount: double.tryParse(body['taxAmount'].toString()) ?? 0.0,
-        grandTotal: double.tryParse(body['grandTotal'].toString()) ?? 0.0,
-        amountReceived: double.tryParse(body['amountReceived'].toString()) ?? 0.0,
-        changeAmount: double.tryParse(body['changeAmount'].toString()) ?? 0.0,
+        subtotal: toDbl(body['subtotal']),
+        discountAmount: toDbl(body['discountAmount']),
+        taxAmount: toDbl(body['taxAmount']),
+        grandTotal: toDbl(body['grandTotal']),
+        amountReceived: toDbl(body['amountReceived']),
+        changeAmount: toDbl(body['changeAmount']),
         paymentMethod: body['paymentMethod']?.toString() ?? 'Cash',
         itemsData: itemsData,
         paymentsData: paymentsData.isNotEmpty ? paymentsData : [
           {
             'payment_method': body['paymentMethod']?.toString() ?? 'Cash',
-            'amount': double.tryParse(body['grandTotal'].toString()) ?? 0.0,
+            'amount': toDbl(body['grandTotal']),
             'reference_number': body['referenceNumber']?.toString(),
           }
         ],
@@ -99,11 +105,11 @@ class OrderController {
 
   Future<Response> getOrderById(Request request, String idStr) async {
     try {
-      final id = int.tryParse(idStr);
-      if (id == null) {
-        return ResponseUtils.error(message: 'Invalid order ID', statusCode: 400);
+      if (idStr.isEmpty) {
+        return ResponseUtils.error(message: 'Order ID is required', statusCode: 400);
       }
 
+      final id = int.tryParse(idStr) ?? idStr;
       final order = await orderService.getOrderById(id);
       return ResponseUtils.success(
         message: 'Order details fetched',
@@ -118,11 +124,11 @@ class OrderController {
 
   Future<Response> cancelOrder(Request request, String idStr) async {
     try {
-      final id = int.tryParse(idStr);
-      if (id == null) {
-        return ResponseUtils.error(message: 'Invalid order ID', statusCode: 400);
+      if (idStr.isEmpty) {
+        return ResponseUtils.error(message: 'Order ID is required', statusCode: 400);
       }
 
+      final id = int.tryParse(idStr) ?? idStr;
       await orderService.cancelOrder(id);
       return ResponseUtils.success(message: 'Order cancelled successfully and stock restored.');
     } on ApiException catch (e) {

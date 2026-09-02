@@ -9,6 +9,15 @@ class HamburgerButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final canPop = ModalRoute.of(context)?.canPop ?? false;
+    if (canPop) {
+      return IconButton(
+        icon: Icon(Icons.arrow_back, size: 24, color: color ?? const Color(0xFF0F172A)),
+        onPressed: () {
+          Navigator.of(context).pop();
+        },
+      );
+    }
     return IconButton(
       icon: Icon(Icons.menu_rounded, size: 24, color: color ?? const Color(0xFF0F172A)),
       onPressed: () {

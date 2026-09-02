@@ -144,6 +144,13 @@ class PostgresService {
       // Inventory
       "ALTER TABLE inventory ALTER COLUMN id SET DEFAULT gen_random_uuid()::text;",
 
+      // Payments
+      "ALTER TABLE payments ALTER COLUMN id SET DEFAULT gen_random_uuid()::text;",
+      "ALTER TABLE payments ADD COLUMN IF NOT EXISTS order_id VARCHAR(100);",
+      "ALTER TABLE payments ADD COLUMN IF NOT EXISTS payment_method VARCHAR(50) DEFAULT 'cash';",
+      "UPDATE payments SET payment_method = method WHERE payment_method IS NULL AND method IS NOT NULL;",
+      "UPDATE payments SET method = payment_method WHERE method IS NULL AND payment_method IS NOT NULL;",
+
       // Foreign Key Cascades & Nullifications
       "ALTER TABLE products DROP CONSTRAINT IF EXISTS products_unit_id_fkey;",
       "ALTER TABLE products ADD CONSTRAINT products_unit_id_fkey FOREIGN KEY (unit_id) REFERENCES units(id) ON DELETE SET NULL ON UPDATE CASCADE;",
@@ -486,6 +493,17 @@ class PostgresService {
         product_id INT NOT NULL REFERENCES products(id),
         quantity NUMERIC(12,3) NOT NULL DEFAULT 1,
         refund_amount NUMERIC(12,2) NOT NULL DEFAULT 0
+      );
+    ''');
+
+    await connection.execute('''
+      CREATE TABLE IF NOT EXISTS barcodes (
+        id SERIAL PRIMARY KEY,
+        product_id INT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+        barcode VARCHAR(100) NOT NULL,
+        label_quantity INT NOT NULL DEFAULT 1,
+        created_by INT REFERENCES users(id),
+        created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
     ''');
 

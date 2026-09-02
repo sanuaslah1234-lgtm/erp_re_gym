@@ -5,6 +5,8 @@
 /// - `gym.*` : Gym & Fitness Management (Members, Plans, Attendance, Workouts, Schedules)
 class AppRoles {
   static const String superAdmin = 'SUPER_ADMIN';
+  static const String gymSuperAdmin = 'GYM_SUPER_ADMIN';
+  static const String retailSuperAdmin = 'RETAIL_SUPER_ADMIN';
   static const String erpManager = 'ERP_MANAGER';
   static const String erpCashier = 'ERP_CASHIER';
   static const String inventoryManager = 'INVENTORY_MANAGER';
@@ -14,6 +16,8 @@ class AppRoles {
 
   static const List<String> allRoles = [
     superAdmin,
+    gymSuperAdmin,
+    retailSuperAdmin,
     erpManager,
     erpCashier,
     inventoryManager,
@@ -109,7 +113,13 @@ class AppPermissions {
     // 1. SUPER_ADMIN: Full access to all ERP + Gym permissions
     AppRoles.superAdmin: allPermissions,
 
-    // 2. ERP_MANAGER: Full ERP permissions, no gym permissions
+    // 2. GYM_SUPER_ADMIN: Full access to all Gym permissions, no ERP access
+    AppRoles.gymSuperAdmin: allGymPermissions,
+
+    // 3. RETAIL_SUPER_ADMIN: Full access to all ERP/Retail permissions, no Gym access
+    AppRoles.retailSuperAdmin: allErpPermissions,
+
+    // 4. ERP_MANAGER: Full ERP permissions, no gym permissions
     AppRoles.erpManager: allErpPermissions,
 
     // 3. ERP_CASHIER: POS + Invoicing & Payments only

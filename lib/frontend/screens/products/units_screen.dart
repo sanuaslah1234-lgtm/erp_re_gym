@@ -159,96 +159,189 @@ class _UnitsScreenState extends State<UnitsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Page Header
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Units of Measure',
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF0F172A),
+                        if (isMobile)
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Units of Measure',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF0F172A),
+                                ),
                               ),
-                            ),
-                            Wrap(
-                              spacing: 8,
-                              children: [
-                                OutlinedButton.icon(
-                                  onPressed: () {
-                                    ExportPrintHelper.showPrintPage(
-                                      context: context,
-                                      title: 'Units of Measure',
-                                      headers: ['Unit Name', 'Short Symbol', 'No of Products', 'Status'],
-                                      rows: displayedUnits
-                                          .map((u) => [
-                                                u.name,
-                                                u.shortSymbol,
-                                                u.productCount.toString().padLeft(2, '0'),
-                                                u.status.toUpperCase()
-                                              ])
-                                          .toList(),
-                                    );
-                                  },
-                                  style: OutlinedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    foregroundColor: const Color(0xFF334155),
-                                    side: const BorderSide(color: Color(0xFFCBD5E1)),
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: OutlinedButton.icon(
+                                      onPressed: () {
+                                        ExportPrintHelper.showPrintPage(
+                                          context: context,
+                                          title: 'Units of Measure',
+                                          headers: ['Unit Name', 'Short Symbol', 'No of Products', 'Status'],
+                                          rows: displayedUnits
+                                              .map((u) => [
+                                                    u.name,
+                                                    u.shortSymbol,
+                                                    u.productCount.toString().padLeft(2, '0'),
+                                                    u.status.toUpperCase()
+                                                  ])
+                                              .toList(),
+                                        );
+                                      },
+                                      style: OutlinedButton.styleFrom(
+                                        backgroundColor: Colors.white,
+                                        foregroundColor: const Color(0xFF334155),
+                                        side: const BorderSide(color: Color(0xFFCBD5E1)),
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                                      ),
+                                      icon: const Icon(Icons.print_outlined, size: 16),
+                                      label: const Text('Print'),
+                                    ),
                                   ),
-                                  icon: const Icon(Icons.print_outlined, size: 16),
-                                  label: const Text('Print'),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: OutlinedButton.icon(
+                                      onPressed: () {
+                                        ExportPrintHelper.exportCsv(
+                                          context: context,
+                                          filename: 'units_of_measure',
+                                          headers: ['Unit Name', 'Short Symbol', 'No of Products', 'Status'],
+                                          rows: displayedUnits
+                                              .map((u) => [u.name, u.shortSymbol, u.productCount, u.status])
+                                              .toList(),
+                                        );
+                                      },
+                                      style: OutlinedButton.styleFrom(
+                                        backgroundColor: Colors.white,
+                                        foregroundColor: const Color(0xFF334155),
+                                        side: const BorderSide(color: Color(0xFFCBD5E1)),
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                                      ),
+                                      icon: const Icon(Icons.download_outlined, size: 16),
+                                      label: const Text('Export'),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: ElevatedButton.icon(
+                                      onPressed: () {
+                                        setState(() {
+                                          if (_showAddSection && _editingUnit != null) {
+                                            _resetForm();
+                                          } else {
+                                            _showAddSection = !_showAddSection;
+                                            if (!_showAddSection) _resetForm();
+                                          }
+                                        });
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFF0F172A),
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                      ),
+                                      icon: const Icon(Icons.add, size: 16),
+                                      label: const Text('Add'),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          )
+                        else
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Units of Measure',
+                                style: TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF0F172A),
                                 ),
-                                OutlinedButton.icon(
-                                  onPressed: () {
-                                    ExportPrintHelper.exportCsv(
-                                      context: context,
-                                      filename: 'units_of_measure',
-                                      headers: ['Unit Name', 'Short Symbol', 'No of Products', 'Status'],
-                                      rows: displayedUnits
-                                          .map((u) => [u.name, u.shortSymbol, u.productCount, u.status])
-                                          .toList(),
-                                    );
-                                  },
-                                  style: OutlinedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    foregroundColor: const Color(0xFF334155),
-                                    side: const BorderSide(color: Color(0xFFCBD5E1)),
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              ),
+                              Wrap(
+                                spacing: 8,
+                                children: [
+                                  OutlinedButton.icon(
+                                    onPressed: () {
+                                      ExportPrintHelper.showPrintPage(
+                                        context: context,
+                                        title: 'Units of Measure',
+                                        headers: ['Unit Name', 'Short Symbol', 'No of Products', 'Status'],
+                                        rows: displayedUnits
+                                            .map((u) => [
+                                                  u.name,
+                                                  u.shortSymbol,
+                                                  u.productCount.toString().padLeft(2, '0'),
+                                                  u.status.toUpperCase()
+                                                ])
+                                            .toList(),
+                                      );
+                                    },
+                                    style: OutlinedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: const Color(0xFF334155),
+                                      side: const BorderSide(color: Color(0xFFCBD5E1)),
+                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                    ),
+                                    icon: const Icon(Icons.print_outlined, size: 16),
+                                    label: const Text('Print'),
                                   ),
-                                  icon: const Icon(Icons.download_outlined, size: 16),
-                                  label: const Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text('Export'),
-                                      SizedBox(width: 4),
-                                      Icon(Icons.keyboard_arrow_down, size: 16),
-                                    ],
+                                  OutlinedButton.icon(
+                                    onPressed: () {
+                                      ExportPrintHelper.exportCsv(
+                                        context: context,
+                                        filename: 'units_of_measure',
+                                        headers: ['Unit Name', 'Short Symbol', 'No of Products', 'Status'],
+                                        rows: displayedUnits
+                                            .map((u) => [u.name, u.shortSymbol, u.productCount, u.status])
+                                            .toList(),
+                                      );
+                                    },
+                                    style: OutlinedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: const Color(0xFF334155),
+                                      side: const BorderSide(color: Color(0xFFCBD5E1)),
+                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                                    ),
+                                    icon: const Icon(Icons.download_outlined, size: 16),
+                                    label: const Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text('Export'),
+                                        SizedBox(width: 4),
+                                        Icon(Icons.keyboard_arrow_down, size: 16),
+                                      ],
+                                    ),
                                   ),
-                                ),
-                                ElevatedButton.icon(
-                                  onPressed: () {
-                                    setState(() {
-                                      if (_showAddSection && _editingUnit != null) {
-                                        _resetForm();
-                                      } else {
-                                        _showAddSection = !_showAddSection;
-                                        if (!_showAddSection) _resetForm();
-                                      }
-                                    });
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF0F172A),
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  ElevatedButton.icon(
+                                    onPressed: () {
+                                      setState(() {
+                                        if (_showAddSection && _editingUnit != null) {
+                                          _resetForm();
+                                        } else {
+                                          _showAddSection = !_showAddSection;
+                                          if (!_showAddSection) _resetForm();
+                                        }
+                                      });
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF0F172A),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    ),
+                                    icon: const Icon(Icons.add, size: 18),
+                                    label: const Text('Add New Unit'),
                                   ),
-                                  icon: const Icon(Icons.add, size: 18),
-                                  label: const Text('Add New Unit'),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+                                ],
+                              ),
+                            ],
+                          ),
                         const SizedBox(height: 20),
 
                         // Inline Add / Edit Measurement Unit Section Card
@@ -272,26 +365,29 @@ class _UnitsScreenState extends State<UnitsScreen> {
                               children: [
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          _editingUnit != null ? 'Edit Measurement Unit' : 'Add Measurement Unit',
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: Color(0xFF0F172A),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            _editingUnit != null ? 'Edit Measurement Unit' : 'Add Measurement Unit',
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF0F172A),
+                                            ),
                                           ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          _editingUnit != null
-                                              ? 'Update details for this measurement unit'
-                                              : 'Create a new measurement unit (e.g. Kilogram, Pieces, Litre)',
-                                          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                                        ),
-                                      ],
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            _editingUnit != null
+                                                ? 'Update details for this measurement unit'
+                                                : 'Create a new measurement unit (e.g. Kilogram, Pieces, Litre)',
+                                            style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                     IconButton(
                                       icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),

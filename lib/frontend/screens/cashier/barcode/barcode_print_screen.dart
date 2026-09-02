@@ -15,6 +15,8 @@ class BarcodePrintScreen extends StatefulWidget {
 }
 
 class _BarcodePrintScreenState extends State<BarcodePrintScreen> {
+  int _mobileTab = 0; // 0: Products, 1: Settings, 2: Print Sheet
+
   @override
   void initState() {
     super.initState();
@@ -33,73 +35,130 @@ class _BarcodePrintScreenState extends State<BarcodePrintScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(leading: const HamburgerButton(), backgroundColor: Colors.white, elevation: 0, title: const Text('Barcode Printing', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)))),
-      body: Row(
-        children: [
-          Expanded(
-            child: Column(
-              children: [
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Column(
+      appBar: AppBar(
+        leading: const HamburgerButton(),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text(
+          'Barcode Printing',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)),
+        ),
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(isMobile ? 12.0 : 20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Sub-header Text
+            const Text(
+              'Generate, customize, and print high-density barcodes & price tags for inventory.',
+              style: TextStyle(
+                fontSize: 13,
+                color: Color(0xFF64748B),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // Main Content Area
+            Expanded(
+              child: isMobile
+                  ? _buildMobileCard(barcodeProvider, totalLabelsCount)
+                  : Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Sub-header Text matching Image 2
-                        const Text(
-                          'Generate, customize, and print high-density barcodes & price tags for inventory.',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Color(0xFF64748B),
-                            fontWeight: FontWeight.w500,
+                        // Left Panel: Label & Print Settings
+                        const SizedBox(
+                          width: 320,
+                          child: SingleChildScrollView(
+                            child: LabelPrintSettingsCard(),
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(width: 16),
 
-                        // Main Content Area: Left Settings Card + Right Table Card
+                        // Right Panel: Select Products / Live Print Sheet
                         Expanded(
-                          child: isMobile
-                              ? SingleChildScrollView(
-                                  child: Column(
-                                    children: [
-                                      const LabelPrintSettingsCard(),
-                                      const SizedBox(height: 16),
-                                      _buildRightTableCard(barcodeProvider, totalLabelsCount),
-                                    ],
-                                  ),
-                                )
-                              : Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // Left Panel: Label & Print Settings
-                                    const SizedBox(
-                                      width: 320,
-                                      child: SingleChildScrollView(
-                                        child: LabelPrintSettingsCard(),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 16),
-
-                                    // Right Panel: Select Products / Live Print Sheet
-                                    Expanded(
-                                      child: _buildRightTableCard(barcodeProvider, totalLabelsCount),
-                                    ),
-                                  ],
-                                ),
+                          child: _buildDesktopCard(barcodeProvider, totalLabelsCount),
                         ),
                       ],
                     ),
-                  ),
-                ),
-              ],
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMobileCard(BarcodeProvider provider, int totalLabelsCount) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // Mobile Top Tabs: Products, Settings, Live Sheet
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: const BoxDecoration(
+              border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+            ),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildTabButton(
+                    label: 'Products (${provider.checkedProductIds.length})',
+                    icon: Icons.grid_view_rounded,
+                    isActive: _mobileTab == 0,
+                    onTap: () => setState(() => _mobileTab = 0),
+                  ),
+                  const SizedBox(width: 12),
+                  _buildTabButton(
+                    label: 'Settings',
+                    icon: Icons.tune_rounded,
+                    isActive: _mobileTab == 1,
+                    onTap: () => setState(() => _mobileTab = 1),
+                  ),
+                  const SizedBox(width: 12),
+                  _buildTabButton(
+                    label: 'Print Sheet ($totalLabelsCount)',
+                    icon: Icons.visibility_outlined,
+                    isActive: _mobileTab == 2,
+                    onTap: () => setState(() => _mobileTab = 2),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Content
+          Expanded(
+            child: provider.isLoading
+                ? const Center(child: CircularProgressIndicator(color: Color(0xFF2563EB)))
+                : (_mobileTab == 0
+                    ? const BarcodeProductsTable()
+                    : (_mobileTab == 1
+                        ? const SingleChildScrollView(
+                            padding: EdgeInsets.all(12),
+                            child: LabelPrintSettingsCard(),
+                          )
+                        : const LivePrintSheetGrid())),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildRightTableCard(BarcodeProvider provider, int totalLabelsCount) {
+  Widget _buildDesktopCard(BarcodeProvider provider, int totalLabelsCount) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -121,41 +180,45 @@ class _BarcodePrintScreenState extends State<BarcodePrintScreen> {
             decoration: const BoxDecoration(
               border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // Tabs: Select Products & Live Print Sheet
-                Row(
-                  children: [
-                    _buildTabButton(
-                      label: 'Select Products (${provider.checkedProductIds.length})',
-                      icon: Icons.grid_view_rounded,
-                      isActive: provider.activeTab == 0,
-                      onTap: () => provider.setActiveTab(0),
-                    ),
-                    const SizedBox(width: 16),
-                    _buildTabButton(
-                      label: 'Live Print Sheet ($totalLabelsCount Labels)',
-                      icon: Icons.visibility_outlined,
-                      isActive: provider.activeTab == 1,
-                      onTap: () => provider.setActiveTab(1),
-                    ),
-                  ],
-                ),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Tabs: Select Products & Live Print Sheet
+                  Row(
+                    children: [
+                      _buildTabButton(
+                        label: 'Select Products (${provider.checkedProductIds.length})',
+                        icon: Icons.grid_view_rounded,
+                        isActive: provider.activeTab == 0,
+                        onTap: () => provider.setActiveTab(0),
+                      ),
+                      const SizedBox(width: 16),
+                      _buildTabButton(
+                        label: 'Live Print Sheet ($totalLabelsCount Labels)',
+                        icon: Icons.visibility_outlined,
+                        isActive: provider.activeTab == 1,
+                        onTap: () => provider.setActiveTab(1),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 24),
 
-                // Preset Qty Buttons Row (1, 5, 10)
-                Row(
-                  children: [
-                    const Text('Preset Qty:', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-                    const SizedBox(width: 8),
-                    _buildPresetQtyButton('1', provider),
-                    const SizedBox(width: 4),
-                    _buildPresetQtyButton('5', provider),
-                    const SizedBox(width: 4),
-                    _buildPresetQtyButton('10', provider),
-                  ],
-                ),
-              ],
+                  // Preset Qty Buttons Row (1, 5, 10)
+                  Row(
+                    children: [
+                      const Text('Preset Qty:', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                      const SizedBox(width: 8),
+                      _buildPresetQtyButton('1', provider),
+                      const SizedBox(width: 4),
+                      _buildPresetQtyButton('5', provider),
+                      const SizedBox(width: 4),
+                      _buildPresetQtyButton('10', provider),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
 

@@ -74,11 +74,11 @@ class _MemberDetailsDialogState extends State<MemberDetailsDialog> with SingleTi
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final dialogWidth = (screenWidth - 40).clamp(320.0, 500.0);
+    final dialogWidth = (screenWidth - 40).clamp(320.0, 560.0);
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       backgroundColor: Colors.white,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: SizedBox(
         width: dialogWidth,
         height: 650,
@@ -86,7 +86,7 @@ class _MemberDetailsDialogState extends State<MemberDetailsDialog> with SingleTi
           children: [
             // Header
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               decoration: const BoxDecoration(
                 color: Color(0xFFEFF6FF),
                 borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
@@ -94,25 +94,29 @@ class _MemberDetailsDialogState extends State<MemberDetailsDialog> with SingleTi
               child: Row(
                 children: [
                   CircleAvatar(
-                    radius: 24,
+                    radius: 22,
                     backgroundColor: AppColors.primary,
                     child: Text(
                       _member != null && _member!.name.isNotEmpty ? _member!.name[0].toUpperCase() : 'M',
-                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
+                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
                     ),
                   ),
-                  const SizedBox(width: 14),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            Text(
-                              _member?.name ?? 'Loading Member...',
-                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                            Flexible(
+                              child: Text(
+                                _member?.name ?? 'Loading Member...',
+                                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                            const SizedBox(width: 10),
+                            const SizedBox(width: 8),
                             _buildStatusBadge(_member?.status ?? 'ACTIVE'),
                           ],
                         ),
@@ -120,13 +124,18 @@ class _MemberDetailsDialogState extends State<MemberDetailsDialog> with SingleTi
                         Text(
                           'Code: ${_member?.memberCode ?? '-'}  •  Phone: ${_member?.phone ?? '-'}  •  Email: ${_member?.email ?? 'N/A'}',
                           style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
                   ),
+                  const SizedBox(width: 8),
                   IconButton(
                     icon: const Icon(Icons.close, color: Color(0xFF94A3B8)),
                     onPressed: () => Navigator.of(context).pop(),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
                   ),
                 ],
               ),
@@ -135,8 +144,11 @@ class _MemberDetailsDialogState extends State<MemberDetailsDialog> with SingleTi
             // Tab Bar
             Container(
               color: const Color(0xFFF8FAFC),
+              width: double.infinity,
               child: TabBar(
                 controller: _tabController,
+                isScrollable: true,
+                tabAlignment: TabAlignment.start,
                 indicatorColor: AppColors.primary,
                 labelColor: AppColors.primary,
                 unselectedLabelColor: const Color(0xFF64748B),
@@ -176,7 +188,7 @@ class _MemberDetailsDialogState extends State<MemberDetailsDialog> with SingleTi
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       itemCount: _memberships.length,
       separatorBuilder: (_, _) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
@@ -184,56 +196,78 @@ class _MemberDetailsDialogState extends State<MemberDetailsDialog> with SingleTi
         final isLatest = index == 0;
 
         return Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: isLatest ? const Color(0xFFF0FDF4) : const Color(0xFFFAFAFA),
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: isLatest ? const Color(0xFFBBF7D0) : const Color(0xFFE2E8F0)),
           ),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(9),
                 decoration: BoxDecoration(
                   color: isLatest ? AppColors.successLight : const Color(0xFFE2E8F0),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(Icons.fitness_center_rounded, color: isLatest ? AppColors.success : const Color(0xFF64748B), size: 24),
+                child: Icon(Icons.fitness_center_rounded, color: isLatest ? AppColors.success : const Color(0xFF64748B), size: 22),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        Text(
-                          ms.planName ?? 'Standard Plan',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF0F172A)),
+                        Flexible(
+                          child: Text(
+                            ms.planName ?? 'Standard Plan',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                         const SizedBox(width: 8),
                         _buildStatusBadge(ms.status),
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 5),
                     Text(
-                      'Period: ${ms.startDate.toIso8601String().split('T').first}  to  ${ms.endDate.toIso8601String().split('T').first} (${ms.daysLeft} days left)',
+                      'Period: ${ms.startDate.toIso8601String().split('T').first} to ${ms.endDate.toIso8601String().split('T').first}',
                       style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '(${ms.daysLeft} days left)',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: ms.isExpired ? const Color(0xFFEF4444) : const Color(0xFF10B981),
+                      ),
                     ),
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     '\$${ms.finalAmount.toStringAsFixed(2)}',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                   ),
                   const SizedBox(height: 4),
                   if (ms.id != null)
                     TextButton.icon(
-                      style: TextButton.styleFrom(padding: EdgeInsets.zero, visualDensity: VisualDensity.compact),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        backgroundColor: AppColors.primary.withValues(alpha: 0.08),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                      ),
                       onPressed: () {
                         showDialog(
                           context: context,
@@ -246,8 +280,8 @@ class _MemberDetailsDialogState extends State<MemberDetailsDialog> with SingleTi
                           ),
                         );
                       },
-                      icon: const Icon(Icons.autorenew_rounded, size: 16, color: AppColors.primary),
-                      label: const Text('Renew', style: TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.bold)),
+                      icon: const Icon(Icons.autorenew_rounded, size: 14, color: AppColors.primary),
+                      label: const Text('Renew', style: TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.bold)),
                     ),
                 ],
               ),
@@ -264,7 +298,7 @@ class _MemberDetailsDialogState extends State<MemberDetailsDialog> with SingleTi
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       itemCount: _attendance.length,
       separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
@@ -284,16 +318,24 @@ class _MemberDetailsDialogState extends State<MemberDetailsDialog> with SingleTi
           child: Row(
             children: [
               const Icon(Icons.check_circle_outline, color: AppColors.success, size: 20),
-              const SizedBox(width: 12),
-              Text(
-                a.attendanceDate.toIso8601String().split('T').first,
-                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF0F172A)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      a.attendanceDate.toIso8601String().split('T').first,
+                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF0F172A)),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'In: $checkInStr  •  Out: $checkOutStr',
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(width: 20),
-              Text('Check-in: $checkInStr', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-              const SizedBox(width: 14),
-              Text('Check-out: $checkOutStr', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
-              const Spacer(),
+              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(6)),
@@ -312,14 +354,14 @@ class _MemberDetailsDialogState extends State<MemberDetailsDialog> with SingleTi
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       itemCount: _payments.length,
       separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
         final p = _payments[index];
 
         return Container(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: const Color(0xFFFAFAFA),
             borderRadius: BorderRadius.circular(10),
@@ -332,27 +374,47 @@ class _MemberDetailsDialogState extends State<MemberDetailsDialog> with SingleTi
                 decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(8)),
                 child: const Icon(Icons.receipt_long_outlined, color: AppColors.primary, size: 20),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Ref: ${p.referenceNumber ?? 'PAY-${p.id}'}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
-                    Text('Date: ${p.paymentDate.toIso8601String().split('T').first}  •  Method: ${p.paymentMethod}', style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                    Text(
+                      'Ref: ${p.referenceNumber ?? 'PAY-${p.id}'}',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${p.paymentDate.toIso8601String().split('T').first}  •  ${p.paymentMethod}',
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
                   ],
                 ),
               ),
-              Text(
-                '\$${p.amount.toStringAsFixed(2)}',
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-              ),
-              const SizedBox(width: 10),
-              _buildStatusBadge(p.status),
               const SizedBox(width: 8),
-              if (p.id != null)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '\$${p.amount.toStringAsFixed(2)}',
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  ),
+                  const SizedBox(height: 2),
+                  _buildStatusBadge(p.status),
+                ],
+              ),
+              if (p.id != null) ...[
+                const SizedBox(width: 4),
                 IconButton(
                   icon: const Icon(Icons.print_outlined, size: 18, color: AppColors.primary),
                   tooltip: 'View Receipt',
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
                   onPressed: () {
                     showDialog(
                       context: context,
@@ -360,6 +422,7 @@ class _MemberDetailsDialogState extends State<MemberDetailsDialog> with SingleTi
                     );
                   },
                 ),
+              ],
             ],
           ),
         );
@@ -373,14 +436,14 @@ class _MemberDetailsDialogState extends State<MemberDetailsDialog> with SingleTi
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       itemCount: _workouts.length,
       separatorBuilder: (_, _) => const SizedBox(height: 14),
       itemBuilder: (context, index) {
         final w = _workouts[index];
 
         return Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: const Color(0xFFFAFAFA),
             borderRadius: BorderRadius.circular(12),
@@ -391,16 +454,32 @@ class _MemberDetailsDialogState extends State<MemberDetailsDialog> with SingleTi
             children: [
               Row(
                 children: [
-                  Text(w.name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                  const SizedBox(width: 10),
-                  _buildStatusBadge(w.status),
-                  const Spacer(),
-                  if (w.goal != null)
-                    Chip(
-                      label: Text('Goal: ${w.goal!}', style: const TextStyle(fontSize: 11, color: AppColors.primary)),
-                      backgroundColor: const Color(0xFFEFF6FF),
-                      padding: EdgeInsets.zero,
+                  Flexible(
+                    child: Text(
+                      w.name,
+                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
+                  ),
+                  const SizedBox(width: 8),
+                  _buildStatusBadge(w.status),
+                  if (w.goal != null) ...[
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        'Goal: ${w.goal!}',
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primary),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ],
               ),
               if (w.exercises.isNotEmpty) ...[
@@ -411,9 +490,17 @@ class _MemberDetailsDialogState extends State<MemberDetailsDialog> with SingleTi
                       padding: const EdgeInsets.symmetric(vertical: 2),
                       child: Row(
                         children: [
-                          const Icon(Icons.arrow_right, size: 18, color: AppColors.primary),
-                          Text('${ex.exerciseName} (${ex.muscleGroup ?? "General"})', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                          const Spacer(),
+                          const Icon(Icons.arrow_right, size: 16, color: AppColors.primary),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              '${ex.exerciseName} (${ex.muscleGroup ?? "General"})',
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
                           Text('${ex.sets} sets × ${ex.reps} reps', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
                         ],
                       ),

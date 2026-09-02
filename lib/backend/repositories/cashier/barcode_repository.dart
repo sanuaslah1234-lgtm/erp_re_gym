@@ -7,12 +7,34 @@ class BarcodeRepository {
 
   BarcodeRepository(this.db);
 
+  bool _barcodesTableEnsured = false;
+  Future<void> _ensureBarcodesTable() async {
+    if (_barcodesTableEnsured) return;
+    try {
+      await db.connection.execute('''
+        CREATE TABLE IF NOT EXISTS barcodes (
+          id SERIAL PRIMARY KEY,
+          product_id INT NOT NULL,
+          barcode VARCHAR(100) NOT NULL,
+          label_quantity INT NOT NULL DEFAULT 1,
+          created_by INT,
+          created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+      ''');
+      _barcodesTableEnsured = true;
+    } catch (e) {
+      print('Error ensuring barcodes table: $e');
+    }
+  }
+
   Future<BarcodeModel> createBarcode({
     required int productId,
     required String barcode,
     int labelQuantity = 1,
     int? createdBy,
   }) async {
+    await _ensureBarcodesTable();
+
     final sql = '''
       INSERT INTO barcodes (product_id, barcode, label_quantity, created_by)
       VALUES (@productId, @barcode, @qty, @createdBy)
@@ -34,8 +56,8 @@ class BarcodeRepository {
 
     // Fetch product details for preview model
     final prodRes = await db.connection.execute(
-      Sql.named('SELECT name, product_code, selling_price FROM products WHERE id = @id OR id::text = @idStr'),
-      parameters: {'id': productId, 'idStr': productId.toString()},
+      Sql.named('SELECT name, product_code, selling_price FROM products WHERE id::text = @idStr LIMIT 1'),
+      parameters: {'idStr': productId.toString()},
     );
 
     final prodMap = prodRes.isNotEmpty ? prodRes.first.toColumnMap() : <String, dynamic>{};
@@ -54,10 +76,12 @@ class BarcodeRepository {
   }
 
   Future<List<BarcodeModel>> getAllBarcodes() async {
+    await _ensureBarcodesTable();
+
     final sql = '''
       SELECT b.*, p.name as product_name, p.product_code, p.selling_price
       FROM barcodes b
-      JOIN products p ON b.product_id = p.id
+      LEFT JOIN products p ON b.product_id::text = p.id::text
       ORDER BY b.created_at DESC
     ''';
 

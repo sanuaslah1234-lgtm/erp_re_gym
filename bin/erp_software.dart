@@ -69,6 +69,7 @@ import 'package:erp_software/backend/admin/settings/repositories/settings_reposi
 
 import 'package:erp_software/backend/services/gym_service.dart';
 import 'package:erp_software/backend/controllers/gym_controller.dart';
+import 'package:erp_software/backend/database/rbac_seeder.dart';
 
 Future<void> main() async {
   print('Starting ERP Backend...');
@@ -83,6 +84,10 @@ Future<void> main() async {
     final migrationRunner = MigrationRunner(postgresService);
     await migrationRunner.runMigrations();
     
+    // Seed RBAC Roles, Permissions, and Default SuperAdmins
+    print('Seeding RBAC & dedicated SuperAdmins...');
+    final rbacSeeder = RbacSeeder(postgresService);
+    await rbacSeeder.seedAll();
   } catch (e) {
     print('Startup failed: $e');
     print('Ensure PostgreSQL is running and .env is configured correctly.');

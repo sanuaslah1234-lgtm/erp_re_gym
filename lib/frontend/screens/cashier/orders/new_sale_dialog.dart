@@ -20,7 +20,7 @@ class _NewSaleDialogState extends State<NewSaleDialog> {
   final TextEditingController _receivedCtrl = TextEditingController();
   
   List<Map<String, dynamic>> _products = [];
-  List<Map<String, dynamic>> _cartItems = [];
+  final List<Map<String, dynamic>> _cartItems = [];
   bool _isLoading = false;
   bool _isSubmitting = false;
   String _selectedPaymentMethod = 'Cash';
@@ -50,19 +50,51 @@ class _NewSaleDialogState extends State<NewSaleDialog> {
           'Content-Type': 'application/json',
           if (auth.token != null) 'Authorization': 'Bearer ${auth.token}',
         },
-      ).timeout(const Duration(seconds: 5));
-      final body = jsonDecode(response.body);
-      if (response.statusCode == 200 && body['success'] == true) {
-        final List data = body['data'] ?? [];
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final dynamic decoded = jsonDecode(response.body);
+        List rawList = [];
+        if (decoded is List) {
+          rawList = decoded;
+        } else if (decoded is Map) {
+          if (decoded['data'] is List) {
+            rawList = decoded['data'];
+          } else if (decoded['products'] is List) {
+            rawList = decoded['products'];
+          }
+        }
+
+        final items = rawList.map((e) {
+          if (e is Map) {
+            return Map<String, dynamic>.from(e);
+          }
+          return <String, dynamic>{};
+        }).where((m) => m.isNotEmpty).toList();
+
         setState(() {
-          _products = data.cast<Map<String, dynamic>>();
+          _products = items;
         });
+      } else {
+        setState(() => _error = 'Failed to load products (${response.statusCode})');
       }
     } catch (e) {
-      setState(() => _error = 'Failed to load products');
+      setState(() => _error = 'Failed to load products: ${e.toString().replaceAll("Exception: ", "")}');
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  double _getProductPrice(Map<String, dynamic> product) {
+    final val = product['sellingPrice'] ?? product['selling_price'] ?? product['purchasePrice'] ?? product['purchase_price'] ?? 0;
+    if (val is num) return val.toDouble();
+    return double.tryParse(val.toString()) ?? 0.0;
+  }
+
+  int _getProductStock(Map<String, dynamic> product) {
+    final val = product['stockQuantity'] ?? product['stock_quantity'] ?? product['stock'] ?? 0;
+    if (val is num) return val.toInt();
+    return int.tryParse(val.toString()) ?? 0;
   }
 
   void _addToCart(Map<String, dynamic> product) {
@@ -76,7 +108,7 @@ class _NewSaleDialogState extends State<NewSaleDialog> {
         };
       });
     } else {
-      final price = (product['selling_price'] ?? product['purchase_price'] ?? 0).toDouble();
+      final price = _getProductPrice(product);
       setState(() {
         _cartItems.add({
           'product_id': product['id'],
@@ -168,251 +200,331 @@ class _NewSaleDialogState extends State<NewSaleDialog> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final dialogWidth = (screenWidth - 40).clamp(320.0, 500.0);
+    final isMobile = screenWidth < 750;
+    final dialogWidth = isMobile ? (screenWidth - 24) : 800.0;
+    final maxDialogHeight = (MediaQuery.of(context).size.height * 0.9).clamp(400.0, 750.0);
+
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
       child: Container(
         width: dialogWidth,
-        height: 600,
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Row(
+        constraints: BoxConstraints(maxHeight: maxDialogHeight),
+        padding: const EdgeInsets.all(16),
+        child: isMobile
+            ? DefaultTabController(
+                length: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.point_of_sale, color: Color(0xFF2563EB), size: 22),
-                    SizedBox(width: 10),
-                    Text('New Sale', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  ],
-                ),
-                IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
-              ],
-            ),
-            const Divider(height: 20),
-            
-            Expanded(
-              child: Row(
-                children: [
-                  // Left: Product Browser
-                  Expanded(
-                    flex: 3,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    // Header
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // Search
-                        TextField(
-                          controller: _searchCtrl,
-                          decoration: InputDecoration(
-                            hintText: 'Search products...',
-                            prefixIcon: const Icon(Icons.search, size: 18),
-                            isDense: true,
-                            filled: true,
-                            fillColor: const Color(0xFFF1F5F9),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
-                            suffixIcon: IconButton(
-                              icon: const Icon(Icons.refresh, size: 18),
-                              onPressed: _loadProducts,
-                            ),
-                          ),
-                          onSubmitted: (_) => _loadProducts(),
-                        ),
-                        const SizedBox(height: 10),
-                        
-                        // Product List
-                        Expanded(
-                          child: _isLoading
-                              ? const Center(child: CircularProgressIndicator())
-                              : _error != null
-                                  ? Center(child: Text(_error!, style: const TextStyle(color: Colors.red)))
-                                  : _products.isEmpty
-                                      ? const Center(child: Text('No products found'))
-                                      : ListView.builder(
-                                          itemCount: _products.length,
-                                          itemBuilder: (context, index) {
-                                            final p = _products[index];
-                                            final stock = (p['stock_quantity'] ?? 0).toInt();
-                                            final price = (p['selling_price'] ?? 0).toDouble();
-                                            return Card(
-                                              margin: const EdgeInsets.only(bottom: 6),
-                                              child: ListTile(
-                                                dense: true,
-                                                title: Text(p['name'] ?? '', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                                                subtitle: Text('\$${price.toStringAsFixed(2)}  •  Stock: $stock', style: const TextStyle(fontSize: 11)),
-                                                trailing: IconButton(
-                                                  icon: const Icon(Icons.add_circle, color: Color(0xFF2563EB)),
-                                                  onPressed: stock > 0 ? () => _addToCart(p) : null,
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                        ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  
-                  const SizedBox(width: 16),
-                  const VerticalDivider(width: 1),
-                  const SizedBox(width: 16),
-                  
-                  // Right: Cart
-                  Expanded(
-                    flex: 2,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Cart (${_cartItems.length} items)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                        const SizedBox(height: 8),
-                        
-                        Expanded(
-                          child: _cartItems.isEmpty
-                              ? const Center(child: Text('Add products from the left', style: TextStyle(color: Colors.grey, fontSize: 12)))
-                              : ListView.builder(
-                                  itemCount: _cartItems.length,
-                                  itemBuilder: (context, index) {
-                                    final item = _cartItems[index];
-                                    return Container(
-                                      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-                                      margin: const EdgeInsets.only(bottom: 4),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFF8FAFC),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          Expanded(
-                                            flex: 3,
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(item['product_name'], style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis),
-                                                Text('\$${(item['unit_price'] as double).toStringAsFixed(2)} each', style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                                              ],
-                                            ),
-                                          ),
-                                          Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              IconButton(
-                                                padding: EdgeInsets.zero,
-                                                constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
-                                                icon: const Icon(Icons.remove_circle_outline, size: 18, color: Colors.red),
-                                                onPressed: () => _updateCartQuantity(index, -1),
-                                              ),
-                                              Text('${item['quantity']}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                                              IconButton(
-                                                padding: EdgeInsets.zero,
-                                                constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
-                                                icon: const Icon(Icons.add_circle_outline, size: 18, color: Color(0xFF2563EB)),
-                                                onPressed: () => _updateCartQuantity(index, 1),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text('\$${(item['total_amount'] as double).toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                                          const SizedBox(width: 4),
-                                          IconButton(
-                                            padding: EdgeInsets.zero,
-                                            constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
-                                            icon: const Icon(Icons.close, size: 14, color: Colors.grey),
-                                            onPressed: () => _removeFromCart(index),
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                ),
-                        ),
-                        
-                        const Divider(height: 20),
-                        
-                        // Payment
-                        Row(
+                        const Row(
                           children: [
-                            const Text('Payment: ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                            Expanded(
-                              child: DropdownButtonFormField<String>(
-                                value: _selectedPaymentMethod,
-                                isDense: true,
-                                decoration: const InputDecoration(isDense: true, border: OutlineInputBorder()),
-                                items: const [
-                                  DropdownMenuItem(value: 'Cash', child: Text('Cash', style: TextStyle(fontSize: 12))),
-                                  DropdownMenuItem(value: 'Card', child: Text('Card', style: TextStyle(fontSize: 12))),
-                                  DropdownMenuItem(value: 'UPI', child: Text('UPI', style: TextStyle(fontSize: 12))),
-                                ],
-                                onChanged: (v) => setState(() => _selectedPaymentMethod = v ?? 'Cash'),
-                              ),
-                            ),
+                            Icon(Icons.point_of_sale, color: Color(0xFF2563EB), size: 22),
+                            SizedBox(width: 8),
+                            Text('New Sale', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                           ],
                         ),
-                        const SizedBox(height: 8),
-                        
-                        if (_selectedPaymentMethod == 'Cash')
-                          TextField(
-                            controller: _receivedCtrl,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'Amount Received',
-                              isDense: true,
-                              border: OutlineInputBorder(),
-                              prefixText: '\$ ',
-                            ),
-                          ),
-                        const SizedBox(height: 10),
-                        
-                        // Totals
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF1F5F9),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Column(
-                            children: [
-                              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                                const Text('Subtotal', style: TextStyle(fontSize: 12)),
-                                Text('\$${_subtotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                              ]),
-                              const SizedBox(height: 4),
-                              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                                const Text('Grand Total', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                                Text('\$${_grandTotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2563EB))),
-                              ]),
-                            ],
-                          ),
+                        IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Tabs
+                    Container(
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: TabBar(
+                        indicator: BoxDecoration(
+                          color: const Color(0xFF2563EB),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        const SizedBox(height: 12),
-                        
-                        // Submit
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: _isSubmitting || _cartItems.isEmpty ? null : _submitSale,
-                            icon: _isSubmitting
-                                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                : const Icon(Icons.check, size: 18),
-                            label: Text(_isSubmitting ? 'Processing...' : 'Complete Sale'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF16A34A),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                            ),
+                        labelColor: Colors.white,
+                        unselectedLabelColor: const Color(0xFF64748B),
+                        labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        tabs: [
+                          const Tab(text: 'Products'),
+                          Tab(text: 'Cart (${_cartItems.length}) - \$${_grandTotal.toStringAsFixed(2)}'),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    Expanded(
+                      child: TabBarView(
+                        children: [
+                          _buildProductBrowser(),
+                          SingleChildScrollView(
+                            child: _buildCartView(),
                           ),
-                        ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.point_of_sale, color: Color(0xFF2563EB), size: 22),
+                          SizedBox(width: 10),
+                          Text('New Sale', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                      IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
+                    ],
+                  ),
+                  const Divider(height: 20),
+
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Expanded(flex: 3, child: _buildProductBrowser()),
+                        const SizedBox(width: 16),
+                        const VerticalDivider(width: 1),
+                        const SizedBox(width: 16),
+                        Expanded(flex: 2, child: _buildCartView()),
                       ],
                     ),
                   ),
                 ],
               ),
+      ),
+    );
+  }
+
+  Widget _buildProductBrowser() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextField(
+          controller: _searchCtrl,
+          decoration: InputDecoration(
+            hintText: 'Search products...',
+            prefixIcon: const Icon(Icons.search, size: 18),
+            isDense: true,
+            filled: true,
+            fillColor: const Color(0xFFF1F5F9),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+            suffixIcon: IconButton(
+              icon: const Icon(Icons.refresh, size: 18),
+              onPressed: _loadProducts,
+            ),
+          ),
+          onSubmitted: (_) => _loadProducts(),
+        ),
+        const SizedBox(height: 10),
+        Expanded(
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _error != null
+                  ? Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.error_outline, color: Colors.red, size: 36),
+                            const SizedBox(height: 8),
+                            Text(_error!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red, fontSize: 13)),
+                            const SizedBox(height: 12),
+                            ElevatedButton.icon(
+                              onPressed: _loadProducts,
+                              icon: const Icon(Icons.refresh, size: 16),
+                              label: const Text('Retry'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF2563EB),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  : _products.isEmpty
+                      ? const Center(child: Text('No products found'))
+                      : ListView.builder(
+                          itemCount: _products.length,
+                          itemBuilder: (context, index) {
+                            final p = _products[index];
+                            final stock = _getProductStock(p);
+                            final price = _getProductPrice(p);
+                            final code = p['productCode'] ?? p['product_code'] ?? p['sku'] ?? '';
+                            return Card(
+                              margin: const EdgeInsets.only(bottom: 6),
+                              child: ListTile(
+                                dense: true,
+                                title: Text(p['name'] ?? 'Product', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                                subtitle: Text(
+                                  '\$${price.toStringAsFixed(2)}  •  Stock: $stock${code.isNotEmpty ? '  •  $code' : ''}',
+                                  style: const TextStyle(fontSize: 11),
+                                ),
+                                trailing: IconButton(
+                                  icon: const Icon(Icons.add_circle, color: Color(0xFF2563EB)),
+                                  onPressed: stock > 0 ? () => _addToCart(p) : null,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCartView() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Cart (${_cartItems.length} items)', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        const SizedBox(height: 8),
+        if (_cartItems.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(24),
+            child: const Center(child: Text('Cart is empty. Add products to begin sale.', style: TextStyle(color: Colors.grey, fontSize: 12))),
+          )
+        else
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _cartItems.length,
+            itemBuilder: (context, index) {
+              final item = _cartItems[index];
+              return Container(
+                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                margin: const EdgeInsets.only(bottom: 4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      flex: 3,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(item['product_name'], style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis),
+                          Text('\$${(item['unit_price'] as double).toStringAsFixed(2)} each', style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                        ],
+                      ),
+                    ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                          icon: const Icon(Icons.remove_circle_outline, size: 18, color: Colors.red),
+                          onPressed: () => _updateCartQuantity(index, -1),
+                        ),
+                        Text('${item['quantity']}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                        IconButton(
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                          icon: const Icon(Icons.add_circle_outline, size: 18, color: Color(0xFF2563EB)),
+                          onPressed: () => _updateCartQuantity(index, 1),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 4),
+                    Text('\$${(item['total_amount'] as double).toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    const SizedBox(width: 4),
+                    IconButton(
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+                      icon: const Icon(Icons.close, size: 14, color: Colors.grey),
+                      onPressed: () => _removeFromCart(index),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        const Divider(height: 20),
+        Row(
+          children: [
+            const Text('Payment: ', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+            Expanded(
+              child: DropdownButtonFormField<String>(
+                initialValue: _selectedPaymentMethod,
+                isDense: true,
+                decoration: const InputDecoration(isDense: true, border: OutlineInputBorder()),
+                items: const [
+                  DropdownMenuItem(value: 'Cash', child: Text('Cash', style: TextStyle(fontSize: 12))),
+                  DropdownMenuItem(value: 'Card', child: Text('Card', style: TextStyle(fontSize: 12))),
+                  DropdownMenuItem(value: 'UPI', child: Text('UPI', style: TextStyle(fontSize: 12))),
+                ],
+                onChanged: (v) => setState(() => _selectedPaymentMethod = v ?? 'Cash'),
+              ),
             ),
           ],
         ),
-      ),
+        const SizedBox(height: 8),
+        if (_selectedPaymentMethod == 'Cash') ...[
+          TextField(
+            controller: _receivedCtrl,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+              labelText: 'Amount Received',
+              isDense: true,
+              border: OutlineInputBorder(),
+              prefixText: '\$ ',
+            ),
+          ),
+          const SizedBox(height: 10),
+        ],
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            children: [
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                const Text('Subtotal', style: TextStyle(fontSize: 12)),
+                Text('\$${_subtotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+              ]),
+              const SizedBox(height: 4),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                const Text('Grand Total', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                Text('\$${_grandTotal.toStringAsFixed(2)}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF2563EB))),
+              ]),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: _isSubmitting || _cartItems.isEmpty ? null : _submitSale,
+            icon: _isSubmitting
+                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                : const Icon(Icons.check, size: 18),
+            label: Text(_isSubmitting ? 'Processing...' : 'Complete Sale'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF16A34A),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

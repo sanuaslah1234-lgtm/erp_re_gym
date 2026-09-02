@@ -182,7 +182,7 @@ class _AddEditScheduleDialogState extends State<AddEditScheduleDialog> {
               child: _isInitLoading
                   ? const Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator(color: AppColors.primary))
                   : SingleChildScrollView(
-                      padding: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(18),
                       child: Form(
                         key: _formKey,
                         child: Column(
@@ -193,52 +193,47 @@ class _AddEditScheduleDialogState extends State<AddEditScheduleDialog> {
                               decoration: _inputDecoration('Title *', icon: Icons.title_outlined),
                               validator: (v) => (v == null || v.trim().isEmpty) ? 'Title is required' : null,
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 12),
 
                             DropdownButtonFormField<int?>(
-                              value: safeTrainerValue,
+                              initialValue: safeTrainerValue,
                               decoration: _inputDecoration('Trainer', icon: Icons.sports_gymnastics_rounded),
+                              isExpanded: true,
                               items: trainerItems,
                               onChanged: (v) => setState(() => _selectedTrainerId = v),
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 12),
 
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: InkWell(
-                                    onTap: () async {
-                                      final picked = await showDatePicker(
-                                        context: context,
-                                        initialDate: _date,
-                                        firstDate: DateTime.now().subtract(const Duration(days: 30)),
-                                        lastDate: DateTime.now().add(const Duration(days: 180)),
-                                      );
-                                      if (picked != null) setState(() => _date = picked);
-                                    },
-                                    child: InputDecorator(
-                                      decoration: _inputDecoration('Session Date', icon: Icons.event_outlined),
-                                      child: Text(_date.toIso8601String().split('T').first, style: const TextStyle(fontSize: 13)),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: DropdownButtonFormField<String>(
-                                    value: _status,
-                                    decoration: _inputDecoration('Status', icon: Icons.toggle_on_outlined),
-                                    items: const [
-                                      DropdownMenuItem(value: 'SCHEDULED', child: Text('SCHEDULED')),
-                                      DropdownMenuItem(value: 'ONGOING', child: Text('ONGOING')),
-                                      DropdownMenuItem(value: 'COMPLETED', child: Text('COMPLETED')),
-                                      DropdownMenuItem(value: 'CANCELLED', child: Text('CANCELLED')),
-                                    ],
-                                    onChanged: (v) => setState(() => _status = v ?? 'SCHEDULED'),
-                                  ),
-                                ),
-                              ],
+                            InkWell(
+                              onTap: () async {
+                                final picked = await showDatePicker(
+                                  context: context,
+                                  initialDate: _date,
+                                  firstDate: DateTime.now().subtract(const Duration(days: 30)),
+                                  lastDate: DateTime.now().add(const Duration(days: 180)),
+                                );
+                                if (picked != null) setState(() => _date = picked);
+                              },
+                              child: InputDecorator(
+                                decoration: _inputDecoration('Session Date', icon: Icons.event_outlined),
+                                child: Text(_date.toIso8601String().split('T').first, style: const TextStyle(fontSize: 13)),
+                              ),
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 12),
+
+                            DropdownButtonFormField<String>(
+                              initialValue: _status,
+                              decoration: _inputDecoration('Status', icon: Icons.toggle_on_outlined),
+                              isExpanded: true,
+                              items: const [
+                                DropdownMenuItem(value: 'SCHEDULED', child: Text('SCHEDULED')),
+                                DropdownMenuItem(value: 'ONGOING', child: Text('ONGOING')),
+                                DropdownMenuItem(value: 'COMPLETED', child: Text('COMPLETED')),
+                                DropdownMenuItem(value: 'CANCELLED', child: Text('CANCELLED')),
+                              ],
+                              onChanged: (v) => setState(() => _status = v ?? 'SCHEDULED'),
+                            ),
+                            const SizedBox(height: 12),
 
                             Row(
                               children: [
@@ -248,7 +243,7 @@ class _AddEditScheduleDialogState extends State<AddEditScheduleDialog> {
                                     decoration: _inputDecoration('Start Time', icon: Icons.access_time),
                                   ),
                                 ),
-                                const SizedBox(width: 14),
+                                const SizedBox(width: 10),
                                 Expanded(
                                   child: TextFormField(
                                     controller: _endTimeController,
@@ -257,7 +252,7 @@ class _AddEditScheduleDialogState extends State<AddEditScheduleDialog> {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 12),
 
                             TextFormField(
                               controller: _descriptionController,
@@ -272,35 +267,38 @@ class _AddEditScheduleDialogState extends State<AddEditScheduleDialog> {
 
             // Footer
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              padding: const EdgeInsets.all(16),
               decoration: const BoxDecoration(
                 color: Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
                 border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  OutlinedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
                     ),
-                    child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
                   ),
-                  const SizedBox(width: 12),
-                  ElevatedButton.icon(
-                    onPressed: _isLoading ? null : _save,
-                    icon: _isLoading
-                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Icon(Icons.check, size: 18),
-                    label: Text(isEdit ? 'Save Changes' : 'Schedule Session'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _isLoading ? null : _save,
+                      icon: _isLoading
+                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Icon(Icons.check, size: 18),
+                      label: Text(isEdit ? 'Save' : 'Schedule', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
                     ),
                   ),
                 ],

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/providers/cashier/pos_provider.dart';
 import 'package:erp_software/frontend/screens/cashier/pos/widgets/cart_panel.dart';
+import 'package:erp_software/frontend/screens/cashier/pos/widgets/held_orders_dialog.dart';
 import 'package:erp_software/frontend/screens/cashier/pos/widgets/product_grid.dart';
 import 'package:erp_software/frontend/screens/cashier/pos/widgets/product_search_bar.dart';
 import 'package:erp_software/frontend/widgets/erp_toast.dart';
@@ -19,11 +20,15 @@ class PosScreen extends StatefulWidget {
 class _PosScreenState extends State<PosScreen> {
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+  final FocusNode _keyboardFocusNode = FocusNode();
+  int _mobileTabIndex = 0; // 0: Products, 1: Cart
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _keyboardFocusNode.requestFocus();
       final token = Provider.of<AuthProvider>(context, listen: false).token;
       Provider.of<PosProvider>(context, listen: false).fetchProducts(token);
     });
@@ -33,6 +38,7 @@ class _PosScreenState extends State<PosScreen> {
   void dispose() {
     _searchController.dispose();
     _searchFocusNode.dispose();
+    _keyboardFocusNode.dispose();
     super.dispose();
   }
 
@@ -67,7 +73,7 @@ class _PosScreenState extends State<PosScreen> {
     });
 
     return KeyboardListener(
-      focusNode: FocusNode()..requestFocus(),
+      focusNode: _keyboardFocusNode,
       onKeyEvent: _handleKeyEvents,
       child: Scaffold(
         backgroundColor: const Color(0xFFF8FAFC),
@@ -81,13 +87,9 @@ class _PosScreenState extends State<PosScreen> {
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
                       child: isMobile
-                          ? Column(
-                              children: [
-                                _buildProductSection(posProvider, authProvider),
-                                const SizedBox(height: 16),
-                                const SizedBox(height: 450, child: CartPanel()),
-                              ],
-                            )
+                          ? (_mobileTabIndex == 0
+                              ? _buildProductSection(posProvider, authProvider)
+                              : const CartPanel())
                           : Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -103,11 +105,96 @@ class _PosScreenState extends State<PosScreen> {
             ),
           ],
         ),
+        bottomNavigationBar: (isMobile && _mobileTabIndex == 0 && posProvider.itemCount > 0)
+            ? Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 8, offset: const Offset(0, -2)),
+                  ],
+                ),
+                child: SafeArea(
+                  child: ElevatedButton(
+                    onPressed: () => setState(() => _mobileTabIndex = 1),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2563EB),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const SizedBox(width: 16),
+                        Text(
+                          'View Cart (${posProvider.itemCount} items)',
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          '\$${posProvider.grandTotal.toStringAsFixed(2)}',
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(width: 16),
+                      ],
+                    ),
+                  ),
+                ),
+              )
+            : null,
       ),
     );
   }
 
   Widget _buildProductSection(PosProvider posProvider, AuthProvider authProvider) {
+    // Build clean, deduplicated categories dropdown items
+    final categoryItems = <DropdownMenuItem<int?>>[
+      const DropdownMenuItem<int?>(
+        value: null,
+        child: Text('All Categories', style: TextStyle(fontSize: 12)),
+      ),
+    ];
+    final seenCatIds = <int>{};
+    for (final cat in posProvider.categories) {
+      final catId = int.tryParse(cat['id']?.toString() ?? '');
+      if (catId != null && !seenCatIds.contains(catId)) {
+        seenCatIds.add(catId);
+        categoryItems.add(
+          DropdownMenuItem<int?>(
+            value: catId,
+            child: Text(cat['name']?.toString() ?? 'Category $catId', style: const TextStyle(fontSize: 12)),
+          ),
+        );
+      }
+    }
+    final selectedCatValue = (posProvider.selectedCategoryId != null && seenCatIds.contains(posProvider.selectedCategoryId))
+        ? posProvider.selectedCategoryId
+        : null;
+
+    // Build clean, deduplicated brands dropdown items
+    final brandItems = <DropdownMenuItem<int?>>[
+      const DropdownMenuItem<int?>(
+        value: null,
+        child: Text('All Brands', style: TextStyle(fontSize: 12)),
+      ),
+    ];
+    final seenBrandIds = <int>{};
+    for (final b in posProvider.brands) {
+      final bId = int.tryParse(b['id']?.toString() ?? '');
+      if (bId != null && !seenBrandIds.contains(bId)) {
+        seenBrandIds.add(bId);
+        brandItems.add(
+          DropdownMenuItem<int?>(
+            value: bId,
+            child: Text(b['name']?.toString() ?? 'Brand $bId', style: const TextStyle(fontSize: 12)),
+          ),
+        );
+      }
+    }
+    final selectedBrandValue = (posProvider.selectedBrandId != null && seenBrandIds.contains(posProvider.selectedBrandId))
+        ? posProvider.selectedBrandId
+        : null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -122,12 +209,13 @@ class _PosScreenState extends State<PosScreen> {
         ),
         const SizedBox(height: 12),
 
-        // Dropdowns Row: All Categories | All Brands | Grid View
+        // Dropdowns Row: All Categories | All Brands | Held Orders
         Row(
           children: [
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                height: 38,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(10),
@@ -135,32 +223,21 @@ class _PosScreenState extends State<PosScreen> {
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<int?>(
-                    value: posProvider.selectedCategoryId,
+                    value: selectedCatValue,
                     hint: const Text('All Categories', style: TextStyle(fontSize: 12, color: Color(0xFF475569))),
                     isExpanded: true,
                     icon: const Icon(Icons.keyboard_arrow_down, size: 18, color: Color(0xFF64748B)),
-                    items: [
-                      const DropdownMenuItem<int?>(
-                        value: null,
-                        child: Text('All Categories', style: TextStyle(fontSize: 12)),
-                      ),
-                      ...posProvider.categories.map((cat) {
-                        final catId = int.tryParse(cat['id'].toString());
-                        return DropdownMenuItem<int?>(
-                          value: catId,
-                          child: Text(cat['name'].toString(), style: const TextStyle(fontSize: 12)),
-                        );
-                      }),
-                    ],
+                    items: categoryItems,
                     onChanged: (val) => posProvider.selectCategory(val, authProvider.token),
                   ),
                 ),
               ),
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             Expanded(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                height: 38,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(10),
@@ -168,48 +245,59 @@ class _PosScreenState extends State<PosScreen> {
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<int?>(
-                    value: posProvider.selectedBrandId,
+                    value: selectedBrandValue,
                     hint: const Text('All Brands', style: TextStyle(fontSize: 12, color: Color(0xFF475569))),
                     isExpanded: true,
                     icon: const Icon(Icons.keyboard_arrow_down, size: 18, color: Color(0xFF64748B)),
-                    items: [
-                      const DropdownMenuItem<int?>(
-                        value: null,
-                        child: Text('All Brands', style: TextStyle(fontSize: 12)),
-                      ),
-                      ...posProvider.brands.map((b) {
-                        final bId = int.tryParse(b['id'].toString());
-                        return DropdownMenuItem<int?>(
-                          value: bId,
-                          child: Text(b['name'].toString(), style: const TextStyle(fontSize: 12)),
-                        );
-                      }),
-                    ],
+                    items: brandItems,
                     onChanged: (val) => posProvider.selectBrand(val, authProvider.token),
                   ),
                 ),
               ),
             ),
-            const SizedBox(width: 10),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.grid_view_rounded, size: 16, color: Color(0xFF64748B)),
-                  SizedBox(width: 4),
-                  Text('Grid', style: TextStyle(fontSize: 12, color: Color(0xFF475569))),
-                  Icon(Icons.keyboard_arrow_down, size: 16, color: Color(0xFF64748B)),
-                ],
+            const SizedBox(width: 8),
+            InkWell(
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (_) => const HeldOrdersDialog(),
+                );
+              },
+              borderRadius: BorderRadius.circular(10),
+              child: Container(
+                height: 38,
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                decoration: BoxDecoration(
+                  color: posProvider.heldOrders.isNotEmpty ? const Color(0xFFFEF3C7) : Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: posProvider.heldOrders.isNotEmpty ? const Color(0xFFF59E0B) : const Color(0xFFE2E8F0),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.pause_circle_outline,
+                      size: 16,
+                      color: posProvider.heldOrders.isNotEmpty ? const Color(0xFFD97706) : const Color(0xFF64748B),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Held (${posProvider.heldOrders.length})',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: posProvider.heldOrders.isNotEmpty ? FontWeight.bold : FontWeight.normal,
+                        color: posProvider.heldOrders.isNotEmpty ? const Color(0xFFD97706) : const Color(0xFF475569),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
 
         // Categories / Tags Filter Pills (dynamic from database)
         SingleChildScrollView(
@@ -242,17 +330,13 @@ class _PosScreenState extends State<PosScreen> {
                   ),
                 ),
               ),
-              ...posProvider.categories.map((cat) {
-                final isSelected = posProvider.selectedCategoryId == cat['id'];
+              ...seenCatIds.map((cId) {
+                final cat = posProvider.categories.firstWhere((c) => int.tryParse(c['id']?.toString() ?? '') == cId, orElse: () => {'id': cId, 'name': 'Category $cId'});
+                final isSelected = posProvider.selectedCategoryId == cId;
                 return Padding(
                   padding: const EdgeInsets.only(left: 10),
                   child: InkWell(
-                    onTap: () {
-                      final cId = int.tryParse(cat['id'].toString());
-                      if (cId != null) {
-                        posProvider.selectCategory(cId, authProvider.token);
-                      }
-                    },
+                    onTap: () => posProvider.selectCategory(cId, authProvider.token),
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
@@ -289,4 +373,3 @@ class _PosScreenState extends State<PosScreen> {
     );
   }
 }
-

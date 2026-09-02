@@ -213,8 +213,8 @@ class _RenewMembershipDialogState extends State<RenewMembershipDialog> {
                             const SizedBox(height: 14),
 
                             // Plan
-                            DropdownButtonFormField<int>(
-                              value: safePlanValue,
+                            DropdownButtonFormField<int?>(
+                              initialValue: safePlanValue,
                               decoration: _inputDecoration('Renewal Plan *', icon: Icons.fitness_center_outlined),
                               items: planItems,
                               isExpanded: true,
@@ -257,7 +257,7 @@ class _RenewMembershipDialogState extends State<RenewMembershipDialog> {
 
                             // Payment Method
                             DropdownButtonFormField<String>(
-                              value: _paymentMethod,
+                              initialValue: _paymentMethod,
                               decoration: _inputDecoration('Payment Method', icon: Icons.account_balance_wallet_outlined),
                               isExpanded: true,
                               items: const [

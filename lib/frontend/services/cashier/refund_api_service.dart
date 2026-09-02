@@ -41,7 +41,7 @@ class RefundApiService {
   }
 
   Future<Refund> getRefundById(String? token, int id) async {
-    final response = await http.get(Uri.parse('$baseUrl/api/$id'), headers: _headers(token)).timeout(const Duration(seconds: 4));
+    final response = await http.get(Uri.parse('$baseUrl/$id'), headers: _headers(token)).timeout(const Duration(seconds: 4));
     final body = jsonDecode(response.body);
 
     if (response.statusCode == 200 && body['success'] == true) {

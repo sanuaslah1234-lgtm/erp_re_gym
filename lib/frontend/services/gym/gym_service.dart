@@ -12,7 +12,7 @@ import 'package:erp_software/core/models/gym/gym_workout_model.dart';
 import 'package:erp_software/core/models/gym/gym_schedule_model.dart';
 
 class GymApiService {
-  static const String baseUrl = AppConstants.apiBaseUrl;
+  static String get baseUrl => AppConstants.apiBaseUrl;
   static String? authToken;
 
   static void setAuthToken(String? token) {

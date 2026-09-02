@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/screens/auth/forgot_password_modal.dart';
+import 'package:erp_software/frontend/widgets/common/server_config_dialog.dart';
 import 'package:erp_software/frontend/widgets/erp_toast.dart';
 import 'package:provider/provider.dart';
 
@@ -93,19 +94,30 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF6C5CE7).withValues(alpha: 0.15),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.lock_outline_rounded,
-                          size: 48,
-                          color: Color(0xFF6C5CE7),
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const SizedBox(width: 32),
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF6C5CE7).withValues(alpha: 0.15),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.lock_outline_rounded,
+                              size: 44,
+                              color: Color(0xFF6C5CE7),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.dns_outlined, color: Color(0xFFA29BFE), size: 20),
+                            tooltip: 'Configure Server IP',
+                            onPressed: () => ServerConfigDialog.show(context),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
                       const Text(
                         'ERP Portal Login',
                         style: TextStyle(
@@ -219,17 +231,54 @@ class _LoginScreenState extends State<LoginScreen> {
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.05),
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
                         ),
-                        child: Row(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Icon(Icons.info_outline, size: 16, color: Colors.grey),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                'Default Credentials: admin@erp.com / admin123',
-                                style: TextStyle(fontSize: 11, color: Colors.grey.shade400),
-                              ),
+                            Row(
+                              children: [
+                                const Icon(Icons.flash_on_rounded, size: 16, color: Color(0xFFA29BFE)),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    'Quick Sign-in (Password: admin123):',
+                                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey.shade300),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 6,
+                              children: [
+                                ActionChip(
+                                  backgroundColor: const Color(0xFF1E293B),
+                                  side: const BorderSide(color: Color(0xFF3B82F6)),
+                                  avatar: const Icon(Icons.fitness_center_rounded, size: 14, color: Color(0xFF60A5FA)),
+                                  label: const Text('Gym SuperAdmin', style: TextStyle(fontSize: 11, color: Colors.white)),
+                                  onPressed: () {
+                                    setState(() {
+                                      _emailController.text = 'superadmingym@gmail.com';
+                                      _passwordController.text = 'admin123';
+                                    });
+                                  },
+                                ),
+                                ActionChip(
+                                  backgroundColor: const Color(0xFF1E293B),
+                                  side: const BorderSide(color: Color(0xFF10B981)),
+                                  avatar: const Icon(Icons.storefront_rounded, size: 14, color: Color(0xFF34D399)),
+                                  label: const Text('Retail SuperAdmin', style: TextStyle(fontSize: 11, color: Colors.white)),
+                                  onPressed: () {
+                                    setState(() {
+                                      _emailController.text = 'superadminretail@gmail.com';
+                                      _passwordController.text = 'admin123';
+                                    });
+                                  },
+                                ),
+                              ],
                             ),
                           ],
                         ),

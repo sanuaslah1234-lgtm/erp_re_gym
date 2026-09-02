@@ -29,13 +29,14 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 800;
     final provider = Provider.of<ProductManagementProvider>(context);
     final purchases = provider.purchases.where((p) {
       if (_search.isEmpty) return true;
       final q = _search.toLowerCase();
       return p.invoiceNumber.toLowerCase().contains(q) || (p.supplierName?.toLowerCase().contains(q) ?? false);
     }).toList();
+
+    final isMobile = MediaQuery.of(context).size.width < 700;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -51,25 +52,47 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Purchases', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-                                SizedBox(height: 4),
-                                Text('Manage purchase orders and history', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-                              ],
-                            ),
-                            ElevatedButton.icon(
-                              onPressed: () => _showAddPurchase(context),
-                              icon: const Icon(Icons.add, size: 18),
-                              label: const Text('New Purchase'),
-                              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
-                            ),
-                          ],
-                        ),
+                        if (isMobile)
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Purchases', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                                  SizedBox(height: 2),
+                                  Text('Manage purchase orders and history', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              ElevatedButton.icon(
+                                onPressed: _showAddPurchase,
+                                icon: const Icon(Icons.add, size: 16),
+                                label: const Text('New Purchase'),
+                                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                              ),
+                            ],
+                          )
+                        else
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Purchases', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                                  SizedBox(height: 4),
+                                  Text('Manage purchase orders and history', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                                ],
+                              ),
+                              ElevatedButton.icon(
+                                onPressed: _showAddPurchase,
+                                icon: const Icon(Icons.add, size: 18),
+                                label: const Text('New Purchase'),
+                                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                              ),
+                            ],
+                          ),
                         const SizedBox(height: 20),
                         Container(
                           padding: const EdgeInsets.all(16),
@@ -154,9 +177,9 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
                     child: Text(p.paymentStatus.toUpperCase(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: isPaid ? AppColors.success : AppColors.warning)),
                   )),
                   SizedBox(width: 80, child: Row(children: [
-                    _iconBtn(Icons.edit_outlined, () => _showEditDialog(context, p)),
+                    _iconBtn(Icons.edit_outlined, () => _showEditDialog(p)),
                     const SizedBox(width: 4),
-                    _iconBtn(Icons.delete_outline, () => _showDeleteDialog(context, p), danger: true),
+                    _iconBtn(Icons.delete_outline, () => _showDeleteDialog(p), danger: true),
                   ])),
                 ]),
               );
@@ -167,7 +190,7 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
     );
   }
 
-  void _showAddPurchase(BuildContext context) {
+  void _showAddPurchase() {
     showDialog(context: context, builder: (_) => const PurchaseManagementDialog());
   }
 
@@ -179,7 +202,7 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
     );
   }
 
-  void _showEditDialog(BuildContext context, PurchaseModel p) {
+  void _showEditDialog(PurchaseModel p) {
     final invoiceCtrl = TextEditingController(text: p.invoiceNumber);
     final supplierCtrl = TextEditingController(text: p.supplierName ?? '');
     final totalCtrl = TextEditingController(text: p.totalAmount.toString());
@@ -201,7 +224,7 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
           TextField(controller: totalCtrl, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Total Amount *', border: OutlineInputBorder(), isDense: true)),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
-            value: paymentStatus,
+            initialValue: paymentStatus,
             decoration: const InputDecoration(labelText: 'Payment Status', border: OutlineInputBorder(), isDense: true),
             items: const [
               DropdownMenuItem(value: 'paid', child: Text('Paid')),
@@ -225,10 +248,12 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
                   paymentStatus: paymentStatus,
                   purchaseDate: p.purchaseDate,
                 ));
+                if (!mounted) return;
                 if (ctx.mounted) Navigator.pop(ctx);
-                if (mounted) ErpToast.showSuccess(context, 'Purchase updated');
+                ErpToast.showSuccess(context, 'Purchase updated');
               } catch (e) {
-                if (mounted) ErpToast.showError(context, e.toString().replaceAll('Exception: ', ''));
+                if (!mounted) return;
+                ErpToast.showError(context, e.toString().replaceAll('Exception: ', ''));
               }
             },
             icon: const Icon(Icons.save, size: 16), label: const Text('Save'),
@@ -239,7 +264,7 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
     ));
   }
 
-  void _showDeleteDialog(BuildContext context, PurchaseModel p) {
+  void _showDeleteDialog(PurchaseModel p) {
     showDialog(context: context, builder: (ctx) => AlertDialog(
       title: const Text('Delete Purchase'),
       content: Text('Delete purchase "${p.invoiceNumber}"? This cannot be undone.'),
@@ -251,10 +276,12 @@ class _PurchasesScreenState extends State<PurchasesScreen> {
               final auth = Provider.of<AuthProvider>(context, listen: false);
               final provider = Provider.of<ProductManagementProvider>(context, listen: false);
               await provider.deletePurchase(auth.token, p.id);
+              if (!mounted) return;
               if (ctx.mounted) Navigator.pop(ctx);
-              if (mounted) ErpToast.showSuccess(context, 'Purchase deleted');
+              ErpToast.showSuccess(context, 'Purchase deleted');
             } catch (e) {
-              if (mounted) ErpToast.showError(ctx, e.toString().replaceAll('Exception: ', ''));
+              if (!mounted) return;
+              ErpToast.showError(context, e.toString().replaceAll('Exception: ', ''));
             }
           },
           style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),

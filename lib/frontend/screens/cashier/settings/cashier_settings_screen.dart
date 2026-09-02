@@ -73,7 +73,45 @@ class _CashierSettingsScreenState extends State<CashierSettingsScreen> {
   Widget build(BuildContext context) {
     final settingsProvider = Provider.of<CashierSettingsProvider>(context);
     final authProvider = Provider.of<AuthProvider>(context);
-    final isMobile = MediaQuery.of(context).size.width < 800;
+
+    final isMobile = MediaQuery.of(context).size.width < 650;
+
+    final saveButton = ElevatedButton.icon(
+      onPressed: settingsProvider.isLoading
+          ? null
+          : () async {
+              final updated = CashierSettings(
+                id: settingsProvider.settings.id,
+                storeName: _nameCtrl.text.trim(),
+                storeAddress: _addrCtrl.text.trim(),
+                phone: _phoneCtrl.text.trim(),
+                email: _emailCtrl.text.trim(),
+                receiptFooter: _footerCtrl.text.trim(),
+                showLogo: settingsProvider.settings.showLogo,
+                showTax: settingsProvider.settings.showTax,
+                showCashierName: settingsProvider.settings.showCashierName,
+                showCustomerName: settingsProvider.settings.showCustomerName,
+                autoPrintReceipt: settingsProvider.settings.autoPrintReceipt,
+                defaultTaxPercentage: double.tryParse(_taxCtrl.text) ?? 5.0,
+                allowNegativeStock: settingsProvider.settings.allowNegativeStock,
+                requireCustomer: settingsProvider.settings.requireCustomer,
+                allowDiscount: settingsProvider.settings.allowDiscount,
+                maximumDiscountPercentage: double.tryParse(_maxDiscCtrl.text) ?? 50.0,
+                autoClearCart: settingsProvider.settings.autoClearCart,
+              );
+
+              final success = await settingsProvider.saveSettings(authProvider.token, updated);
+              if (success && context.mounted) {
+                ErpToast.showSuccess(
+                  context,
+                  'Cashier settings saved to PostgreSQL database!',
+                );
+              }
+            },
+      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF4F46E5), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12)),
+      icon: const Icon(Icons.save, size: 18),
+      label: const Text('Save Settings', style: TextStyle(fontWeight: FontWeight.bold)),
+    );
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -85,52 +123,27 @@ class _CashierSettingsScreenState extends State<CashierSettingsScreen> {
               children: [
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(24.0),
+                    padding: EdgeInsets.all(isMobile ? 16.0 : 24.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('Cashier Module Settings', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                            ElevatedButton.icon(
-                              onPressed: settingsProvider.isLoading
-                                  ? null
-                                  : () async {
-                                      final updated = CashierSettings(
-                                        id: settingsProvider.settings.id,
-                                        storeName: _nameCtrl.text.trim(),
-                                        storeAddress: _addrCtrl.text.trim(),
-                                        phone: _phoneCtrl.text.trim(),
-                                        email: _emailCtrl.text.trim(),
-                                        receiptFooter: _footerCtrl.text.trim(),
-                                        showLogo: settingsProvider.settings.showLogo,
-                                        showTax: settingsProvider.settings.showTax,
-                                        showCashierName: settingsProvider.settings.showCashierName,
-                                        showCustomerName: settingsProvider.settings.showCustomerName,
-                                        autoPrintReceipt: settingsProvider.settings.autoPrintReceipt,
-                                        defaultTaxPercentage: double.tryParse(_taxCtrl.text) ?? 5.0,
-                                        allowNegativeStock: settingsProvider.settings.allowNegativeStock,
-                                        requireCustomer: settingsProvider.settings.requireCustomer,
-                                        allowDiscount: settingsProvider.settings.allowDiscount,
-                                        maximumDiscountPercentage: double.tryParse(_maxDiscCtrl.text) ?? 50.0,
-                                        autoClearCart: settingsProvider.settings.autoClearCart,
-                                      );
-
-                                      final success = await settingsProvider.saveSettings(authProvider.token, updated);
-                                      if (success && context.mounted) {
-                                        ErpToast.showSuccess(
-                                          context,
-                                          'Cashier settings saved to PostgreSQL database!',
-                                        );
-                                      }
-                                    },
-                              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF4F46E5), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12)),
-                              icon: const Icon(Icons.save),
-                              label: const Text('Save Settings', style: TextStyle(fontWeight: FontWeight.bold)),
-                            ),
-                          ],
-                        ),
+                        if (isMobile)
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              const Text('Cashier Module Settings', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                              const SizedBox(height: 12),
+                              saveButton,
+                            ],
+                          )
+                        else
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Cashier Module Settings', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                              saveButton,
+                            ],
+                          ),
                         const SizedBox(height: 24),
 
                         settingsProvider.isLoading

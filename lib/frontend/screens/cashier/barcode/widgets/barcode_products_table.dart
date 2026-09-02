@@ -17,29 +17,26 @@ class BarcodeProductsTable extends StatelessWidget {
       children: [
         // Search & Category Filter Row
         Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            children: [
-              Expanded(
-                child: SizedBox(
-                  height: 38,
-                  child: TextField(
-                    onChanged: (val) => provider.setSearchQuery(val),
-                    decoration: InputDecoration(
-                      hintText: 'Search by name, SKU or barcode...',
-                      hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
-                      prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF94A3B8)),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
-                    ),
+          padding: const EdgeInsets.all(14.0),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isNarrow = constraints.maxWidth < 450;
+              final searchField = SizedBox(
+                height: 38,
+                child: TextField(
+                  onChanged: (val) => provider.setSearchQuery(val),
+                  decoration: InputDecoration(
+                    hintText: 'Search name, SKU or barcode...',
+                    hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                    prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF94A3B8)),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
                   ),
                 ),
-              ),
-              const SizedBox(width: 16),
+              );
 
-              // Category Dropdown (dynamic from database)
-              Container(
+              final categoryDropdown = Container(
                 height: 38,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
@@ -66,210 +63,257 @@ class BarcodeProductsTable extends StatelessWidget {
                     },
                   ),
                 ),
-              ),
-            ],
+              );
+
+              if (isNarrow) {
+                return Column(
+                  children: [
+                    searchField,
+                    const SizedBox(height: 8),
+                    SizedBox(width: double.infinity, child: categoryDropdown),
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  Expanded(child: searchField),
+                  const SizedBox(width: 12),
+                  categoryDropdown,
+                ],
+              );
+            },
           ),
         ),
 
-        // Table Header
-        Container(
-          color: const Color(0xFFF8FAFC),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 32,
-                child: Checkbox(
-                  value: allSelected,
-                  activeColor: const Color(0xFF2563EB),
-                  onChanged: (val) => provider.toggleAllCheckboxes(val),
-                ),
-              ),
-              const SizedBox(width: 8),
-              const Expanded(flex: 3, child: Text('PRODUCT INFO', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B)))),
-              const Expanded(flex: 2, child: Text('SKU / BARCODE', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B)))),
-              const Expanded(flex: 2, child: Text('PRICE', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B)))),
-              const Expanded(flex: 2, child: Text('PRINT QTY', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B)))),
-              const Expanded(flex: 3, child: Text('LIVE BARCODE', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B)))),
-            ],
-          ),
-        ),
-
-        // Table Rows Body
+        // Table Content Area with Responsive Horizontal Scroll for Narrow Screens
         Expanded(
-          child: products.isEmpty
-              ? const Center(child: Text('No products found', style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))))
-              : ListView.separated(
-                  padding: EdgeInsets.zero,
-                  itemCount: products.length,
-                  separatorBuilder: (_, _) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
-                  itemBuilder: (context, index) {
-                    final product = products[index];
-                    final isChecked = provider.checkedProductIds.contains(product.id);
-                    final printItem = provider.selectedProducts.firstWhere(
-                      (item) => item.product.id == product.id,
-                      orElse: () => BarcodePrintItem(product: product, quantity: 1),
-                    );
-                    final barcodeData = product.barcode ?? product.productCode;
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              const double minTableWidth = 660.0;
+              final bool needsScroll = constraints.maxWidth < minTableWidth;
+              final double contentWidth = needsScroll ? minTableWidth : constraints.maxWidth;
 
-                    final initials = product.name.length >= 2 ? product.name.substring(0, 2).toUpperCase() : 'PR';
-
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              Widget tableWidget = SizedBox(
+                width: contentWidth,
+                child: Column(
+                  children: [
+                    // Table Header
+                    Container(
+                      color: const Color(0xFFF8FAFC),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       child: Row(
                         children: [
                           SizedBox(
                             width: 32,
                             child: Checkbox(
-                              value: isChecked,
+                              value: allSelected,
                               activeColor: const Color(0xFF2563EB),
-                              onChanged: (val) => provider.toggleProductCheck(product.id, val),
+                              onChanged: (val) => provider.toggleAllCheckboxes(val),
                             ),
                           ),
                           const SizedBox(width: 8),
-
-                          // PRODUCT INFO (Avatar + Title + Subtitle)
-                          Expanded(
-                            flex: 3,
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 36,
-                                  height: 36,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFEEF2FF),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      initials,
-                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        product.name,
-                                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      Text(
-                                        product.name.toLowerCase(),
-                                        style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          // SKU / BARCODE
-                          Expanded(
-                            flex: 2,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF1F5F9),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    product.productCode,
-                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  barcodeData,
-                                  style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontFamily: 'monospace'),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          // PRICE
-                          Expanded(
-                            flex: 2,
-                            child: Text(
-                              '₹${product.sellingPrice.toStringAsFixed(2)}',
-                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
-                            ),
-                          ),
-
-                          // PRINT QTY (Stepper)
-                          Expanded(
-                            flex: 2,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  height: 28,
-                                  decoration: BoxDecoration(
-                                    border: Border.all(color: const Color(0xFFCBD5E1)),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      InkWell(
-                                        onTap: () => provider.updateQuantity(product.id, printItem.quantity - 1),
-                                        child: const Padding(
-                                          padding: EdgeInsets.symmetric(horizontal: 6),
-                                          child: Icon(Icons.remove, size: 14, color: Color(0xFF64748B)),
-                                        ),
-                                      ),
-                                      Container(
-                                        width: 32,
-                                        height: double.infinity,
-                                        alignment: Alignment.center,
-                                        color: const Color(0xFFF8FAFC),
-                                        child: Text(
-                                          '${printItem.quantity}',
-                                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
-                                      InkWell(
-                                        onTap: () => provider.updateQuantity(product.id, printItem.quantity + 1),
-                                        child: const Padding(
-                                          padding: EdgeInsets.symmetric(horizontal: 6),
-                                          child: Icon(Icons.add, size: 14, color: Color(0xFF64748B)),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          // LIVE BARCODE
-                          Expanded(
-                            flex: 3,
-                            child: Container(
-                              alignment: Alignment.center,
-                              padding: const EdgeInsets.symmetric(horizontal: 8),
-                              child: BarcodeWidget(
-                                data: barcodeData,
-                                height: 32,
-                                showText: false,
-                                color: Colors.black,
-                              ),
-                            ),
-                          ),
+                          const Expanded(flex: 3, child: Text('PRODUCT INFO', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B)))),
+                          const Expanded(flex: 2, child: Text('SKU / BARCODE', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B)))),
+                          const Expanded(flex: 2, child: Text('PRICE', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B)))),
+                          const Expanded(flex: 2, child: Text('PRINT QTY', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B)))),
+                          const Expanded(flex: 3, child: Text('LIVE BARCODE', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF64748B)))),
                         ],
                       ),
-                    );
-                  },
+                    ),
+
+                    // Table Rows Body
+                    Expanded(
+                      child: products.isEmpty
+                          ? const Center(child: Text('No products found', style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))))
+                          : ListView.separated(
+                              padding: EdgeInsets.zero,
+                              itemCount: products.length,
+                              separatorBuilder: (_, _) => const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                              itemBuilder: (context, index) {
+                                final product = products[index];
+                                final isChecked = provider.checkedProductIds.contains(product.id);
+                                final printItem = provider.selectedProducts.firstWhere(
+                                  (item) => item.product.id == product.id,
+                                  orElse: () => BarcodePrintItem(product: product, quantity: 1),
+                                );
+                                final barcodeData = product.barcode ?? product.productCode;
+                                final initials = product.name.length >= 2 ? product.name.substring(0, 2).toUpperCase() : 'PR';
+
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                                  child: Row(
+                                    children: [
+                                      SizedBox(
+                                        width: 32,
+                                        child: Checkbox(
+                                          value: isChecked,
+                                          activeColor: const Color(0xFF2563EB),
+                                          onChanged: (val) => provider.toggleProductCheck(product.id, val),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+
+                                      // PRODUCT INFO
+                                      Expanded(
+                                        flex: 3,
+                                        child: Row(
+                                          children: [
+                                            Container(
+                                              width: 34,
+                                              height: 34,
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFEEF2FF),
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Center(
+                                                child: Text(
+                                                  initials,
+                                                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 10),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    product.name,
+                                                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                  Text(
+                                                    product.name.toLowerCase(),
+                                                    style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+
+                                      // SKU / BARCODE
+                                      Expanded(
+                                        flex: 2,
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFF1F5F9),
+                                                borderRadius: BorderRadius.circular(4),
+                                              ),
+                                              child: Text(
+                                                product.productCode,
+                                                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 2),
+                                            Text(
+                                              barcodeData,
+                                              style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontFamily: 'monospace'),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+
+                                      // PRICE
+                                      Expanded(
+                                        flex: 2,
+                                        child: Text(
+                                          '₹${product.sellingPrice.toStringAsFixed(2)}',
+                                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                                        ),
+                                      ),
+
+                                      // PRINT QTY (Stepper)
+                                      Expanded(
+                                        flex: 2,
+                                        child: Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Container(
+                                              height: 28,
+                                              decoration: BoxDecoration(
+                                                border: Border.all(color: const Color(0xFFCBD5E1)),
+                                                borderRadius: BorderRadius.circular(6),
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  InkWell(
+                                                    onTap: () => provider.updateQuantity(product.id, printItem.quantity - 1),
+                                                    child: const Padding(
+                                                      padding: EdgeInsets.symmetric(horizontal: 6),
+                                                      child: Icon(Icons.remove, size: 14, color: Color(0xFF64748B)),
+                                                    ),
+                                                  ),
+                                                  Container(
+                                                    width: 30,
+                                                    height: double.infinity,
+                                                    alignment: Alignment.center,
+                                                    color: const Color(0xFFF8FAFC),
+                                                    child: Text(
+                                                      '${printItem.quantity}',
+                                                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                                    ),
+                                                  ),
+                                                  InkWell(
+                                                    onTap: () => provider.updateQuantity(product.id, printItem.quantity + 1),
+                                                    child: const Padding(
+                                                      padding: EdgeInsets.symmetric(horizontal: 6),
+                                                      child: Icon(Icons.add, size: 14, color: Color(0xFF64748B)),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+
+                                      // LIVE BARCODE
+                                      Expanded(
+                                        flex: 3,
+                                        child: Container(
+                                          alignment: Alignment.center,
+                                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                                          child: BarcodeWidget(
+                                            data: barcodeData,
+                                            height: 32,
+                                            showText: false,
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
                 ),
+              );
+
+              if (needsScroll) {
+                return SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: tableWidget,
+                );
+              }
+              return tableWidget;
+            },
+          ),
         ),
       ],
     );

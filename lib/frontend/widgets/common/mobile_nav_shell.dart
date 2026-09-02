@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:erp_software/core/constants/app_permissions.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
-import 'package:erp_software/frontend/screens/cashier/cashier_dashboard_screen.dart';
+import 'package:erp_software/frontend/screens/cashier/pos/pos_screen.dart';
+import 'package:erp_software/frontend/screens/cashier/barcode/barcode_print_screen.dart';
+import 'package:erp_software/frontend/screens/cashier/settings/cashier_settings_screen.dart';
 import 'package:erp_software/frontend/screens/cashier/orders/pos_orders_screen.dart';
 import 'package:erp_software/frontend/screens/customers/customers_screen.dart';
 import 'package:erp_software/frontend/screens/employees/employee_screen.dart';
@@ -114,9 +116,9 @@ class _MobileNavShellState extends State<MobileNavShell> {
       case 'Reports': return const ReportsScreen();
       case 'Invoices': return const InvoicesScreen();
       case 'Sales Orders': return const PosOrdersScreen();
-      case 'POS Terminal': return CashierDashboardScreen(initialTab: 'POS Terminal');
-      case 'Barcode Printing': return CashierDashboardScreen(initialTab: 'Barcode Printing');
-      case 'Settings': return CashierDashboardScreen(initialTab: 'Settings');
+      case 'POS Terminal': return const PosScreen();
+      case 'Barcode Printing': return const BarcodePrintScreen();
+      case 'Settings': return const CashierSettingsScreen();
       case 'Roles': return const DesignationsRolesScreen();
       case 'Branches': return const StoreBranchesScreen();
       default: return const EmployeesScreen();

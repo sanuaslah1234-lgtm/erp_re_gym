@@ -189,7 +189,7 @@ class _AddEditPlanDialogState extends State<AddEditPlanDialog> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: DropdownButtonFormField<String>(
-                              value: _status,
+                              initialValue: _status,
                               decoration: _inputDecoration('Status', icon: Icons.toggle_on_outlined),
                               isExpanded: true,
                               items: const [

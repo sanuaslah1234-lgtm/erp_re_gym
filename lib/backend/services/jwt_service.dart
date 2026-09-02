@@ -25,16 +25,37 @@ class JwtPayload {
         'permissions': permissions,
       };
 
+  bool get isGymSuperAdmin =>
+      email.toLowerCase() == 'superadmingym@gmail.com' ||
+      role.toUpperCase() == AppRoles.gymSuperAdmin;
+
+  bool get isRetailSuperAdmin =>
+      email.toLowerCase() == 'superadminretail@gmail.com' ||
+      role.toUpperCase() == AppRoles.retailSuperAdmin;
+
   bool get isSuperAdmin =>
-      role.toUpperCase() == AppRoles.superAdmin ||
-      role.toLowerCase() == 'admin';
+      !isGymSuperAdmin &&
+      !isRetailSuperAdmin &&
+      (role.toUpperCase() == AppRoles.superAdmin || role.toLowerCase() == 'admin');
 
   bool can(String permission) {
+    if (isGymSuperAdmin) {
+      return permission.startsWith('gym.');
+    }
+    if (isRetailSuperAdmin) {
+      return permission.startsWith('erp.');
+    }
     if (isSuperAdmin) return true;
     return permissions.contains(permission) || permissions.contains('*');
   }
 
   bool hasAnyPermission(List<String> perms) {
+    if (isGymSuperAdmin) {
+      return perms.any((p) => p.startsWith('gym.'));
+    }
+    if (isRetailSuperAdmin) {
+      return perms.any((p) => p.startsWith('erp.'));
+    }
     if (isSuperAdmin) return true;
     return perms.any((p) => can(p));
   }

@@ -180,18 +180,20 @@ class _AssignTrainerDialogState extends State<AssignTrainerDialog> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Trainer selector
-                        DropdownButtonFormField<int>(
-                          value: safeTrainerValue,
+                        DropdownButtonFormField<int?>(
+                          initialValue: safeTrainerValue,
                           decoration: _inputDecoration('Trainer *', icon: Icons.sports_gymnastics_rounded),
+                          isExpanded: true,
                           items: trainerItems,
                           onChanged: (v) => setState(() => _selectedTrainerId = v),
                         ),
                         const SizedBox(height: 14),
 
                         // Member selector
-                        DropdownButtonFormField<int>(
-                          value: safeMemberValue,
+                        DropdownButtonFormField<int?>(
+                          initialValue: safeMemberValue,
                           decoration: _inputDecoration('Member *', icon: Icons.person_outline),
+                          isExpanded: true,
                           items: memberItems,
                           onChanged: (v) => setState(() => _selectedMemberId = v),
                         ),
@@ -243,35 +245,38 @@ class _AssignTrainerDialogState extends State<AssignTrainerDialog> {
 
             // Footer
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              padding: const EdgeInsets.all(16),
               decoration: const BoxDecoration(
                 color: Color(0xFFF8FAFC),
                 borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
                 border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  OutlinedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
                     ),
-                    child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
                   ),
-                  const SizedBox(width: 12),
-                  ElevatedButton.icon(
-                    onPressed: _isLoading ? null : _save,
-                    icon: _isLoading
-                        ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Icon(Icons.check, size: 18),
-                    label: const Text('Assign Trainer'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _isLoading ? null : _save,
+                      icon: _isLoading
+                          ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Icon(Icons.check, size: 18),
+                      label: const Text('Assign', style: TextStyle(fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
                     ),
                   ),
                 ],

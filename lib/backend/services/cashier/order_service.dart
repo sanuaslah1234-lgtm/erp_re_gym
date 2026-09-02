@@ -74,7 +74,7 @@ class OrderService {
     );
   }
 
-  Future<PosOrderModel> getOrderById(int id) async {
+  Future<PosOrderModel> getOrderById(dynamic id) async {
     final order = await orderRepository.findById(id);
     if (order == null) {
       throw ApiException('Order #$id not found', statusCode: 404);
@@ -82,7 +82,7 @@ class OrderService {
     return order;
   }
 
-  Future<void> cancelOrder(int id) async {
+  Future<void> cancelOrder(dynamic id) async {
     await orderRepository.cancelOrder(id);
   }
 }

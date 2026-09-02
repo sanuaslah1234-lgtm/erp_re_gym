@@ -111,12 +111,14 @@ class PosOrder {
       amountReceived: double.tryParse((json['amountReceived'] ?? json['amount_received'] ?? '0').toString()) ?? 0.0,
       changeAmount: double.tryParse((json['changeAmount'] ?? json['change_amount'] ?? '0').toString()) ?? 0.0,
       items: json['items'] != null
-          ? (json['items'] as List).map((i) => PosOrderItem.fromJson(i)).toList()
+          ? (json['items'] as List).map((i) => PosOrderItem.fromJson(i is Map<String, dynamic> ? i : Map<String, dynamic>.from(i as Map))).toList()
           : [],
       payments: json['payments'] != null
-          ? (json['payments'] as List).map((p) => Payment.fromJson(p)).toList()
+          ? (json['payments'] as List).map((p) => Payment.fromJson(p is Map<String, dynamic> ? p : Map<String, dynamic>.from(p as Map))).toList()
           : [],
-      createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'].toString()) : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'].toString())
+          : (json['created_at'] != null ? DateTime.tryParse(json['created_at'].toString()) : null),
     );
   }
 }

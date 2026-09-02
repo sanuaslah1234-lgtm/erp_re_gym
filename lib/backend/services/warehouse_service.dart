@@ -1,6 +1,5 @@
 import 'package:erp_software/backend/database/postgres_service.dart';
 import 'package:postgres/postgres.dart';
-import 'package:uuid/uuid.dart';
 
 class WarehouseService {
   final PostgresService postgresService;
@@ -83,11 +82,6 @@ class WarehouseService {
     String? phone,
     bool? isActive,
   }) async {
-    String? statusVal;
-    if (isActive != null) {
-      statusVal = isActive ? 'ACTIVE' : 'INACTIVE';
-    }
-
     final result = await postgresService.connection.execute(
       Sql.named('''
         UPDATE warehouses

@@ -155,62 +155,72 @@ class _GymMembersScreenState extends State<GymMembersScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(leading: const HamburgerButton(), backgroundColor: Colors.white, elevation: 0),
-      body: Row(
-        children: [
-          Expanded(
-            child: Column(
-              children: [
-                Expanded(
-                  child: RefreshIndicator(
-                    onRefresh: loadMembers,
-                    color: AppColors.primary,
-                    backgroundColor: Colors.white,
-                    child: SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: EdgeInsets.all(isMobile ? 14.0 : 24.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Header
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Gym Members',
-                                    style: TextStyle(
-                                      fontSize: 26,
-                                      fontWeight: FontWeight.w800,
-                                      color: Color(0xFF2563EB),
-                                      letterSpacing: -0.5,
-                                    ),
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text('Manage member registrations, plans, and attendance', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
-                                ],
-                              ),
-                              ElevatedButton.icon(
-                                onPressed: () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (_) => AddEditMemberDialog(onSaved: loadMembers),
-                                  );
-                                },
-                                icon: const Icon(Icons.add, size: 18),
-                                label: const Text('+ Add Member'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primary,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 20),
+      appBar: AppBar(
+        leading: const HamburgerButton(),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text('Gym Members', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF0F172A))),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person_add_alt_1_rounded, color: AppColors.primary),
+            tooltip: 'Add Member',
+            onPressed: () {
+              showDialog(
+                context: context,
+                builder: (_) => AddEditMemberDialog(onSaved: loadMembers),
+              );
+            },
+          ),
+        ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: loadMembers,
+        color: AppColors.primary,
+        backgroundColor: Colors.white,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(14.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Members List',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF2563EB),
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text('Manage member registrations, plans, and attendance', style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (_) => AddEditMemberDialog(onSaved: loadMembers),
+                        );
+                      },
+                      icon: const Icon(Icons.add_rounded, size: 18),
+                      label: const Text('Register New Member'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
 
                           // Search & Filter Card
                           Container(
@@ -298,12 +308,6 @@ class _GymMembersScreenState extends State<GymMembersScreen> {
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -448,43 +452,65 @@ class _GymMembersScreenState extends State<GymMembersScreen> {
         itemBuilder: (context, index) {
           final m = _filteredMembers[index];
 
-          return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-            child: Row(
-              children: [
-                // Avatar
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: AppColors.primaryLight,
-                  child: Text(
-                    m.name.isNotEmpty ? m.name[0].toUpperCase() : 'M',
-                    style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
-                  ),
-                ),
-                const SizedBox(width: 14),
-
-                // Name & Code
-                Expanded(
-                  flex: 3,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+          return InkWell(
+            onTap: () {
+              if (m.id != null) {
+                showDialog(
+                  context: context,
+                  builder: (_) => MemberDetailsDialog(memberId: m.id!, onUpdated: loadMembers),
+                );
+              }
+            },
+            borderRadius: BorderRadius.circular(14),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     children: [
-                      Text(m.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A))),
-                      const SizedBox(height: 2),
-                      Text('Code: ${m.memberCode}  •  ${m.phone}', style: const TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                      CircleAvatar(
+                        radius: 18,
+                        backgroundColor: AppColors.primaryLight,
+                        child: Text(
+                          m.name.isNotEmpty ? m.name[0].toUpperCase() : 'M',
+                          style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary, fontSize: 13),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(m.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            const SizedBox(height: 2),
+                            Text('Code: ${m.memberCode}  •  ${m.phone}', style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          ],
+                        ),
+                      ),
+                      _buildStatusBadge(m.status),
                     ],
                   ),
-                ),
-
-                // Plan & Expiry
-                if (!isMobile) ...[
-                  Expanded(
-                    flex: 3,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFF1F5F9)),
+                    ),
+                    child: Row(
                       children: [
-                        Text(m.currentPlanName ?? 'No Active Plan', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF0F172A))),
-                        const SizedBox(height: 2),
+                        Icon(Icons.fitness_center_rounded, size: 14, color: AppColors.primary.withValues(alpha: 0.7)),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            m.currentPlanName ?? 'No Active Plan',
+                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: Color(0xFF334155)),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                         Text(
                           m.currentMembershipEndDate != null
                               ? 'Expires: ${m.currentMembershipEndDate!.toIso8601String().split('T').first} (${m.daysRemaining}d)'
@@ -498,46 +524,46 @@ class _GymMembersScreenState extends State<GymMembersScreen> {
                       ],
                     ),
                   ),
-                ],
-
-                // Status Badge
-                _buildStatusBadge(m.status),
-                const SizedBox(width: 10),
-
-                // Actions
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.visibility_outlined, size: 18, color: AppColors.primary),
-                      tooltip: 'View Profile',
-                      onPressed: () {
-                        if (m.id != null) {
+                  const SizedBox(height: 6),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton.icon(
+                        style: TextButton.styleFrom(foregroundColor: AppColors.primary, padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), minimumSize: Size.zero, tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+                        icon: const Icon(Icons.visibility_outlined, size: 15),
+                        label: const Text('View', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        onPressed: () {
+                          if (m.id != null) {
+                            showDialog(
+                              context: context,
+                              builder: (_) => MemberDetailsDialog(memberId: m.id!, onUpdated: loadMembers),
+                            );
+                          }
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      TextButton.icon(
+                        style: TextButton.styleFrom(foregroundColor: const Color(0xFF64748B), padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), minimumSize: Size.zero, tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+                        icon: const Icon(Icons.edit_outlined, size: 15),
+                        label: const Text('Edit', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        onPressed: () {
                           showDialog(
                             context: context,
-                            builder: (_) => MemberDetailsDialog(memberId: m.id!, onUpdated: loadMembers),
+                            builder: (_) => AddEditMemberDialog(member: m, onSaved: loadMembers),
                           );
-                        }
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF64748B)),
-                      tooltip: 'Edit Member',
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (_) => AddEditMemberDialog(member: m, onSaved: loadMembers),
-                        );
-                      },
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline, size: 18, color: Color(0xFFEF4444)),
-                      tooltip: 'Delete Member',
-                      onPressed: () => _deleteMember(m),
-                    ),
-                  ],
-                ),
-              ],
+                        },
+                      ),
+                      const SizedBox(width: 8),
+                      TextButton.icon(
+                        style: TextButton.styleFrom(foregroundColor: const Color(0xFFEF4444), padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), minimumSize: Size.zero, tapTargetSize: MaterialTapTargetSize.shrinkWrap),
+                        icon: const Icon(Icons.delete_outline, size: 15),
+                        label: const Text('Delete', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        onPressed: () => _deleteMember(m),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           );
         },

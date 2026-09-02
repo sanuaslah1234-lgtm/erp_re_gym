@@ -291,7 +291,6 @@ class _EmployeesScreenState
   @override
   Widget build(BuildContext context) {
     final visibleEmployees = filteredEmployees;
-    final isMobile = MediaQuery.of(context).size.width < 900;
 
     return Scaffold(
       backgroundColor: AppColors.pageBackground,

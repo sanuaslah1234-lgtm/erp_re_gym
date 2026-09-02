@@ -72,8 +72,6 @@ class _ExpensesAccountsScreenState extends State<ExpensesAccountsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 800;
-
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(leading: const HamburgerButton(), backgroundColor: Colors.white, elevation: 0, title: const Text('Expenses', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)))),
@@ -96,7 +94,7 @@ class _ExpensesAccountsScreenState extends State<ExpensesAccountsScreen> {
                         Row(children: [
                           _summaryCard('Total Transactions', '${_filtered.length}', Icons.receipt_long, const Color(0xFF2563EB), const Color(0xFFDBEAFE)),
                           const SizedBox(width: 16),
-                          _summaryCard('Total Amount', '\$${_totalAmount.toStringAsFixed(2)}', Icons.attach_money, const Color(0xFF10B981), const Color(0xFFD1FAEFE)),
+                          _summaryCard('Total Amount', '\$${_totalAmount.toStringAsFixed(2)}', Icons.attach_money, const Color(0xFF10B981), const Color(0xFFD1FAE5)),
                         ]),
                         const SizedBox(height: 20),
                         Container(
@@ -155,16 +153,33 @@ class _ExpensesAccountsScreenState extends State<ExpensesAccountsScreen> {
   Widget _summaryCard(String title, String value, IconData icon, Color color, Color bg) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
         decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.border), boxShadow: AppShadows.soft),
         child: Row(children: [
-          Container(width: 40, height: 40, decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(11)), child: Icon(icon, color: color, size: 20)),
-          const SizedBox(width: 10),
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w500)),
-            const SizedBox(height: 3),
-            Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.textPrimary)),
-          ]),
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
+            child: Icon(icon, color: color, size: 18),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(
+                title,
+                style: const TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ]),
+          ),
         ]),
       ),
     );

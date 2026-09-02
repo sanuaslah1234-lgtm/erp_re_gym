@@ -44,31 +44,46 @@ class PosOrderModel {
     this.updatedAt,
   });
 
+  static double _parseDouble(dynamic v) {
+    if (v is num) return v.toDouble();
+    return double.tryParse(v?.toString() ?? '0') ?? 0.0;
+  }
+
+  static int? _parseInt(dynamic v) {
+    if (v == null) return null;
+    if (v is num) return v.toInt();
+    return int.tryParse(v.toString());
+  }
+
   factory PosOrderModel.fromJson(Map<String, dynamic> json) {
     return PosOrderModel(
-      id: int.tryParse(json['id'].toString()),
+      id: _parseInt(json['id']),
       orderNumber: json['orderNumber']?.toString() ?? json['order_number']?.toString() ?? '',
-      customerId: int.tryParse((json['customerId'] ?? json['customer_id'] ?? '').toString()),
+      customerId: _parseInt(json['customerId'] ?? json['customer_id']),
       customerName: json['customerName']?.toString() ?? json['customer_name']?.toString(),
-      cashierId: int.tryParse((json['cashierId'] ?? json['cashier_id'] ?? '1').toString()) ?? 1,
+      cashierId: _parseInt(json['cashierId'] ?? json['cashier_id']) ?? 1,
       cashierName: json['cashierName']?.toString() ?? json['cashier_name']?.toString(),
-      subtotal: double.tryParse((json['subtotal'] ?? '0').toString()) ?? 0.0,
-      discountAmount: double.tryParse((json['discountAmount'] ?? json['discount_amount'] ?? '0').toString()) ?? 0.0,
-      taxAmount: double.tryParse((json['taxAmount'] ?? json['tax_amount'] ?? '0').toString()) ?? 0.0,
-      grandTotal: double.tryParse((json['grandTotal'] ?? json['grand_total'] ?? '0').toString()) ?? 0.0,
+      subtotal: _parseDouble(json['subtotal'] ?? json['subtotal_amount']),
+      discountAmount: _parseDouble(json['discountAmount'] ?? json['discount_amount']),
+      taxAmount: _parseDouble(json['taxAmount'] ?? json['tax_amount']),
+      grandTotal: _parseDouble(json['grandTotal'] ?? json['grand_total']),
       paymentStatus: json['paymentStatus']?.toString() ?? json['payment_status']?.toString() ?? 'paid',
       orderStatus: json['orderStatus']?.toString() ?? json['order_status']?.toString() ?? 'paid',
       paymentMethod: json['paymentMethod']?.toString() ?? json['payment_method']?.toString(),
-      amountReceived: double.tryParse((json['amountReceived'] ?? json['amount_received'] ?? '0').toString()) ?? 0.0,
-      changeAmount: double.tryParse((json['changeAmount'] ?? json['change_amount'] ?? '0').toString()) ?? 0.0,
+      amountReceived: _parseDouble(json['amountReceived'] ?? json['amount_received']),
+      changeAmount: _parseDouble(json['changeAmount'] ?? json['change_amount']),
       items: json['items'] != null
-          ? (json['items'] as List).map((i) => OrderItemModel.fromJson(i)).toList()
+          ? (json['items'] as List).map((i) => OrderItemModel.fromJson(i is Map<String, dynamic> ? i : Map<String, dynamic>.from(i as Map))).toList()
           : [],
       payments: json['payments'] != null
-          ? (json['payments'] as List).map((p) => PaymentModel.fromJson(p)).toList()
+          ? (json['payments'] as List).map((p) => PaymentModel.fromJson(p is Map<String, dynamic> ? p : Map<String, dynamic>.from(p as Map))).toList()
           : [],
-      createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'].toString()) : null,
-      updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt'].toString()) : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'].toString())
+          : (json['created_at'] != null ? DateTime.tryParse(json['created_at'].toString()) : null),
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.tryParse(json['updatedAt'].toString())
+          : (json['updated_at'] != null ? DateTime.tryParse(json['updated_at'].toString()) : null),
     );
   }
 

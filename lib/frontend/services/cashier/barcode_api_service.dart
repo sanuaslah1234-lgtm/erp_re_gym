@@ -10,13 +10,14 @@ class BarcodeApiService {
         if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
       };
 
-  Future<Map<String, dynamic>> recordBarcodePrint(String? token, int productId, String barcode, int labelQuantity) async {
+  Future<Map<String, dynamic>> recordBarcodePrint(String? token, dynamic productId, String barcode, int labelQuantity) async {
+    final numericProductId = productId is int ? productId : (int.tryParse(productId.toString()) ?? 1);
     final response = await http
         .post(
           Uri.parse(baseUrl),
           headers: _headers(token),
           body: jsonEncode({
-            'productId': productId,
+            'productId': numericProductId,
             'barcode': barcode,
             'labelQuantity': labelQuantity,
           }),

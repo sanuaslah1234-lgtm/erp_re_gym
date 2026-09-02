@@ -38,7 +38,6 @@ class _RefundsScreenState extends State<RefundsScreen> {
   Widget build(BuildContext context) {
     final refundProvider = Provider.of<RefundProvider>(context);
     final authProvider = Provider.of<AuthProvider>(context);
-    final isMobile = MediaQuery.of(context).size.width < 800;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),

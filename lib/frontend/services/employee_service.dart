@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:erp_software/core/models/employee_model.dart';
 
 class EmployeeService {
-  static const String baseUrl = AppConstants.apiBaseUrl;
+  static String get baseUrl => AppConstants.apiBaseUrl;
 
   // =========================================================
   // GET ALL EMPLOYEES

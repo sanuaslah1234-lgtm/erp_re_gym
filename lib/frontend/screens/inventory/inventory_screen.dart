@@ -562,8 +562,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 800;
-
     final totalRecords = _filteredItems.length;
     final healthyStock = _filteredItems.where((i) => i.status == 'In Stock').length;
     final lowStock = _filteredItems.where((i) => i.status == 'Low Stock').length;
@@ -580,54 +578,54 @@ class _InventoryScreenState extends State<InventoryScreen> {
               children: [
                 Expanded(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(14),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Page Header
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                            const Text('Inventory / Stock',
+                                style: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.textPrimary)),
+                            const SizedBox(height: 4),
+                            const Text('Manage stock levels, adjustments, and audit trail',
+                                style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                            const SizedBox(height: 12),
+                            Row(
                               children: [
-                                Text('Inventory / Stock',
-                                    style: TextStyle(
-                                        fontSize: 22,
-                                        fontWeight: FontWeight.bold,
-                                        color: AppColors.textPrimary)),
-                                SizedBox(height: 4),
-                                Text('Manage stock levels, adjustments, and audit trail',
-                                    style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-                              ],
-                            ),
-                            Wrap(
-                              spacing: 8,
-                              children: [
-                                OutlinedButton.icon(
-                                  onPressed: _showStockAdjustmentDialog,
-                                  icon: const Icon(Icons.swap_horiz, size: 16),
-                                  label: const Text('Stock Adjustment'),
-                                  style: OutlinedButton.styleFrom(
-                                      foregroundColor: AppColors.warningDark,
-                                      side: const BorderSide(color: AppColors.warning),
-                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10)),
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    onPressed: _showStockAdjustmentDialog,
+                                    icon: const Icon(Icons.swap_horiz, size: 16),
+                                    label: const Text('Stock Adjust'),
+                                    style: OutlinedButton.styleFrom(
+                                        foregroundColor: AppColors.warningDark,
+                                        side: const BorderSide(color: AppColors.warning),
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10)),
+                                  ),
                                 ),
-                                ElevatedButton.icon(
-                                  onPressed: _showAddInventoryDialog,
-                                  icon: const Icon(Icons.add, size: 18),
-                                  label: const Text('Add Inventory'),
-                                  style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppColors.primary,
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: _showAddInventoryDialog,
+                                    icon: const Icon(Icons.add, size: 18),
+                                    label: const Text('Add Stock'),
+                                    style: ElevatedButton.styleFrom(
+                                        backgroundColor: AppColors.primary,
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                                  ),
                                 ),
                               ],
                             ),
                           ],
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 16),
 
                         // Stats
                         InventoryStats(

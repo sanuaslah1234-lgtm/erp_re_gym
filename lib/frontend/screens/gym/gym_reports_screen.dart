@@ -298,7 +298,7 @@ class _GymReportsScreenState extends State<GymReportsScreen> {
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: _tabNames.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, i) {
           final isActive = _selectedTab == i;
           return GestureDetector(
@@ -373,7 +373,7 @@ class _GymReportsScreenState extends State<GymReportsScreen> {
               CircleAvatar(
                 radius: 16,
                 backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                child: Text(_initials(name), style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary)),
+                child: Text(_initials(name), style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.primary)),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -388,12 +388,12 @@ class _GymReportsScreenState extends State<GymReportsScreen> {
               _statusBadge(status),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Row(
             children: [
               _infoChip(Icons.card_membership_rounded, plan),
               const Spacer(),
-              Text('\$${paid}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF16A34A))),
+              Text('\$$paid', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF16A34A))),
             ],
           ),
         ],
@@ -403,9 +403,9 @@ class _GymReportsScreenState extends State<GymReportsScreen> {
 
   Widget _attendanceCard(Map<String, dynamic> r) {
     final member = r['member_name'] ?? '-';
-    final date = r['attendance_date'] ?? '-';
-    final checkIn = r['check_in'] ?? '-';
-    final checkOut = r['check_out'] ?? '-';
+    final date = _formatDate(r['attendance_date']);
+    final checkIn = _formatTime(r['check_in']);
+    final checkOut = _formatTime(r['check_out']);
     final status = r['status'] ?? '-';
 
     return Container(
@@ -423,14 +423,14 @@ class _GymReportsScreenState extends State<GymReportsScreen> {
               _statusBadge(status),
             ],
           ),
-          const SizedBox(height: 8),
-          Row(
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
             children: [
-              _infoChip(Icons.calendar_today_rounded, '$date'),
-              const SizedBox(width: 8),
-              _infoChip(Icons.login_rounded, '$checkIn'),
-              const SizedBox(width: 8),
-              _infoChip(Icons.logout_rounded, '$checkOut'),
+              _infoChip(Icons.calendar_today_rounded, date),
+              _infoChip(Icons.login_rounded, 'In: $checkIn'),
+              _infoChip(Icons.logout_rounded, 'Out: $checkOut'),
             ],
           ),
         ],
@@ -440,7 +440,7 @@ class _GymReportsScreenState extends State<GymReportsScreen> {
 
   Widget _revenueCard(Map<String, dynamic> r) {
     final member = r['member_name'] ?? '-';
-    final date = r['payment_date'] ?? '-';
+    final date = _formatDate(r['payment_date']);
     final amount = r['amount'] ?? 0;
     final method = r['payment_method'] ?? '-';
     final status = r['status'] ?? '-';
@@ -457,16 +457,17 @@ class _GymReportsScreenState extends State<GymReportsScreen> {
               Icon(Icons.payments_rounded, size: 16, color: AppColors.primary),
               const SizedBox(width: 6),
               Expanded(child: Text(member, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF0F172A)), maxLines: 1, overflow: TextOverflow.ellipsis)),
-              Text('\$${amount}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Color(0xFF16A34A))),
+              Text('\$$amount', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Color(0xFF16A34A))),
             ],
           ),
-          const SizedBox(height: 8),
-          Row(
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              _infoChip(Icons.calendar_today_rounded, '$date'),
-              const SizedBox(width: 8),
-              _infoChip(Icons.payment_rounded, '$method'),
-              const SizedBox(width: 8),
+              _infoChip(Icons.calendar_today_rounded, date),
+              _infoChip(Icons.payment_rounded, method),
               _statusBadge(status),
             ],
           ),
@@ -478,7 +479,7 @@ class _GymReportsScreenState extends State<GymReportsScreen> {
   Widget _expiryCard(Map<String, dynamic> r) {
     final member = r['member_name'] ?? '-';
     final plan = r['plan_name'] ?? '-';
-    final endDate = r['end_date'] ?? '-';
+    final endDate = _formatDate(r['end_date']);
     final daysLeft = r['days_remaining'] ?? '-';
     final status = r['status'] ?? '-';
 
@@ -497,20 +498,27 @@ class _GymReportsScreenState extends State<GymReportsScreen> {
               _statusBadge(status),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           Row(
             children: [
-              _infoChip(Icons.card_membership_rounded, '$plan'),
-              const SizedBox(width: 8),
-              _infoChip(Icons.event_busy_rounded, 'End: $endDate'),
-              const Spacer(),
+              Expanded(
+                child: Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    _infoChip(Icons.card_membership_rounded, plan),
+                    _infoChip(Icons.event_busy_rounded, 'End: $endDate'),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: _daysColor(daysLeft).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Text('$daysLeft days', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _daysColor(daysLeft))),
+                child: Text('$daysLeft days', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _daysColor(daysLeft))),
               ),
             ],
           ),
@@ -552,13 +560,13 @@ class _GymReportsScreenState extends State<GymReportsScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Row(
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
             children: [
               _infoChip(Icons.people_rounded, '$assigned assigned'),
-              const SizedBox(width: 8),
               _infoChip(Icons.check_circle_outline, '$active active'),
-              const SizedBox(width: 8),
               _infoChip(Icons.schedule_rounded, '$schedules schedules'),
             ],
           ),
@@ -568,6 +576,42 @@ class _GymReportsScreenState extends State<GymReportsScreen> {
   }
 
   // --- Helpers ---
+
+  String _formatDate(dynamic d) {
+    if (d == null || d == '' || d == '-') return '-';
+    final str = d.toString();
+    if (str.contains('T')) {
+      return str.split('T').first;
+    }
+    return str.split(' ').first;
+  }
+
+  String _formatTime(dynamic t) {
+    if (t == null || t == '' || t == '-') return '-';
+    final str = t.toString();
+    if (str.contains('T')) {
+      final timePart = str.split('T').last.replaceAll('Z', '');
+      final parts = timePart.split(':');
+      if (parts.length >= 2) {
+        final hour = int.tryParse(parts[0]) ?? 0;
+        final minute = parts[1];
+        final period = hour >= 12 ? 'PM' : 'AM';
+        final displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
+        return '$displayHour:$minute $period';
+      }
+    }
+    if (str.contains(':')) {
+      final parts = str.split(':');
+      if (parts.length >= 2) {
+        final hour = int.tryParse(parts[0]) ?? 0;
+        final minute = parts[1];
+        final period = hour >= 12 ? 'PM' : 'AM';
+        final displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
+        return '$displayHour:$minute $period';
+      }
+    }
+    return str;
+  }
 
   Widget _statusBadge(String status) {
     final s = status.toUpperCase();
@@ -586,18 +630,16 @@ class _GymReportsScreenState extends State<GymReportsScreen> {
   }
 
   Widget _infoChip(IconData icon, String text) {
-    return Flexible(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-        decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(6)),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 10, color: const Color(0xFF64748B)),
-            const SizedBox(width: 3),
-            Flexible(child: Text(text, style: const TextStyle(fontSize: 10, color: Color(0xFF475569)), maxLines: 1, overflow: TextOverflow.ellipsis)),
-          ],
-        ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(color: const Color(0xFFF1F5F9), borderRadius: BorderRadius.circular(6)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: const Color(0xFF64748B)),
+          const SizedBox(width: 4),
+          Text(text, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF334155))),
+        ],
       ),
     );
   }

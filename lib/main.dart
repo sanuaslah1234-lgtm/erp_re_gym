@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+import 'core/constants/app_constants.dart';
 import 'frontend/admin/audit_log/providers/audit_log_provider.dart';
 import 'frontend/admin/landing_page/providers/landing_page_provider.dart';
 import 'frontend/admin/manager/providers/manager_provider.dart';
@@ -20,7 +22,15 @@ import 'frontend/screens/auth/login_screen.dart';
 import 'frontend/widgets/common/mobile_nav_shell.dart';
 import 'theme/app_theme.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final savedUrl = prefs.getString('custom_api_base_url');
+    if (savedUrl != null && savedUrl.trim().isNotEmpty) {
+      AppConstants.setBaseUrl(savedUrl);
+    }
+  } catch (_) {}
   runApp(const ErpApp());
 }
 

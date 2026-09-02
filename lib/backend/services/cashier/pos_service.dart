@@ -27,4 +27,3 @@ class PosService {
     return await productRepository.getBrands();
   }
 }
-
