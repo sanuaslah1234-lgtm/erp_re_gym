@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'core/constants/app_constants.dart';
 import 'frontend/admin/audit_log/providers/audit_log_provider.dart';
-import 'frontend/admin/branch/providers/branch_provider.dart';
 import 'frontend/admin/landing_page/providers/landing_page_provider.dart';
 import 'frontend/admin/manager/providers/manager_provider.dart';
 import 'frontend/admin/reports/providers/inventory_reports_provider.dart';
@@ -50,7 +49,7 @@ class ErpApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => BarcodeProvider()),
         ChangeNotifierProvider(create: (_) => RefundProvider()),
         ChangeNotifierProvider(create: (_) => CashierSettingsProvider()),
-        ChangeNotifierProvider(create: (_) => BranchProvider()),
+        // BranchProvider created by sidebar with auth token
         ChangeNotifierProvider(create: (_) => ReportsProvider()),
         ChangeNotifierProvider(create: (_) => PurchaseReportsProvider()),
         ChangeNotifierProvider(create: (_) => InventoryReportsProvider()),
