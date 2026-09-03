@@ -89,7 +89,7 @@ class _PosScreenState extends State<PosScreen> {
                       child: isMobile
                           ? (_mobileTabIndex == 0
                               ? _buildProductSection(posProvider, authProvider)
-                              : const CartPanel())
+                              : CartPanel(onBack: () => setState(() => _mobileTabIndex = 0)))
                           : Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [

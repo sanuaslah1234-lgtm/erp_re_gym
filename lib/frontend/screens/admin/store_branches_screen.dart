@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:erp_software/theme/app_colors.dart';
 import 'package:erp_software/frontend/admin/branch/providers/branch_provider.dart';
+import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/admin/branch/widgets/branch_card_list.dart';
 import 'package:erp_software/frontend/admin/branch/widgets/branch_data_table.dart';
 import 'package:erp_software/frontend/admin/branch/widgets/branch_toolbar.dart';
@@ -19,7 +20,10 @@ class _StoreBranchesScreenState extends State<StoreBranchesScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<BranchProvider>().fetchBranches();
+      final auth = context.read<AuthProvider>();
+      final branchProvider = context.read<BranchProvider>();
+      branchProvider.setToken(auth.token);
+      branchProvider.fetchBranches();
     });
   }
 

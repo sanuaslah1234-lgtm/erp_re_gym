@@ -137,11 +137,15 @@ class _AddEditTrainerDialogState extends State<AddEditTrainerDialog> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       backgroundColor: Colors.white,
       insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
-      child: SizedBox(
-        width: dialogWidth,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+        ),
+        child: SizedBox(
+          width: dialogWidth,
+          height: double.infinity,
+          child: Column(
+            children: [
             // Header
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
@@ -175,10 +179,11 @@ class _AddEditTrainerDialogState extends State<AddEditTrainerDialog> {
             ),
 
             // Form
-            _isInitLoading
-                ? const Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator(color: AppColors.primary))
-                : SingleChildScrollView(
-                    padding: const EdgeInsets.all(18),
+            Flexible(
+              child: _isInitLoading
+                  ? const Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator(color: AppColors.primary))
+                  : SingleChildScrollView(
+                      padding: const EdgeInsets.all(18),
                     child: Form(
                       key: _formKey,
                       child: Column(
@@ -249,6 +254,7 @@ class _AddEditTrainerDialogState extends State<AddEditTrainerDialog> {
                       ),
                     ),
                   ),
+            ),
 
             // Footer
             Container(
@@ -292,7 +298,8 @@ class _AddEditTrainerDialogState extends State<AddEditTrainerDialog> {
           ],
         ),
       ),
-    );
+    ),
+  );
   }
 
   InputDecoration _inputDecoration(String label, {IconData? icon}) {

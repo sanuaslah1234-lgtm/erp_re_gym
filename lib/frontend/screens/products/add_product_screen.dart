@@ -1,4 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:erp_software/core/config/app_config.dart';
 import 'package:erp_software/core/models/cashier/product_model.dart';
 import 'package:erp_software/frontend/providers/auth_provider.dart';
 import 'package:erp_software/frontend/providers/product_management_provider.dart';
@@ -27,7 +30,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   final TextEditingController _openingStockController = TextEditingController(text: '0');
   final TextEditingController _lowStockAlertController = TextEditingController(text: '10');
-  final TextEditingController _warehouseController = TextEditingController(text: 'Main Warehouse');
+  String? _selectedWarehouseId;
+  List<Map<String, dynamic>> _warehouses = [];
 
   String? _selectedCategory;
   String? _selectedBrand;
@@ -37,6 +41,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
   @override
   void initState() {
     super.initState();
+    _loadWarehouses();
     if (widget.existingProduct != null) {
       final p = widget.existingProduct!;
       _nameController.text = p.name;
@@ -71,8 +76,26 @@ class _AddProductScreenState extends State<AddProductScreen> {
     _discountController.dispose();
     _openingStockController.dispose();
     _lowStockAlertController.dispose();
-    _warehouseController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadWarehouses() async {
+    try {
+      final res = await http.get(Uri.parse('${AppConfig.apiBaseUrl}/api/warehouses'));
+      if (res.statusCode == 200) {
+        final decoded = jsonDecode(res.body);
+        final List data = decoded is List ? decoded : (decoded is Map ? (decoded['data'] ?? []) : []);
+        if (mounted) {
+          setState(() {
+            _warehouses = data.cast<Map<String, dynamic>>();
+            // Auto-select if only one warehouse
+            if (_warehouses.length == 1 && _selectedWarehouseId == null) {
+              _selectedWarehouseId = _warehouses[0]['id'].toString();
+            }
+          });
+        }
+      }
+    } catch (_) {}
   }
 
   void _handleSaveProduct(ProductManagementProvider provider, AuthProvider authProvider) async {
@@ -385,9 +408,24 @@ class _AddProductScreenState extends State<AddProductScreen> {
                                           _buildInputField('Low Stock Alert', _lowStockAlertController, hint: '10'),
                                         ),
                                         const SizedBox(height: 16),
-                                        _buildResponsiveRow(
-                                          isMobile,
-                                          _buildInputField('Warehouse', _warehouseController),
+                                        // Warehouse Dropdown
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            const Text('Warehouse', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF334155))),
+                                            const SizedBox(height: 6),
+                                            DropdownButtonFormField<String>(
+                                              isExpanded: true,
+                                              value: _selectedWarehouseId,
+                                              hint: const Text('Select Warehouse', style: TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
+                                              decoration: const InputDecoration(isDense: true, border: OutlineInputBorder()),
+                                              items: _warehouses.map<DropdownMenuItem<String>>((w) => DropdownMenuItem<String>(
+                                                value: w['id'].toString(),
+                                                child: Text(w['name']?.toString() ?? '', overflow: TextOverflow.ellipsis),
+                                              )).toList(),
+                                              onChanged: (val) => setState(() => _selectedWarehouseId = val),
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     ),

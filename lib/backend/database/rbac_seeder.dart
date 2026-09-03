@@ -121,6 +121,7 @@ class RbacSeeder {
       },
     ];
 
+    int _empIndex = 0;
     for (final u in superAdminUsers) {
       final email = u['email']!;
       final role = u['role']!;
@@ -128,6 +129,7 @@ class RbacSeeder {
       final empId = u['empId']!;
       final department = u['department']!;
       final designation = u['designation']!;
+      final phone = '+1${++_empIndex}000000000';
 
       final roleRes = await conn.execute(
         Sql.named('SELECT id FROM roles WHERE UPPER(name) = UPPER(@name) LIMIT 1'),
@@ -144,8 +146,8 @@ class RbacSeeder {
       if (userCheck.isEmpty) {
         final insertRes = await conn.execute(
           Sql.named('''
-            INSERT INTO users (id, email, password_hash, plain_password, role, role_id, is_active, is_verified, employee_id)
-            VALUES (gen_random_uuid()::text, @email, @hash, 'admin123', @role, @role_id, true, true, @emp_id)
+            INSERT INTO users (email, password_hash, plain_password, role, role_id, is_active, is_verified, employee_id)
+            VALUES (@email, @hash, 'admin123', @role, @role_id, true, true, @emp_id)
             RETURNING id
           '''),
           parameters: {
@@ -192,14 +194,16 @@ class RbacSeeder {
       if (empCheck.isEmpty) {
         await conn.execute(
           Sql.named('''
-            INSERT INTO employees (user_id, employee_id, full_name, email, phone, department, designation, is_verified, role)
-            VALUES (@user_id, @emp_id, @full_name, @email, '+1000000000', @department, @designation, true, @role)
+            INSERT INTO employees (user_id, employee_id, full_name, email, phone, password_hash, department, designation, is_verified, role)
+            VALUES (@user_id, @emp_id, @full_name, @email, @phone, @hash, @department, @designation, true, @role)
           '''),
           parameters: {
             'user_id': userIdInt,
             'emp_id': empId,
             'full_name': fullName,
             'email': email,
+            'phone': phone,
+            'hash': defaultPasswordHash,
             'department': department,
             'designation': designation,
             'role': role,

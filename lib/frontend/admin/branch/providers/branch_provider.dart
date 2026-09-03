@@ -11,6 +11,8 @@ class BranchProvider extends ChangeNotifier {
 
   BranchProvider({BranchApiService? api, String? token}) : _api = api ?? BranchApiService(token: token);
 
+  void setToken(String? token) => _api.setToken(token);
+
   List<BranchModel> _branches = [];
   bool isLoading = false;
   bool isMutating = false; // create/update/delete in-flight

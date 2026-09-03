@@ -49,7 +49,7 @@ class OrderApiService {
         throw Exception(body['message'] ?? 'Failed to fetch POS orders');
       }
     } catch (e) {
-      return [];
+      throw Exception(e.toString());
     }
   }
 

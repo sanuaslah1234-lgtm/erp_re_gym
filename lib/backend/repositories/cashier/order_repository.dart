@@ -214,8 +214,8 @@ class OrderRepository {
         final payNumber = 'PAY-${DateTime.now().millisecondsSinceEpoch % 10000000}';
         final payRes = await session.execute(
           Sql.named('''
-            INSERT INTO payments (id, payment_number, order_id, payment_method, method, amount, reference_number, status)
-            VALUES (gen_random_uuid(), @payNumber, @orderId, @pMethod, @pMethod, @pAmt, @pRef, 'PAID')
+            INSERT INTO payments (payment_number, order_id, payment_method, method, amount, reference_number, status)
+            VALUES (@payNumber, @orderId, @pMethod, @pMethod, @pAmt, @pRef, 'PAID')
             RETURNING id, created_at
           '''),
           parameters: {
@@ -272,7 +272,7 @@ class OrderRepository {
     String sql = '''
       SELECT o.*, 
              COALESCE(u.full_name, e.full_name, 'Cashier') as cashier_name,
-             (SELECT COALESCE(p.payment_method, p.method, 'cash') FROM payments p WHERE p.order_id::text = o.id::text OR p.invoice_id::text = o.id::text LIMIT 1) as payment_method
+             (SELECT COALESCE(p.payment_method, p.method, 'cash') FROM payments p WHERE p.order_id::text = o.id::text LIMIT 1) as payment_method
       FROM pos_orders o
       LEFT JOIN users u ON o.cashier_id::text = u.id::text
       LEFT JOIN employees e ON e.user_id::text = u.id::text OR e.id::text = o.cashier_id::text
@@ -292,7 +292,7 @@ class OrderRepository {
     }
 
     if (paymentMethod != null && paymentMethod.isNotEmpty && paymentMethod != 'all') {
-      sql += ' AND EXISTS (SELECT 1 FROM payments p WHERE (p.order_id::text = o.id::text OR p.invoice_id::text = o.id::text) AND LOWER(COALESCE(p.payment_method, p.method, '')) = LOWER(@payMethod))';
+      sql += ' AND EXISTS (SELECT 1 FROM payments p WHERE p.order_id::text = o.id::text AND LOWER(COALESCE(p.payment_method, p.method, '')) = LOWER(@payMethod))';
       params['payMethod'] = paymentMethod;
     }
 
@@ -303,7 +303,13 @@ class OrderRepository {
 
     sql += ' ORDER BY o.created_at DESC LIMIT $limit OFFSET $offset';
 
+    print('--- getAllOrders SQL ---');
+    print(sql);
+    print('Params: $params');
+
     final result = await db.connection.execute(Sql.named(sql), parameters: params);
+
+    print('Query returned ${result.length} rows');
 
     final orders = <PosOrderModel>[];
     for (final row in result) {
@@ -319,7 +325,7 @@ class OrderRepository {
 
       // Fetch payments for each order
       final paymentsRes = await db.connection.execute(
-        Sql.named('SELECT * FROM payments WHERE order_id::text = @orderIdStr OR invoice_id::text = @orderIdStr'),
+        Sql.named('SELECT * FROM payments WHERE order_id::text = @orderIdStr'),
         parameters: {'orderIdStr': orderId.toString()},
       );
       final payments = paymentsRes.map((p) => PaymentModel.fromJson(p.toColumnMap())).toList();
@@ -337,7 +343,7 @@ class OrderRepository {
     final sql = '''
       SELECT o.*, 
              COALESCE(u.full_name, e.full_name, 'Cashier') as cashier_name,
-             (SELECT COALESCE(p.payment_method, p.method, 'cash') FROM payments p WHERE p.order_id::text = o.id::text OR p.invoice_id::text = o.id::text LIMIT 1) as payment_method
+             (SELECT COALESCE(p.payment_method, p.method, 'cash') FROM payments p WHERE p.order_id::text = o.id::text LIMIT 1) as payment_method
       FROM pos_orders o
       LEFT JOIN users u ON o.cashier_id::text = u.id::text
       LEFT JOIN employees e ON e.user_id::text = u.id::text OR e.id::text = o.cashier_id::text
@@ -356,7 +362,7 @@ class OrderRepository {
       parameters: {'orderIdStr': actualOrderId},
     );
     final paymentsRes = await db.connection.execute(
-      Sql.named('SELECT * FROM payments WHERE order_id::text = @orderIdStr OR invoice_id::text = @orderIdStr'),
+      Sql.named('SELECT * FROM payments WHERE order_id::text = @orderIdStr'),
       parameters: {'orderIdStr': actualOrderId},
     );
 

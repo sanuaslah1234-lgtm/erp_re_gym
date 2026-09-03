@@ -1,8 +1,25 @@
 -- Migration: 019_update_pos_and_payments_schema.sql
 
+-- Create payments table if it doesn't exist (was missing from earlier migrations)
+CREATE TABLE IF NOT EXISTS payments (
+    id SERIAL PRIMARY KEY,
+    payment_number VARCHAR(50),
+    order_id VARCHAR(100),
+    payment_method VARCHAR(50) NOT NULL DEFAULT 'cash',
+    method VARCHAR(50),
+    amount NUMERIC(12,2) NOT NULL DEFAULT 0,
+    reference_number VARCHAR(100),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Ensure payments has order_id and payment_method columns
 ALTER TABLE payments ADD COLUMN IF NOT EXISTS order_id VARCHAR(100);
 ALTER TABLE payments ADD COLUMN IF NOT EXISTS payment_method VARCHAR(50) DEFAULT 'cash';
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS method VARCHAR(50);
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS amount NUMERIC(12,2) NOT NULL DEFAULT 0;
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS reference_number VARCHAR(100);
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS payment_number VARCHAR(50);
 UPDATE payments SET payment_method = method WHERE payment_method IS NULL AND method IS NOT NULL;
 UPDATE payments SET method = payment_method WHERE method IS NULL AND payment_method IS NOT NULL;
 

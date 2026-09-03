@@ -7,6 +7,8 @@ class BranchApiService {
 
   BranchApiService({ApiClient? client, String? token}) : _client = client ?? ApiClient(token: token);
 
+  void setToken(String? token) => _client.setToken(token);
+
   Future<List<BranchModel>> getBranches() async {
     final data = await _client.get(AppConstants.branches) as List<dynamic>;
     return data

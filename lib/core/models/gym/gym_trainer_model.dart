@@ -83,6 +83,7 @@ class GymTrainerModel {
       'status': status,
       'createdAt': createdAt?.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
+      'assigned_member_count': assignedMemberCount,
       'assignedMemberCount': assignedMemberCount,
       'employeeCode': employeeCode,
     };

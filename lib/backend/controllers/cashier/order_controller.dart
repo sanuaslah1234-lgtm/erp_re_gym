@@ -83,6 +83,9 @@ class OrderController {
       final limit = int.tryParse(params['limit'] ?? '50') ?? 50;
       final offset = int.tryParse(params['offset'] ?? '0') ?? 0;
 
+      print('--- GET ORDERS ---');
+      print('search: $search, status: $status, paymentMethod: $paymentMethod, date: $date');
+
       final orders = await orderService.getOrders(
         search: search,
         status: status,
@@ -91,6 +94,11 @@ class OrderController {
         limit: limit,
         offset: offset,
       );
+
+      print('Found ${orders.length} orders');
+      if (orders.isNotEmpty) {
+        print('First order: ${orders.first.toJson()}');
+      }
 
       return ResponseUtils.success(
         message: 'Orders fetched successfully',

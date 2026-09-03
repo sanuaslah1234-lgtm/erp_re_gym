@@ -112,6 +112,16 @@ class _PosOrdersScreenState extends State<PosOrdersScreen> {
                         ),
                         const SizedBox(height: 20),
 
+                        // Error Banner
+                        if (orderProvider.errorMessage != null)
+                          Container(
+                            width: double.infinity,
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(color: const Color(0xFFFEF2F2), borderRadius: BorderRadius.circular(10)),
+                            child: Text(orderProvider.errorMessage!, style: const TextStyle(color: Color(0xFFB91C1C), fontSize: 12)),
+                          ),
+
                         // Order List Table
                         orderProvider.isLoading
                             ? const Center(child: CircularProgressIndicator(color: Color(0xFF2563EB)))

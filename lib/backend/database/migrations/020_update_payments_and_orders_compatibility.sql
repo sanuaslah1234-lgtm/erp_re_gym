@@ -2,8 +2,7 @@
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Ensure payments table has default UUID generator
-ALTER TABLE payments ALTER COLUMN id SET DEFAULT gen_random_uuid();
+-- Note: payments.id remains SERIAL (integer) — do not try to set UUID default
 
 -- Ensure payments table columns for POS orders
 ALTER TABLE payments ADD COLUMN IF NOT EXISTS order_id VARCHAR(100);

@@ -28,11 +28,15 @@ class _InventoryScreenState extends State<InventoryScreen> {
   String? _selectedWarehouseId;
   String _selectedStatus = 'All Statuses';
   String _selectedSort = 'Latest';
+  List<Map<String, String>> _warehouses = [];
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadInventory());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadWarehouses();
+      _loadInventory();
+    });
   }
 
   Future<void> _loadInventory() async {
@@ -68,6 +72,21 @@ class _InventoryScreenState extends State<InventoryScreen> {
         }
       }
     }
+  }
+
+  Future<void> _loadWarehouses() async {
+    try {
+      final res = await http.get(Uri.parse('${AppConfig.apiBaseUrl}/api/warehouses'));
+      if (res.statusCode == 200) {
+        final decoded = jsonDecode(res.body);
+        final List data = decoded is List ? decoded : (decoded is Map ? (decoded['data'] ?? []) : []);
+        if (mounted) {
+          setState(() {
+            _warehouses = data.map<Map<String, String>>((e) => {'id': e['id'].toString(), 'name': (e['name'] ?? '').toString()}).toList();
+          });
+        }
+      }
+    } catch (_) {}
   }
 
   List<InventoryModel> get _filteredItems {
@@ -642,7 +661,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                           selectedWarehouseId: _selectedWarehouseId,
                           selectedStatus: _selectedStatus,
                           selectedSort: _selectedSort,
-                          warehouses: const [],
+                          warehouses: _warehouses,
                           onSearchChanged: (val) {
                             _search = val;
                             _loadInventory();

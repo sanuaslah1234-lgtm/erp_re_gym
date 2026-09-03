@@ -67,7 +67,9 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
         Uri.parse('${AppConstants.apiBaseUrl}/api/cashier/orders'),
         headers: headers,
       );
+      print('statusCode: ${res.statusCode}, body: ${res.body}');
       if (res.statusCode == 200) {
+        print('Invoices loaded successfully: ${res.body}');
         final decoded = jsonDecode(res.body);
         final List data = decoded is List ? decoded : (decoded is Map ? (decoded['data'] ?? []) : []);
         if (mounted) setState(() { _invoices = data.map((e) => _Invoice.fromJson(e)).toList(); _isLoading = false; });

@@ -9,7 +9,8 @@ import 'package:erp_software/frontend/widgets/erp_toast.dart';
 import 'package:provider/provider.dart';
 
 class CartPanel extends StatefulWidget {
-  const CartPanel({super.key});
+  final VoidCallback? onBack;
+  const CartPanel({super.key, this.onBack});
 
   @override
   State<CartPanel> createState() => _CartPanelState();
@@ -109,7 +110,7 @@ class _CartPanelState extends State<CartPanel> {
         ? currentCustName
         : 'Walk-in Customer';
 
-    final isMobile = MediaQuery.of(context).size.width < 750;
+    final isMobile = MediaQuery.of(context).size.width < 900;
 
     return Container(
       width: double.infinity,
@@ -128,6 +129,22 @@ class _CartPanelState extends State<CartPanel> {
       child: SingleChildScrollView(
         child: Column(
           children: [
+            // Back button (mobile only)
+            if (isMobile && widget.onBack != null)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: const BoxDecoration(
+                  border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+                ),
+                child: TextButton.icon(
+                  onPressed: widget.onBack,
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 16, color: Color(0xFF2563EB)),
+                  label: const Text('Back to Products', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF2563EB))),
+                  style: TextButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 8)),
+                ),
+              ),
+
             // 1. Customer Selection Header
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),

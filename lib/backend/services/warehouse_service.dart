@@ -21,8 +21,8 @@ class WarehouseService {
 
     final result = await postgresService.connection.execute(
       Sql.named('''
-        INSERT INTO warehouses (id, name, code, address, phone, is_active)
-        VALUES (@id, @name, @code, @address, @phone, true)
+        INSERT INTO warehouses (name, code, address, phone, is_active)
+        VALUES (@name, @code, @address, @phone, true)
         RETURNING id, name, code, address, phone, is_active, created_at, updated_at
       '''),
       parameters: {
